@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: job-automation-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: job-automation
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - job-automation-network
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7-alpine
+    container_name: job-automation-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - job-automation-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/Dockerfile.backend
+    container_name: job-automation-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/job-automation
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    env_file:
+      - .env
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - job-automation-network
+
+  # Job Fetcher Service
+  job-fetcher:
+    build:
+      context: ./job-fetcher
+      dockerfile: ../infrastructure/docker/Dockerfile.job-fetcher
+    container_name: job-automation-fetcher
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/job-automation
+      - REDIS_HOST=redis
+    env_file:
+      - .env
+    volumes:
+      - ./job-fetcher/src:/app/src
+      - ./logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+      - backend
+    networks:
+      - job-automation-network
+
+  # Matching Engine Service
+  matching-engine:
+    build:
+      context: ./matching-engine
+      dockerfile: ../infrastructure/docker/Dockerfile.matching-engine
+    container_name: job-automation-matcher
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/job-automation
+      - REDIS_HOST=redis
+    env_file:
+      - .env
+    volumes:
+      - ./matching-engine/src:/app/src
+      - ./logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - job-automation-network
+
+  # Automation Service (Puppeteer)
+  automation:
+    build:
+      context: ./automation
+      dockerfile: ../infrastructure/docker/Dockerfile.automation
+    container_name: job-automation-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/job-automation
+      - REDIS_HOST=redis
+      - PUPPETEER_HEADLESS=true
+    env_file:
+      - .env
+    volumes:
+      - ./automation/src:/app/src
+      - ./screenshots:/app/screenshots
+      - ./logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+      - backend
+    networks:
+      - job-automation-network
+    # Add extra capabilities for Puppeteer
+    cap_add:
+      - SYS_ADMIN
+    shm_size: 2gb
+
+  # Frontend (Angular)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend
+    container_name: job-automation-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    environment:
+      - API_URL=http://backend:3000
+    depends_on:
+      - backend
+    networks:
+      - job-automation-network
+
+  # Nginx (Production reverse proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: job-automation-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - job-automation-network
+    profiles:
+      - production
+
+networks:
+  job-automation-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data:

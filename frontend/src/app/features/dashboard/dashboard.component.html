@@ -1,0 +1,214 @@
+<div class="dashboard-container p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">
+      Welcome back, {{ currentUser()?.firstName }}!
+    </h1>
+    <p class="text-gray-600 mt-2">
+      Here's your job search overview
+    </p>
+  </div>
+
+  @if (loading()) {
+    <!-- Loading State -->
+    <div class="flex justify-center items-center h-64">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else {
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Jobs Card -->
+      <mat-card class="stat-card">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">Total Jobs</p>
+              <h3 class="text-3xl font-bold text-primary-600 mt-2">
+                {{ stats().totalJobs }}
+              </h3>
+            </div>
+            <mat-icon class="text-primary-500 text-4xl">work</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Applications Card -->
+      <mat-card class="stat-card">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">Applications</p>
+              <h3 class="text-3xl font-bold text-success-600 mt-2">
+                {{ stats().totalApplications }}
+              </h3>
+            </div>
+            <mat-icon class="text-success-500 text-4xl">send</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Pending Card -->
+      <mat-card class="stat-card">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">Pending</p>
+              <h3 class="text-3xl font-bold text-warning-600 mt-2">
+                {{ stats().pendingApplications }}
+              </h3>
+            </div>
+            <mat-icon class="text-warning-500 text-4xl">pending</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Average Match Score Card -->
+      <mat-card class="stat-card">
+        <mat-card-content class="p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">Avg Match</p>
+              <h3 class="text-3xl font-bold text-primary-600 mt-2">
+                {{ stats().averageMatchScore }}%
+              </h3>
+            </div>
+            <mat-icon class="text-primary-500 text-4xl">stars</mat-icon>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- High Match Jobs Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- High Match Jobs -->
+      <mat-card>
+        <mat-card-header class="p-6 border-b">
+          <div class="flex items-center justify-between w-full">
+            <h2 class="text-xl font-semibold">High Match Jobs</h2>
+            <button mat-button routerLink="/jobs" class="text-primary-600">
+              View All
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content class="p-6">
+          @if (highMatchJobs().length > 0) {
+            <div class="space-y-4">
+              @for (job of highMatchJobs(); track job.id) {
+                <div class="job-item p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h3 class="font-semibold text-gray-900">{{ job.title }}</h3>
+                      <p class="text-sm text-gray-600 mt-1">{{ job.company }}</p>
+                      <p class="text-sm text-gray-500 mt-1">{{ job.location }}</p>
+                    </div>
+                    <div class="text-right">
+                      <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                        {{ job.matchScore }}% Match
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center py-8 text-gray-500">
+              <mat-icon class="text-6xl text-gray-300">work_off</mat-icon>
+              <p class="mt-4">No high match jobs found</p>
+              <button mat-raised-button color="primary" class="mt-4" (click)="refreshData()">
+                Fetch New Jobs
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recent Applications -->
+      <mat-card>
+        <mat-card-header class="p-6 border-b">
+          <div class="flex items-center justify-between w-full">
+            <h2 class="text-xl font-semibold">Recent Applications</h2>
+            <button mat-button routerLink="/applications" class="text-primary-600">
+              View All
+            </button>
+          </div>
+        </mat-card-header>
+        <mat-card-content class="p-6">
+          @if (recentApplications().length > 0) {
+            <div class="space-y-4">
+              @for (app of recentApplications(); track app.id) {
+                <div class="application-item p-4 border rounded-lg">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h3 class="font-semibold text-gray-900">{{ app.job?.title }}</h3>
+                      <p class="text-sm text-gray-600 mt-1">{{ app.job?.company }}</p>
+                      <p class="text-xs text-gray-500 mt-1">
+                        Applied: {{ app.appliedDate | date:'short' }}
+                      </p>
+                    </div>
+                    <div>
+                      @switch (app.status) {
+                        @case ('submitted') {
+                          <span class="status-badge bg-success-100 text-success-800">
+                            Submitted
+                          </span>
+                        }
+                        @case ('pending') {
+                          <span class="status-badge bg-warning-100 text-warning-800">
+                            Pending
+                          </span>
+                        }
+                        @case ('failed') {
+                          <span class="status-badge bg-danger-100 text-danger-800">
+                            Failed
+                          </span>
+                        }
+                        @default {
+                          <span class="status-badge bg-gray-100 text-gray-800">
+                            {{ app.status }}
+                          </span>
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center py-8 text-gray-500">
+              <mat-icon class="text-6xl text-gray-300">inbox</mat-icon>
+              <p class="mt-4">No applications yet</p>
+              <button mat-raised-button color="primary" class="mt-4" routerLink="/jobs">
+                Browse Jobs
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-6">
+      <mat-card>
+        <mat-card-header class="p-6 border-b">
+          <h2 class="text-xl font-semibold">Quick Actions</h2>
+        </mat-card-header>
+        <mat-card-content class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button mat-raised-button color="primary" routerLink="/jobs" class="h-20">
+              <mat-icon>search</mat-icon>
+              Browse Jobs
+            </button>
+            <button mat-raised-button color="accent" routerLink="/profile" class="h-20">
+              <mat-icon>person</mat-icon>
+              Update Profile
+            </button>
+            <button mat-raised-button (click)="refreshData()" class="h-20">
+              <mat-icon>refresh</mat-icon>
+              Refresh Data
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

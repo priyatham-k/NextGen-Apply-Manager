@@ -1,0 +1,53 @@
+{
+  "name": "job-application-automation",
+  "version": "1.0.0",
+  "description": "Fully automated job application system with AI matching",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:automation && npm run install:fetcher && npm run install:matcher",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:automation": "cd automation && npm install",
+    "install:fetcher": "cd job-fetcher && npm install",
+    "install:matcher": "cd matching-engine && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:fetcher\" \"npm run dev:automation\"",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:automation": "cd automation && npm run dev",
+    "dev:fetcher": "cd job-fetcher && npm run dev",
+    "dev:matcher": "cd matching-engine && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend && npm run build:automation && npm run build:fetcher && npm run build:matcher",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:automation": "cd automation && npm run build",
+    "build:fetcher": "cd job-fetcher && npm run build",
+    "build:matcher": "cd matching-engine && npm run build",
+    "test": "npm run test:frontend && npm run test:backend && npm run test:automation",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "test:automation": "cd automation && npm test",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "fetch:jobs": "cd job-fetcher && npm run fetch",
+    "install:chrome-deps": "cd automation && npm run install:chrome-deps"
+  },
+  "keywords": [
+    "job-automation",
+    "puppeteer",
+    "angular",
+    "nodejs",
+    "ai-matching"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
