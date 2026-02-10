@@ -121,4 +121,34 @@ export class AuthService {
       })
     );
   }
+
+  uploadProfilePicture(file: File): Observable<ApiResponse<User>> {
+    const formData = new FormData();
+    formData.append('picture', file);
+
+    return this.http.post<ApiResponse<User>>(
+      `${environment.apiUrl}/auth/profile/picture`,
+      formData
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.currentUserSignal.set(response.data);
+          localStorage.setItem('current_user', JSON.stringify(response.data));
+        }
+      })
+    );
+  }
+
+  removeProfilePicture(): Observable<ApiResponse<User>> {
+    return this.http.delete<ApiResponse<User>>(
+      `${environment.apiUrl}/auth/profile/picture`
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.currentUserSignal.set(response.data);
+          localStorage.setItem('current_user', JSON.stringify(response.data));
+        }
+      })
+    );
+  }
 }

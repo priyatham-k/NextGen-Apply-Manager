@@ -49,5 +49,8 @@
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@angular/common": "^19.2.18"
   }
 }

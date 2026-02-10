@@ -1,0 +1,207 @@
+<div class="profile-container">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <h1 class="page-title">Profile Settings</h1>
+    <p class="page-subtitle">Manage your personal information and profile picture</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Profile Picture -->
+    <div class="col-lg-4">
+      <div class="card profile-picture-card">
+        <div class="card-body text-center">
+          <h5 class="card-title mb-4">Profile Picture</h5>
+
+          <!-- Profile Picture Display -->
+          <div class="profile-picture-wrapper mb-3">
+            @if (picturePreview() || user()?.profilePicture) {
+              <img
+                [src]="picturePreview() || user()?.profilePicture"
+                alt="Profile Picture"
+                class="profile-picture"
+              />
+            } @else {
+              <div class="profile-picture-placeholder">
+                <i class="bi bi-person"></i>
+              </div>
+            }
+
+            @if (uploadingPicture()) {
+              <div class="picture-overlay">
+                <div class="spinner-border text-light" role="status">
+                  <span class="visually-hidden">Uploading...</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Upload/Remove Buttons -->
+          <div class="d-grid gap-2">
+            <label class="btn btn-primary" [class.disabled]="uploadingPicture()">
+              <input
+                type="file"
+                class="d-none"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                [disabled]="uploadingPicture()"
+              />
+              <i class="bi bi-upload me-2"></i>
+              {{ uploadingPicture() ? 'Uploading...' : 'Upload Picture' }}
+            </label>
+
+            @if (hasProfilePicture) {
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                (click)="onRemovePicture()"
+                [disabled]="uploadingPicture()"
+              >
+                <i class="bi bi-trash me-2"></i>
+                Remove Picture
+              </button>
+            }
+          </div>
+
+          <p class="text-muted small mt-3 mb-0">
+            Max size: 5MB. Formats: JPG, PNG, GIF, WebP
+          </p>
+        </div>
+      </div>
+
+      <!-- Account Info Card -->
+      <div class="card mt-4">
+        <div class="card-body">
+          <h6 class="card-title mb-3">Account Information</h6>
+          <div class="account-info-list">
+            <div class="info-item">
+              <span class="info-label">Account Status</span>
+              <span class="badge bg-success">Active</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Member Since</span>
+              <span class="info-value">{{ user()?.createdAt | date:'mediumDate' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Last Updated</span>
+              <span class="info-value">{{ user()?.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Profile Details Form -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-4">Personal Details</h5>
+
+          <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+            <div class="row g-3">
+              <!-- First Name -->
+              <div class="col-md-6">
+                <label for="firstName" class="form-label">First Name</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-person"></i>
+                  </span>
+                  <input
+                    type="text"
+                    id="firstName"
+                    class="form-control"
+                    formControlName="firstName"
+                    placeholder="John"
+                    [class.is-invalid]="firstName?.invalid && firstName?.touched"
+                  />
+                </div>
+                @if (firstName?.invalid && firstName?.touched) {
+                  <div class="invalid-feedback d-block">
+                    @if (firstName?.errors?.['required']) {
+                      First name is required
+                    }
+                    @if (firstName?.errors?.['minlength']) {
+                      First name must be at least 2 characters
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Last Name -->
+              <div class="col-md-6">
+                <label for="lastName" class="form-label">Last Name</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-person"></i>
+                  </span>
+                  <input
+                    type="text"
+                    id="lastName"
+                    class="form-control"
+                    formControlName="lastName"
+                    placeholder="Doe"
+                    [class.is-invalid]="lastName?.invalid && lastName?.touched"
+                  />
+                </div>
+                @if (lastName?.invalid && lastName?.touched) {
+                  <div class="invalid-feedback d-block">
+                    @if (lastName?.errors?.['required']) {
+                      Last name is required
+                    }
+                    @if (lastName?.errors?.['minlength']) {
+                      Last name must be at least 2 characters
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Email -->
+              <div class="col-12">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-envelope"></i>
+                  </span>
+                  <input
+                    type="email"
+                    id="email"
+                    class="form-control"
+                    formControlName="email"
+                    placeholder="you@example.com"
+                    [class.is-invalid]="email?.invalid && email?.touched"
+                  />
+                </div>
+                @if (email?.invalid && email?.touched) {
+                  <div class="invalid-feedback d-block">
+                    @if (email?.errors?.['required']) {
+                      Email is required
+                    }
+                    @if (email?.errors?.['email']) {
+                      Please enter a valid email address
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4">
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg"
+                [disabled]="loading() || profileForm.invalid"
+              >
+                @if (loading()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Saving...
+                } @else {
+                  <i class="bi bi-check-circle me-2"></i>
+                  Save Changes
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

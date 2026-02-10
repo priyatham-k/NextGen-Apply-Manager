@@ -1,0 +1,111 @@
+@import '../../../../assets/styles/variables';
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, $accent 0%, $dark-base 100%);
+}
+
+.auth-card {
+  background: white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-xl;
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 450px;
+}
+
+.logo-circle {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, $accent 0%, lighten($accent, 10%) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+
+  svg {
+    width: 40px;
+    height: 40px;
+    color: white;
+  }
+}
+
+.auth-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $text;
+  margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+  color: $muted;
+  font-size: 0.95rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: $text;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input-group-text {
+  background-color: $background;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+    color: $muted;
+  }
+}
+
+.btn-password-toggle {
+  cursor: pointer;
+  background-color: $background;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: $muted;
+  }
+}
+
+.forgot-password {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-lg {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 2rem 0 1.5rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #dee2e6;
+  }
+
+  span {
+    position: relative;
+    background-color: white;
+    padding: 0 1rem;
+    color: $muted;
+    font-size: 0.875rem;
+  }
+}

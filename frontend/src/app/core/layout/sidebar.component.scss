@@ -1,0 +1,178 @@
+@import '../../../assets/styles/variables';
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+  animation: fadeIn 0.2s ease;
+}
+
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  z-index: 1050;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+
+  // Mobile: hidden by default
+  @media (max-width: 991.98px) {
+    transform: translateX(-100%);
+
+    &.sidebar-open {
+      transform: translateX(0);
+    }
+  }
+
+  // Desktop: always visible
+  @media (min-width: 992px) {
+    transform: translateX(0) !important;
+    top: 60px;
+  }
+}
+
+.sidebar-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.5rem;
+  color: $text;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+  margin-top: 3rem;
+
+  @media (min-width: 992px) {
+    margin-top: 0;
+  }
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-item {
+  margin: 0.25rem 0.75rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  color: $text;
+  text-decoration: none;
+  border-radius: $border-radius;
+  transition: $transition-fast;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  position: relative;
+
+  &:hover {
+    background-color: $background;
+    color: $primary;
+
+    .nav-icon {
+      color: $primary;
+    }
+  }
+
+  &.active {
+    background: linear-gradient(135deg, rgba($primary, 0.1) 0%, rgba($primary, 0.05) 100%);
+    color: $primary;
+
+    .nav-icon {
+      color: $primary;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background-color: $primary;
+      border-radius: 0 2px 2px 0;
+    }
+  }
+}
+
+.nav-icon {
+  font-size: 22px;
+  color: $muted;
+  flex-shrink: 0;
+  transition: $transition-fast;
+  line-height: 1;
+}
+
+.nav-text {
+  flex: 1;
+}
+
+.nav-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+}
+
+.nav-divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 1rem 1.5rem;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.help-card {
+  background: linear-gradient(135deg, $primary 0%, lighten($primary, 5%) 100%);
+  padding: 1.25rem;
+  border-radius: $border-radius-lg;
+  text-align: center;
+  color: white;
+
+  .help-icon {
+    font-size: 32px;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+  }
+
+  .help-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .help-link {
+    color: white;
+    text-decoration: underline;
+    font-size: 0.875rem;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}

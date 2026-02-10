@@ -28,7 +28,8 @@
       "@shared/*": ["src/app/shared/*"],
       "@models/*": ["src/app/models/*"],
       "@environments/*": ["src/environments/*"]
-    }
+    },
+    "baseUrl": "./"
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

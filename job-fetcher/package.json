@@ -9,22 +9,27 @@
     "start": "node dist/index.js",
     "fetch": "ts-node src/manual-fetch.ts"
   },
-  "keywords": ["job-api", "jsearch", "adzuna"],
+  "keywords": [
+    "job-api",
+    "jsearch",
+    "adzuna"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.5",
     "dotenv": "^16.4.1",
+    "ioredis": "^5.3.2",
+    "job-application-automation": "file:..",
     "mongoose": "^8.1.1",
     "node-cron": "^3.0.3",
-    "winston": "^3.11.0",
-    "ioredis": "^5.3.2"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@types/node-cron": "^3.0.11",
-    "typescript": "^5.3.3",
+    "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
-    "nodemon": "^3.0.3"
+    "typescript": "^5.3.3"
   }
 }

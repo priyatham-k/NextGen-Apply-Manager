@@ -1,0 +1,255 @@
+<div class="auth-container">
+  <div class="auth-card fade-in">
+    <!-- Logo/Header -->
+    <div class="text-center mb-4">
+      <div class="logo-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+      </div>
+      <h2 class="auth-title">Create Account</h2>
+      <p class="auth-subtitle">Join us and automate your job search</p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ error() }}
+        <button type="button" class="btn-close" (click)="error.set('')"></button>
+      </div>
+    }
+
+    <!-- Register Form -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- First Name Field -->
+      <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            id="firstName"
+            class="form-control"
+            formControlName="firstName"
+            placeholder="John"
+            [class.is-invalid]="firstName?.invalid && firstName?.touched"
+          />
+        </div>
+        @if (firstName?.invalid && firstName?.touched) {
+          <div class="invalid-feedback d-block">
+            @if (firstName?.errors?.['required']) {
+              First name is required
+            }
+            @if (firstName?.errors?.['minlength']) {
+              First name must be at least 2 characters
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Last Name Field -->
+      <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            id="lastName"
+            class="form-control"
+            formControlName="lastName"
+            placeholder="Doe"
+            [class.is-invalid]="lastName?.invalid && lastName?.touched"
+          />
+        </div>
+        @if (lastName?.invalid && lastName?.touched) {
+          <div class="invalid-feedback d-block">
+            @if (lastName?.errors?.['required']) {
+              Last name is required
+            }
+            @if (lastName?.errors?.['minlength']) {
+              Last name must be at least 2 characters
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Email Field -->
+      <div class="mb-3">
+        <label for="email" class="form-label">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+          </span>
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="you@example.com"
+            [class.is-invalid]="email?.invalid && email?.touched"
+          />
+        </div>
+        @if (email?.invalid && email?.touched) {
+          <div class="invalid-feedback d-block">
+            @if (email?.errors?.['required']) {
+              Email is required
+            }
+            @if (email?.errors?.['email']) {
+              Please enter a valid email
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Password Field -->
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </span>
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            class="form-control"
+            formControlName="password"
+            placeholder="Create a password"
+            [class.is-invalid]="password?.invalid && password?.touched"
+          />
+          <button
+            type="button"
+            class="input-group-text btn-password-toggle"
+            (click)="togglePasswordVisibility()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+        @if (password?.invalid && password?.touched) {
+          <div class="invalid-feedback d-block">
+            @if (password?.errors?.['required']) {
+              Password is required
+            }
+            @if (password?.errors?.['minlength']) {
+              Password must be at least 6 characters
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Confirm Password Field -->
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+          <input
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            id="confirmPassword"
+            class="form-control"
+            formControlName="confirmPassword"
+            placeholder="Confirm your password"
+            [class.is-invalid]="confirmPassword?.invalid && confirmPassword?.touched"
+          />
+          <button
+            type="button"
+            class="input-group-text btn-password-toggle"
+            (click)="toggleConfirmPasswordVisibility()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+        @if (confirmPassword?.invalid && confirmPassword?.touched) {
+          <div class="invalid-feedback d-block">
+            @if (confirmPassword?.errors?.['required']) {
+              Please confirm your password
+            }
+            @if (confirmPassword?.errors?.['passwordMismatch']) {
+              Passwords do not match
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Terms and Conditions -->
+      <div class="mb-4">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="agreedToTerms"
+            formControlName="agreedToTerms"
+            [class.is-invalid]="agreedToTerms?.invalid && agreedToTerms?.touched"
+          />
+          <label class="form-check-label" for="agreedToTerms">
+            I agree to the <a href="#" class="text-primary">Terms of Service</a> and
+            <a href="#" class="text-primary">Privacy Policy</a>
+          </label>
+        </div>
+        @if (agreedToTerms?.invalid && agreedToTerms?.touched) {
+          <div class="invalid-feedback d-block">
+            You must agree to the terms and conditions
+          </div>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-success w-100 btn-lg"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Creating account...
+        } @else {
+          Create Account
+        }
+      </button>
+    </form>
+
+    <!-- Divider -->
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <!-- Social Login -->
+    <div class="social-login">
+      <button type="button" class="btn btn-outline-secondary w-100 mb-2">
+        <span>Sign up with Google</span>
+      </button>
+      <button type="button" class="btn btn-outline-secondary w-100">
+        <span>Sign up with GitHub</span>
+      </button>
+    </div>
+
+    <!-- Sign In Link -->
+    <div class="text-center mt-4">
+      <p class="mb-0 text-muted">
+        Already have an account?
+        <a routerLink="/auth/login" class="fw-bold">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

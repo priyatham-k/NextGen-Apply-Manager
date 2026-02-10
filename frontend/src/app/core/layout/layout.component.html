@@ -1,0 +1,14 @@
+<div class="app-layout">
+  <!-- Header -->
+  <app-header (toggleSidebar)="toggleSidebar()"></app-header>
+
+  <!-- Sidebar -->
+  <app-sidebar [isOpen]="sidebarOpen()" (closeSidebar)="closeSidebar()"></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="app-main">
+    <div class="main-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

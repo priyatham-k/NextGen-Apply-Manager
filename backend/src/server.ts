@@ -4,10 +4,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import { connectDatabase } from './config/database';
 import { logger } from './config/logger';
-import { errorHandler } from './middleware/errorHandler';
-import { notFoundHandler } from './middleware/notFoundHandler';
+import errorHandler from './middleware/errorHandler';
+import notFoundHandler from './middleware/notFoundHandler';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -16,8 +17,8 @@ import applicationRoutes from './routes/application.routes';
 import profileRoutes from './routes/profile.routes';
 import analyticsRoutes from './routes/analytics.routes';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -33,7 +34,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Server is healthy',

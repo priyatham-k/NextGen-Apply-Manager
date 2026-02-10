@@ -1,0 +1,46 @@
+@import '../../../assets/styles/variables';
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $background;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 60px;
+
+  // Mobile: full width
+  @media (max-width: 991.98px) {
+    width: 100%;
+  }
+
+  // Desktop: with sidebar offset
+  @media (min-width: 992px) {
+    margin-left: 280px;
+    padding-top: 0;
+  }
+}
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+
+  // Tablet
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  // Desktop
+  @media (min-width: 992px) {
+    padding: 2rem;
+  }
+
+  // Large Desktop
+  @media (min-width: 1400px) {
+    padding: 2.5rem 3rem;
+  }
+}

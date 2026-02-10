@@ -1,23 +1,76 @@
+/* Import Variables */
+@import 'assets/styles/variables';
+
+/* Import Bootstrap Icons */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
 /* Global Styles */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* You can add global styles to this file, and also import other style files */
+/* Apply Custom Colors */
+:root {
+  --primary: #{$primary};
+  --dark-base: #{$dark-base};
+  --accent: #{$accent};
+  --background: #{$background};
+  --text: #{$text};
+  --muted: #{$muted};
+  --success: #{$success};
+  --danger: #{$danger};
+  --warning: #{$warning};
+  --info: #{$info};
+}
+
+/* Reset & Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px; // Base for rem calculations
+}
+
 html, body {
   height: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
   margin: 0;
-  background-color: #f9fafb;
+  background-color: $background;
+  color: $text;
+  font-size: $font-size-base; // 14px - more compact
+  line-height: $line-height-normal;
+  font-weight: $font-weight-normal;
+}
+
+// Typography defaults
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: $spacing-3;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+  color: $text;
+}
+
+h1 { font-size: $h1-font-size; }
+h2 { font-size: $h2-font-size; }
+h3 { font-size: $h3-font-size; }
+h4 { font-size: $h4-font-size; }
+h5 { font-size: $h5-font-size; }
+h6 { font-size: $h6-font-size; }
+
+p {
+  margin-top: 0;
+  margin-bottom: $spacing-4;
+}
+
+small {
+  font-size: $font-size-xs;
 }
 
 /* Custom Scrollbar */
@@ -31,45 +84,150 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: $muted;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: darken($muted, 10%);
+}
+
+/* Bootstrap Overrides - Compact Sizing */
+.btn {
+  font-size: $font-size-sm;
+  padding: $btn-padding-y $btn-padding-x;
+  border-radius: $border-radius;
+  font-weight: $font-weight-medium;
+
+  &.btn-sm {
+    font-size: $font-size-xs;
+    padding: $btn-padding-y-sm $btn-padding-x-sm;
+  }
+
+  &.btn-lg {
+    font-size: $font-size-base;
+    padding: $btn-padding-y-lg $btn-padding-x-lg;
+  }
+}
+
+.btn-primary {
+  background-color: $primary !important;
+  border-color: $primary !important;
+  color: white !important;
+
+  &:hover, &:focus {
+    background-color: $primary-dark !important;
+    border-color: $primary-dark !important;
+  }
+}
+
+.btn-success {
+  background-color: $accent !important;
+  border-color: $accent !important;
+
+  &:hover, &:focus {
+    background-color: $accent-dark !important;
+    border-color: $accent-dark !important;
+  }
+}
+
+// Form controls - more compact
+.form-control,
+.form-select {
+  font-size: $font-size-sm;
+  padding: $spacing-2 $spacing-3;
+  height: $input-height;
+  border-radius: $border-radius;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 0.15rem rgba($primary, 0.25);
+  }
+}
+
+.form-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-2;
+  color: $text;
+}
+
+.input-group-text {
+  font-size: $font-size-sm;
+  padding: $spacing-2 $spacing-3;
+}
+
+// Cards - more compact
+.card {
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow;
+
+  .card-body {
+    padding: $card-padding;
+  }
+
+  .card-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-4;
+  }
+}
+
+// Badges - smaller
+.badge {
+  font-size: $font-size-xs;
+  padding: $spacing-1 $spacing-2;
+  font-weight: $font-weight-medium;
+}
+
+.text-primary {
+  color: $primary !important;
+}
+
+.text-muted {
+  color: $muted !important;
+}
+
+.bg-primary {
+  background-color: $primary !important;
+}
+
+.bg-dark {
+  background-color: $dark-base !important;
 }
 
 /* Material Design Overrides */
 .mat-mdc-card {
   border-radius: 12px !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+  box-shadow: $shadow-md !important;
 }
 
 .mat-mdc-raised-button {
   border-radius: 8px !important;
 }
 
+.mat-primary {
+  background-color: $primary !important;
+}
+
 /* Toastr Overrides */
 .toast-container .ngx-toastr {
   border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-lg;
 }
 
 /* Utility Classes */
-.container {
-  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+.container-custom {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-.card {
-  @apply bg-white rounded-lg shadow p-6;
-}
-
-.btn-primary {
-  @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition;
-}
-
-.btn-secondary {
-  @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition;
+.card-custom {
+  background: white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow;
+  padding: 1.5rem;
 }
 
 /* Loading Animation */
@@ -99,21 +257,52 @@ body {
 
 /* Status Badge Styles */
 .status-badge {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .status-success {
-  @apply bg-green-100 text-green-800;
+  background-color: lighten($accent, 40%);
+  color: darken($accent, 20%);
 }
 
 .status-warning {
-  @apply bg-yellow-100 text-yellow-800;
+  background-color: lighten($warning, 40%);
+  color: darken($warning, 20%);
 }
 
 .status-error {
-  @apply bg-red-100 text-red-800;
+  background-color: lighten($danger, 40%);
+  color: darken($danger, 10%);
 }
 
 .status-info {
-  @apply bg-blue-100 text-blue-800;
+  background-color: lighten($primary, 40%);
+  color: darken($primary, 20%);
+}
+
+/* Form Styles */
+.form-control:focus {
+  border-color: $primary;
+  box-shadow: 0 0 0 0.2rem rgba($primary, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: $primary;
+  border-color: $primary;
+}
+
+/* Link Styles */
+a {
+  color: $primary;
+  text-decoration: none;
+  transition: $transition-fast;
+
+  &:hover {
+    color: $primary-dark;
+  }
 }
