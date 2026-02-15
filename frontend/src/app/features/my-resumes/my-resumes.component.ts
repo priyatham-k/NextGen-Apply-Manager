@@ -1,54 +1,66 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ToastrService } from 'ngx-toastr';
-
-interface Experience {
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-}
-
-interface Education {
-  school: string;
-  degree: string;
-  field: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
+import { ResumeTemplate, ResumeTemplateData } from './models';
+import { ResumeFormEditorComponent } from './components/resume-form-editor/resume-form-editor.component';
+import { TemplateSelectorComponent } from './components/template-selector/template-selector.component';
+import { ResumePreviewComponent } from './components/resume-preview/resume-preview.component';
 
 @Component({
   selector: 'app-my-resumes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ResumeFormEditorComponent,
+    TemplateSelectorComponent,
+    ResumePreviewComponent
+  ],
   templateUrl: './my-resumes.component.html',
   styleUrls: ['./my-resumes.component.scss']
 })
-export class MyResumesComponent implements OnInit {
+export class MyResumesComponent {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
 
-  resumeForm!: FormGroup;
+  resumeForm: FormGroup;
   loading = signal(false);
   previewMode = signal(false);
   savedResumes = signal<any[]>([]);
   currentResumeTitle = signal<string>('');
+  selectedTemplate = signal<ResumeTemplate>('classic');
 
-  ngOnInit(): void {
-    this.initializeForm();
+  private formValues;
+
+  templateData = computed<ResumeTemplateData>(() => {
+    const v = this.formValues() || this.resumeForm.value;
+    return {
+      fullName: v.fullName || '',
+      email: v.email || '',
+      phone: v.phone || '',
+      location: v.location || '',
+      linkedin: v.linkedin || '',
+      github: v.github || '',
+      website: v.website || '',
+      summary: v.summary || '',
+      experiences: v.experiences || [],
+      education: v.education || [],
+      skills: (v.skills || '').split(',').map((s: string) => s.trim()).filter((s: string) => s)
+    };
+  });
+
+  constructor() {
+    this.resumeForm = this.initializeForm();
+    this.formValues = toSignal(this.resumeForm.valueChanges, { initialValue: this.resumeForm.value });
     this.loadSavedResumesList();
   }
 
-  private initializeForm(): void {
-    this.resumeForm = this.fb.group({
-      // Resume Title
+  private initializeForm(): FormGroup {
+    return this.fb.group({
       title: ['My Resume', [Validators.required, Validators.minLength(3)]],
-
-      // Personal Information
+      template: ['classic'],
       fullName: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required]],
@@ -56,17 +68,9 @@ export class MyResumesComponent implements OnInit {
       linkedin: [''],
       github: [''],
       website: [''],
-
-      // Professional Summary
       summary: ['', [Validators.required, Validators.minLength(50)]],
-
-      // Experience
       experiences: this.fb.array([this.createExperience()]),
-
-      // Education
       education: this.fb.array([this.createEducation()]),
-
-      // Skills
       skills: ['', [Validators.required]]
     });
   }
@@ -121,6 +125,11 @@ export class MyResumesComponent implements OnInit {
     }
   }
 
+  onTemplateChange(template: ResumeTemplate): void {
+    this.selectedTemplate.set(template);
+    this.resumeForm.patchValue({ template });
+  }
+
   togglePreview(): void {
     if (this.resumeForm.invalid) {
       this.toastr.error('Please fill all required fields', 'Form Invalid');
@@ -136,14 +145,8 @@ export class MyResumesComponent implements OnInit {
       this.resumeForm.markAllAsTouched();
       return;
     }
-
-    // Set preview mode to show full resume
     this.previewMode.set(true);
-
-    // Small delay to ensure DOM updates before printing
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    setTimeout(() => { window.print(); }, 100);
   }
 
   saveResume(): void {
@@ -159,21 +162,13 @@ export class MyResumesComponent implements OnInit {
       const resumeData = this.resumeForm.value;
       const title = resumeData.title || 'My Resume';
 
-      // Get existing resumes
       const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-
-      // Check if resume with same title exists
       const existingIndex = existingResumes.findIndex((r: any) => r.title === title);
 
       if (existingIndex >= 0) {
-        // Update existing resume
-        existingResumes[existingIndex] = {
-          ...resumeData,
-          updatedAt: new Date().toISOString()
-        };
+        existingResumes[existingIndex] = { ...resumeData, updatedAt: new Date().toISOString() };
         this.toastr.success('Resume updated successfully', 'Success');
       } else {
-        // Add new resume
         existingResumes.push({
           ...resumeData,
           createdAt: new Date().toISOString(),
@@ -200,15 +195,13 @@ export class MyResumesComponent implements OnInit {
   loadResume(resume: any): void {
     this.resumeForm.patchValue(resume);
 
-    // Clear and rebuild arrays
-    while (this.experiences.length) {
-      this.experiences.removeAt(0);
-    }
-    while (this.education.length) {
-      this.education.removeAt(0);
-    }
+    // Restore template (default to classic for old resumes)
+    this.selectedTemplate.set(resume.template || 'classic');
 
-    // Add experiences
+    // Clear and rebuild arrays
+    while (this.experiences.length) { this.experiences.removeAt(0); }
+    while (this.education.length) { this.education.removeAt(0); }
+
     if (resume.experiences) {
       resume.experiences.forEach((exp: any) => {
         const experienceGroup = this.createExperience();
@@ -217,7 +210,6 @@ export class MyResumesComponent implements OnInit {
       });
     }
 
-    // Add education
     if (resume.education) {
       resume.education.forEach((edu: any) => {
         const educationGroup = this.createEducation();
@@ -231,9 +223,7 @@ export class MyResumesComponent implements OnInit {
   }
 
   deleteResume(title: string): void {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) {
-      return;
-    }
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
     const updatedResumes = existingResumes.filter((r: any) => r.title !== title);
@@ -248,25 +238,16 @@ export class MyResumesComponent implements OnInit {
 
   newResume(): void {
     this.resumeForm.reset();
-    this.resumeForm.patchValue({ title: 'New Resume' });
+    this.resumeForm.patchValue({ title: 'New Resume', template: 'classic' });
 
-    // Reset arrays to one item
-    while (this.experiences.length) {
-      this.experiences.removeAt(0);
-    }
-    while (this.education.length) {
-      this.education.removeAt(0);
-    }
+    while (this.experiences.length) { this.experiences.removeAt(0); }
+    while (this.education.length) { this.education.removeAt(0); }
 
     this.experiences.push(this.createExperience());
     this.education.push(this.createEducation());
 
+    this.selectedTemplate.set('classic');
     this.currentResumeTitle.set('');
     this.toastr.info('Started new resume', 'Info');
-  }
-
-  get skillsArray(): string[] {
-    const skills = this.resumeForm.get('skills')?.value || '';
-    return skills.split(',').map((s: string) => s.trim()).filter((s: string) => s);
   }
 }

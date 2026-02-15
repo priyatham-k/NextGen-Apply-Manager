@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   firstName: string;
+  middleName?: string;
   lastName: string;
   profilePicture?: string;
   createdAt: Date;
@@ -120,10 +121,13 @@ export interface Profile {
   id: string;
   userId: string;
   personalInfo: PersonalInfo;
+  professionalSummary?: ProfessionalSummary;
   workExperience: WorkExperience[];
+  projects: Project[];
   education: Education[];
   skills: Skill[];
   certifications: Certification[];
+  additionalInfo?: AdditionalInfo;
   preferences: JobPreferences;
   resumes: Resume[];
   coverLetters: CoverLetter[];
@@ -133,6 +137,7 @@ export interface Profile {
 
 export interface PersonalInfo {
   firstName: string;
+  middleName?: string;
   lastName: string;
   email: string;
   phone: string;
@@ -208,6 +213,73 @@ export interface Certification {
   expiryDate?: Date;
   credentialId?: string;
   credentialUrl?: string;
+}
+
+export interface ProfessionalSummary {
+  summary: string;
+  yearsOfExperience: number;
+  coreCompetencies: string[];
+  specialization: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  role: string;
+  technologies: string[];
+  startDate: Date;
+  endDate?: Date;
+  current: boolean;
+  githubUrl?: string;
+  demoUrl?: string;
+}
+
+export interface Award {
+  id: string;
+  title: string;
+  issuer: string;
+  date: Date;
+  description?: string;
+}
+
+export interface Publication {
+  id: string;
+  title: string;
+  publisher: string;
+  publishDate: Date;
+  url?: string;
+  authors?: string[];
+}
+
+export interface Language {
+  name: string;
+  proficiency: LanguageProficiency;
+}
+
+export enum LanguageProficiency {
+  ELEMENTARY = 'elementary',
+  LIMITED_WORKING = 'limited_working',
+  PROFESSIONAL_WORKING = 'professional_working',
+  FULL_PROFESSIONAL = 'full_professional',
+  NATIVE = 'native'
+}
+
+export interface VolunteerExperience {
+  id: string;
+  organization: string;
+  role: string;
+  startDate: Date;
+  endDate?: Date;
+  current: boolean;
+  description: string;
+}
+
+export interface AdditionalInfo {
+  awards: Award[];
+  publications: Publication[];
+  languages: Language[];
+  volunteerExperience: VolunteerExperience[];
 }
 
 export interface JobPreferences {

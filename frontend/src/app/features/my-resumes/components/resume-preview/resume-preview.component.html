@@ -1,0 +1,18 @@
+<div class="card resume-preview">
+  <div class="card-body p-0">
+    @switch (template()) {
+      @case ('classic') {
+        <app-classic-template [data]="data()" />
+      }
+      @case ('modern') {
+        <app-modern-template [data]="data()" />
+      }
+      @case ('minimal') {
+        <app-minimal-template [data]="data()" />
+      }
+      @case ('professional') {
+        <app-professional-template [data]="data()" />
+      }
+    }
+  </div>
+</div>

@@ -2,206 +2,480 @@
   <!-- Page Header -->
   <div class="page-header mb-4">
     <h1 class="page-title">Profile Settings</h1>
-    <p class="page-subtitle">Manage your personal information and profile picture</p>
+    <p class="page-subtitle">Manage your comprehensive professional profile</p>
   </div>
 
-  <div class="row g-4">
-    <!-- Left Column: Profile Picture -->
-    <div class="col-lg-4">
-      <div class="card profile-picture-card">
-        <div class="card-body text-center">
-          <h5 class="card-title mb-4">Profile Picture</h5>
-
-          <!-- Profile Picture Display -->
-          <div class="profile-picture-wrapper mb-3">
-            @if (picturePreview() || user()?.profilePicture) {
-              <img
-                [src]="picturePreview() || user()?.profilePicture"
-                alt="Profile Picture"
-                class="profile-picture"
-              />
-            } @else {
-              <div class="profile-picture-placeholder">
-                <i class="bi bi-person"></i>
-              </div>
-            }
-
-            @if (uploadingPicture()) {
-              <div class="picture-overlay">
-                <div class="spinner-border text-light" role="status">
-                  <span class="visually-hidden">Uploading...</span>
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-3">Loading profile...</p>
+    </div>
+  } @else {
+    <div class="row g-4">
+      <!-- Left Sidebar -->
+      <div class="col-lg-3">
+        <!-- Profile Picture Card -->
+        <div class="card profile-picture-card">
+          <div class="card-body text-center">
+            <h6 class="card-title mb-3">Profile Picture</h6>
+            <div class="profile-picture-wrapper mb-3">
+              @if (picturePreview() || authService.currentUser()?.profilePicture) {
+                <img [src]="picturePreview() || authService.currentUser()?.profilePicture" alt="Profile Picture" class="profile-picture" />
+              } @else {
+                <div class="profile-picture-placeholder"><i class="bi bi-person"></i></div>
+              }
+              @if (uploadingPicture()) {
+                <div class="picture-overlay">
+                  <div class="spinner-border text-light" role="status"><span class="visually-hidden">Uploading...</span></div>
                 </div>
+              }
+            </div>
+            <div class="d-grid gap-2">
+              <label class="btn btn-sm btn-primary" [class.disabled]="uploadingPicture()">
+                <input type="file" class="d-none" accept="image/*" (change)="onFileSelected($event)" [disabled]="uploadingPicture()" />
+                <i class="bi bi-upload me-1"></i>{{ uploadingPicture() ? 'Uploading...' : 'Upload' }}
+              </label>
+              @if (hasProfilePicture()) {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="onRemovePicture()" [disabled]="uploadingPicture()">
+                  <i class="bi bi-trash me-1"></i>Remove
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Completeness -->
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="card-title mb-3">Profile Completeness</h6>
+            <div class="progress mb-2" style="height: 20px;">
+              <div class="progress-bar" [class.bg-danger]="profileCompleteness() < 30" [class.bg-warning]="profileCompleteness() >= 30 && profileCompleteness() < 60" [class.bg-success]="profileCompleteness() >= 60" role="progressbar" [style.width.%]="profileCompleteness()">
+                {{ profileCompleteness() }}%
               </div>
-            }
+            </div>
+            <small class="text-muted">Complete all sections for better resume generation</small>
           </div>
+        </div>
 
-          <!-- Upload/Remove Buttons -->
-          <div class="d-grid gap-2">
-            <label class="btn btn-primary" [class.disabled]="uploadingPicture()">
-              <input
-                type="file"
-                class="d-none"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                [disabled]="uploadingPicture()"
-              />
-              <i class="bi bi-upload me-2"></i>
-              {{ uploadingPicture() ? 'Uploading...' : 'Upload Picture' }}
-            </label>
-
-            @if (hasProfilePicture) {
-              <button
-                type="button"
-                class="btn btn-outline-danger"
-                (click)="onRemovePicture()"
-                [disabled]="uploadingPicture()"
-              >
-                <i class="bi bi-trash me-2"></i>
-                Remove Picture
-              </button>
-            }
+        <!-- Account Info -->
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="card-title mb-3">Account</h6>
+            <div class="account-info-list">
+              <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="badge bg-success">Active</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Member Since</span>
+                <span class="info-value">{{ authService.currentUser()?.createdAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
           </div>
-
-          <p class="text-muted small mt-3 mb-0">
-            Max size: 5MB. Formats: JPG, PNG, GIF, WebP
-          </p>
         </div>
       </div>
 
-      <!-- Account Info Card -->
-      <div class="card mt-4">
-        <div class="card-body">
-          <h6 class="card-title mb-3">Account Information</h6>
-          <div class="account-info-list">
-            <div class="info-item">
-              <span class="info-label">Account Status</span>
-              <span class="badge bg-success">Active</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Member Since</span>
-              <span class="info-value">{{ user()?.createdAt | date:'mediumDate' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Last Updated</span>
-              <span class="info-value">{{ user()?.updatedAt | date:'medium' }}</span>
+      <!-- Right Content: Tabbed Forms -->
+      <div class="col-lg-9">
+        <div class="card">
+          <div class="card-body p-0">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs profile-tabs" role="tablist">
+              @for (tab of tabs; track tab.key) {
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" [class.active]="activeTab() === tab.key" (click)="switchTab(tab.key)" type="button">
+                    <i class="bi {{ tab.icon }} me-1 tab-icon"></i>
+                    <span class="tab-label">{{ tab.label }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+
+            <div class="tab-content p-4">
+
+              <!-- PERSONAL INFO -->
+              @if (activeTab() === 'personal') {
+                <h5 class="mb-4">Personal Information</h5>
+                <form [formGroup]="personalInfoForm" (ngSubmit)="saveSection('personal')">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">First Name *</label>
+                      <input type="text" class="form-control" formControlName="firstName" placeholder="John" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Middle Name</label>
+                      <input type="text" class="form-control" formControlName="middleName" placeholder="Michael" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Last Name *</label>
+                      <input type="text" class="form-control" formControlName="lastName" placeholder="Doe" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Email *</label>
+                      <input type="email" class="form-control" formControlName="email" placeholder="you&#64;example.com" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><i class="bi bi-phone me-1"></i>Phone</label>
+                      <input type="tel" class="form-control" formControlName="phone" placeholder="+1 (555) 123-4567" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">City</label>
+                      <input type="text" class="form-control" formControlName="city" placeholder="San Francisco" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Country</label>
+                      <input type="text" class="form-control" formControlName="country" placeholder="United States" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><i class="bi bi-linkedin text-primary me-1"></i>LinkedIn</label>
+                      <input type="url" class="form-control" formControlName="linkedin" placeholder="https://linkedin.com/in/yourprofile" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><i class="bi bi-github me-1"></i>GitHub</label>
+                      <input type="url" class="form-control" formControlName="github" placeholder="https://github.com/yourusername" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><i class="bi bi-briefcase me-1"></i>Portfolio</label>
+                      <input type="url" class="form-control" formControlName="portfolio" placeholder="https://yourportfolio.com" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><i class="bi bi-globe me-1"></i>Website</label>
+                      <input type="url" class="form-control" formControlName="website" placeholder="https://yourwebsite.com" />
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'personal' || personalInfoForm.invalid">
+                      @if (savingSection() === 'personal') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Personal Info }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- PROFESSIONAL SUMMARY -->
+              @if (activeTab() === 'summary') {
+                <h5 class="mb-4">Professional Summary</h5>
+                <form [formGroup]="summaryForm" (ngSubmit)="saveSection('summary')">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Summary (2-4 sentences)</label>
+                      <textarea class="form-control" rows="5" formControlName="summary" placeholder="Write a compelling professional summary..."></textarea>
+                      <small class="text-muted">{{ summaryForm.get('summary')?.value?.length || 0 }} / 1000</small>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Years of Experience</label>
+                      <input type="number" class="form-control" formControlName="yearsOfExperience" min="0" />
+                    </div>
+                    <div class="col-md-8">
+                      <label class="form-label">Specialization</label>
+                      <input type="text" class="form-control" formControlName="specialization" placeholder="e.g., Full-Stack Web Development" />
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Core Competencies (comma-separated)</label>
+                      <textarea class="form-control" rows="2" formControlName="coreCompetencies" placeholder="e.g., Agile Development, Team Leadership, System Design"></textarea>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'summary' || summaryForm.invalid">
+                      @if (savingSection() === 'summary') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Summary }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- SKILLS -->
+              @if (activeTab() === 'skills') {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Skills</h5>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addSkill()"><i class="bi bi-plus-circle me-1"></i>Add Skill</button>
+                </div>
+                <form [formGroup]="skillsForm" (ngSubmit)="saveSection('skills')">
+                  <div formArrayName="skills">
+                    @for (skill of skillsArray.controls; track $index) {
+                      <div [formGroupName]="$index" class="array-item-card mb-3">
+                        <div class="row g-2 align-items-end">
+                          <div class="col-md-3">
+                            <label class="form-label">Skill *</label>
+                            <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g., React" />
+                          </div>
+                          <div class="col-md-3">
+                            <label class="form-label">Category *</label>
+                            <select class="form-select form-select-sm" formControlName="category">
+                              @for (cat of skillCategories; track cat) { <option [value]="cat">{{ cat }}</option> }
+                            </select>
+                          </div>
+                          <div class="col-md-2">
+                            <label class="form-label">Level *</label>
+                            <select class="form-select form-select-sm" formControlName="level">
+                              @for (level of skillLevels; track level) { <option [value]="level">{{ level }}</option> }
+                            </select>
+                          </div>
+                          <div class="col-md-2">
+                            <label class="form-label">Years</label>
+                            <input type="number" class="form-control form-control-sm" formControlName="yearsOfExperience" min="0" />
+                          </div>
+                          <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removeSkill($index)"><i class="bi bi-trash me-1"></i>Remove</button>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (skillsArray.length === 0) { <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No skills added yet.</div> }
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'skills' || skillsForm.invalid">
+                      @if (savingSection() === 'skills') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Skills }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- WORK EXPERIENCE -->
+              @if (activeTab() === 'experience') {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Work Experience</h5>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExperience()"><i class="bi bi-plus-circle me-1"></i>Add Experience</button>
+                </div>
+                <form [formGroup]="experienceForm" (ngSubmit)="saveSection('experience')">
+                  <div formArrayName="experiences">
+                    @for (exp of experiencesArray.controls; track $index) {
+                      <div [formGroupName]="$index" class="array-item-card mb-4">
+                        <div class="d-flex justify-content-between mb-3">
+                          <h6 class="mb-0">Experience #{{ $index + 1 }}</h6>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeExperience($index)"><i class="bi bi-trash me-1"></i>Remove</button>
+                        </div>
+                        <div class="row g-3">
+                          <div class="col-md-6"><label class="form-label">Company *</label><input type="text" class="form-control" formControlName="company" placeholder="e.g., Google" /></div>
+                          <div class="col-md-6"><label class="form-label">Position *</label><input type="text" class="form-control" formControlName="position" placeholder="e.g., Senior Software Engineer" /></div>
+                          <div class="col-12"><label class="form-label">Location</label><input type="text" class="form-control" formControlName="location" placeholder="e.g., San Francisco, CA" /></div>
+                          <div class="col-md-4"><label class="form-label">Start Date</label><input type="month" class="form-control" formControlName="startDate" /></div>
+                          <div class="col-md-4"><label class="form-label">End Date</label><input type="month" class="form-control" formControlName="endDate" /></div>
+                          <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input type="checkbox" class="form-check-input" formControlName="current" (change)="onCurrentToggle(exp)" /><label class="form-check-label">Currently working here</label></div></div>
+                          <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" rows="3" formControlName="description" placeholder="Brief description of your role..."></textarea></div>
+                          <div class="col-12"><label class="form-label">Key Achievements (one per line)</label><textarea class="form-control" rows="3" formControlName="achievements" placeholder="Increased system performance by 40%&#10;Led a team of 5 engineers"></textarea></div>
+                          <div class="col-12"><label class="form-label">Technologies (comma-separated)</label><input type="text" class="form-control" formControlName="technologies" placeholder="e.g., React, Node.js, PostgreSQL" /></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (experiencesArray.length === 0) { <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No work experience added yet.</div> }
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'experience' || experienceForm.invalid">
+                      @if (savingSection() === 'experience') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Experience }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- PROJECTS -->
+              @if (activeTab() === 'projects') {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Projects</h5>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addProject()"><i class="bi bi-plus-circle me-1"></i>Add Project</button>
+                </div>
+                <form [formGroup]="projectsForm" (ngSubmit)="saveSection('projects')">
+                  <div formArrayName="projects">
+                    @for (proj of projectsArray.controls; track $index) {
+                      <div [formGroupName]="$index" class="array-item-card mb-4">
+                        <div class="d-flex justify-content-between mb-3">
+                          <h6 class="mb-0">Project #{{ $index + 1 }}</h6>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeProject($index)"><i class="bi bi-trash me-1"></i>Remove</button>
+                        </div>
+                        <div class="row g-3">
+                          <div class="col-md-6"><label class="form-label">Project Name *</label><input type="text" class="form-control" formControlName="name" placeholder="e.g., E-Commerce Platform" /></div>
+                          <div class="col-md-6"><label class="form-label">Your Role</label><input type="text" class="form-control" formControlName="role" placeholder="e.g., Lead Developer" /></div>
+                          <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" rows="3" formControlName="description" placeholder="Brief description..."></textarea></div>
+                          <div class="col-12"><label class="form-label">Technologies (comma-separated)</label><input type="text" class="form-control" formControlName="technologies" placeholder="e.g., React, Node.js, MongoDB" /></div>
+                          <div class="col-md-4"><label class="form-label">Start Date</label><input type="month" class="form-control" formControlName="startDate" /></div>
+                          <div class="col-md-4"><label class="form-label">End Date</label><input type="month" class="form-control" formControlName="endDate" /></div>
+                          <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input type="checkbox" class="form-check-input" formControlName="current" (change)="onCurrentToggle(proj)" /><label class="form-check-label">Ongoing</label></div></div>
+                          <div class="col-md-6"><label class="form-label"><i class="bi bi-github me-1"></i>GitHub URL</label><input type="url" class="form-control" formControlName="githubUrl" placeholder="https://github.com/..." /></div>
+                          <div class="col-md-6"><label class="form-label"><i class="bi bi-link-45deg me-1"></i>Demo URL</label><input type="url" class="form-control" formControlName="demoUrl" placeholder="https://..." /></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (projectsArray.length === 0) { <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No projects added yet.</div> }
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'projects' || projectsForm.invalid">
+                      @if (savingSection() === 'projects') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Projects }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- EDUCATION -->
+              @if (activeTab() === 'education') {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Education</h5>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEducation()"><i class="bi bi-plus-circle me-1"></i>Add Education</button>
+                </div>
+                <form [formGroup]="educationForm" (ngSubmit)="saveSection('education')">
+                  <div formArrayName="education">
+                    @for (edu of educationArray.controls; track $index) {
+                      <div [formGroupName]="$index" class="array-item-card mb-4">
+                        <div class="d-flex justify-content-between mb-3">
+                          <h6 class="mb-0">Education #{{ $index + 1 }}</h6>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeEducation($index)"><i class="bi bi-trash me-1"></i>Remove</button>
+                        </div>
+                        <div class="row g-3">
+                          <div class="col-md-6"><label class="form-label">Institution *</label><input type="text" class="form-control" formControlName="institution" placeholder="e.g., MIT" /></div>
+                          <div class="col-md-6"><label class="form-label">Degree *</label><input type="text" class="form-control" formControlName="degree" placeholder="e.g., Bachelor of Science" /></div>
+                          <div class="col-md-6"><label class="form-label">Field of Study</label><input type="text" class="form-control" formControlName="field" placeholder="e.g., Computer Science" /></div>
+                          <div class="col-md-6"><label class="form-label">Location</label><input type="text" class="form-control" formControlName="location" placeholder="e.g., Cambridge, MA" /></div>
+                          <div class="col-md-4"><label class="form-label">Start Date</label><input type="month" class="form-control" formControlName="startDate" /></div>
+                          <div class="col-md-4"><label class="form-label">End Date</label><input type="month" class="form-control" formControlName="endDate" /></div>
+                          <div class="col-md-4"><label class="form-label">GPA</label><input type="number" class="form-control" formControlName="gpa" min="0" max="4" step="0.01" placeholder="3.8" /></div>
+                          <div class="col-12"><label class="form-label">Achievements (one per line)</label><textarea class="form-control" rows="2" formControlName="achievements" placeholder="Dean's List, Honors Society"></textarea></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (educationArray.length === 0) { <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No education added yet.</div> }
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'education' || educationForm.invalid">
+                      @if (savingSection() === 'education') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Education }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- CERTIFICATIONS -->
+              @if (activeTab() === 'certifications') {
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Certifications</h5>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addCertification()"><i class="bi bi-plus-circle me-1"></i>Add Certification</button>
+                </div>
+                <form [formGroup]="certificationsForm" (ngSubmit)="saveSection('certifications')">
+                  <div formArrayName="certifications">
+                    @for (cert of certificationsArray.controls; track $index) {
+                      <div [formGroupName]="$index" class="array-item-card mb-3">
+                        <div class="d-flex justify-content-between mb-3">
+                          <h6 class="mb-0">Certification #{{ $index + 1 }}</h6>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeCertification($index)"><i class="bi bi-trash me-1"></i>Remove</button>
+                        </div>
+                        <div class="row g-3">
+                          <div class="col-md-6"><label class="form-label">Name *</label><input type="text" class="form-control" formControlName="name" placeholder="e.g., AWS Solutions Architect" /></div>
+                          <div class="col-md-6"><label class="form-label">Issuer *</label><input type="text" class="form-control" formControlName="issuer" placeholder="e.g., Amazon Web Services" /></div>
+                          <div class="col-md-4"><label class="form-label">Issue Date</label><input type="month" class="form-control" formControlName="issueDate" /></div>
+                          <div class="col-md-4"><label class="form-label">Expiry Date</label><input type="month" class="form-control" formControlName="expiryDate" /></div>
+                          <div class="col-md-4"><label class="form-label">Credential ID</label><input type="text" class="form-control" formControlName="credentialId" placeholder="ABC123" /></div>
+                          <div class="col-12"><label class="form-label">Credential URL</label><input type="url" class="form-control" formControlName="credentialUrl" placeholder="https://..." /></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (certificationsArray.length === 0) { <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No certifications added yet.</div> }
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'certifications' || certificationsForm.invalid">
+                      @if (savingSection() === 'certifications') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Certifications }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- ADDITIONAL -->
+              @if (activeTab() === 'additional') {
+                <h5 class="mb-4">Additional Information</h5>
+                <form [formGroup]="additionalForm" (ngSubmit)="saveSection('additional')">
+                  <!-- Awards -->
+                  <div class="section-block mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0"><i class="bi bi-trophy me-1"></i>Awards</h6>
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addAward()"><i class="bi bi-plus me-1"></i>Add</button>
+                    </div>
+                    <div formArrayName="awards">
+                      @for (award of awardsArray.controls; track $index) {
+                        <div [formGroupName]="$index" class="array-item-card mb-2">
+                          <div class="row g-2 align-items-end">
+                            <div class="col-md-4"><label class="form-label">Title *</label><input type="text" class="form-control form-control-sm" formControlName="title" /></div>
+                            <div class="col-md-3"><label class="form-label">Issuer</label><input type="text" class="form-control form-control-sm" formControlName="issuer" /></div>
+                            <div class="col-md-3"><label class="form-label">Date</label><input type="month" class="form-control form-control-sm" formControlName="date" /></div>
+                            <div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removeAward($index)"><i class="bi bi-trash"></i></button></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <!-- Publications -->
+                  <div class="section-block mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0"><i class="bi bi-journal-text me-1"></i>Publications</h6>
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addPublication()"><i class="bi bi-plus me-1"></i>Add</button>
+                    </div>
+                    <div formArrayName="publications">
+                      @for (pub of publicationsArray.controls; track $index) {
+                        <div [formGroupName]="$index" class="array-item-card mb-2">
+                          <div class="row g-2 align-items-end">
+                            <div class="col-md-4"><label class="form-label">Title *</label><input type="text" class="form-control form-control-sm" formControlName="title" /></div>
+                            <div class="col-md-3"><label class="form-label">Publisher</label><input type="text" class="form-control form-control-sm" formControlName="publisher" /></div>
+                            <div class="col-md-3"><label class="form-label">Date</label><input type="month" class="form-control form-control-sm" formControlName="publishDate" /></div>
+                            <div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removePublication($index)"><i class="bi bi-trash"></i></button></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <!-- Languages -->
+                  <div class="section-block mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0"><i class="bi bi-translate me-1"></i>Languages</h6>
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addLanguage()"><i class="bi bi-plus me-1"></i>Add</button>
+                    </div>
+                    <div formArrayName="languages">
+                      @for (lang of languagesArray.controls; track $index) {
+                        <div [formGroupName]="$index" class="array-item-card mb-2">
+                          <div class="row g-2 align-items-end">
+                            <div class="col-md-5"><label class="form-label">Language *</label><input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g., English" /></div>
+                            <div class="col-md-5"><label class="form-label">Proficiency *</label>
+                              <select class="form-select form-select-sm" formControlName="proficiency">
+                                @for (prof of languageProficiencies; track prof) { <option [value]="prof">{{ formatProficiency(prof) }}</option> }
+                              </select>
+                            </div>
+                            <div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removeLanguage($index)"><i class="bi bi-trash"></i></button></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <!-- Volunteer -->
+                  <div class="section-block mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0"><i class="bi bi-heart me-1"></i>Volunteer Experience</h6>
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addVolunteer()"><i class="bi bi-plus me-1"></i>Add</button>
+                    </div>
+                    <div formArrayName="volunteerExperience">
+                      @for (vol of volunteerArray.controls; track $index) {
+                        <div [formGroupName]="$index" class="array-item-card mb-3">
+                          <div class="d-flex justify-content-between mb-2">
+                            <small class="fw-semibold">Volunteer #{{ $index + 1 }}</small>
+                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeVolunteer($index)"><i class="bi bi-trash"></i></button>
+                          </div>
+                          <div class="row g-2">
+                            <div class="col-md-6"><label class="form-label">Organization *</label><input type="text" class="form-control form-control-sm" formControlName="organization" /></div>
+                            <div class="col-md-6"><label class="form-label">Role *</label><input type="text" class="form-control form-control-sm" formControlName="role" /></div>
+                            <div class="col-md-4"><label class="form-label">Start</label><input type="month" class="form-control form-control-sm" formControlName="startDate" /></div>
+                            <div class="col-md-4"><label class="form-label">End</label><input type="month" class="form-control form-control-sm" formControlName="endDate" /></div>
+                            <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input type="checkbox" class="form-check-input" formControlName="current" (change)="onCurrentToggle(vol)" /><label class="form-check-label">Ongoing</label></div></div>
+                            <div class="col-12"><label class="form-label">Description</label><textarea class="form-control form-control-sm" rows="2" formControlName="description"></textarea></div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'additional' || additionalForm.invalid">
+                      @if (savingSection() === 'additional') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Additional Info }
+                    </button>
+                  </div>
+                </form>
+              }
+
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Right Column: Profile Details Form -->
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title mb-4">Personal Details</h5>
-
-          <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-            <div class="row g-3">
-              <!-- First Name -->
-              <div class="col-md-6">
-                <label for="firstName" class="form-label">First Name</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-person"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="firstName"
-                    class="form-control"
-                    formControlName="firstName"
-                    placeholder="John"
-                    [class.is-invalid]="firstName?.invalid && firstName?.touched"
-                  />
-                </div>
-                @if (firstName?.invalid && firstName?.touched) {
-                  <div class="invalid-feedback d-block">
-                    @if (firstName?.errors?.['required']) {
-                      First name is required
-                    }
-                    @if (firstName?.errors?.['minlength']) {
-                      First name must be at least 2 characters
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Last Name -->
-              <div class="col-md-6">
-                <label for="lastName" class="form-label">Last Name</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-person"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="lastName"
-                    class="form-control"
-                    formControlName="lastName"
-                    placeholder="Doe"
-                    [class.is-invalid]="lastName?.invalid && lastName?.touched"
-                  />
-                </div>
-                @if (lastName?.invalid && lastName?.touched) {
-                  <div class="invalid-feedback d-block">
-                    @if (lastName?.errors?.['required']) {
-                      Last name is required
-                    }
-                    @if (lastName?.errors?.['minlength']) {
-                      Last name must be at least 2 characters
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Email -->
-              <div class="col-12">
-                <label for="email" class="form-label">Email Address</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-envelope"></i>
-                  </span>
-                  <input
-                    type="email"
-                    id="email"
-                    class="form-control"
-                    formControlName="email"
-                    placeholder="you@example.com"
-                    [class.is-invalid]="email?.invalid && email?.touched"
-                  />
-                </div>
-                @if (email?.invalid && email?.touched) {
-                  <div class="invalid-feedback d-block">
-                    @if (email?.errors?.['required']) {
-                      Email is required
-                    }
-                    @if (email?.errors?.['email']) {
-                      Please enter a valid email address
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="mt-4">
-              <button
-                type="submit"
-                class="btn btn-primary btn-lg"
-                [disabled]="loading() || profileForm.invalid"
-              >
-                @if (loading()) {
-                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Saving...
-                } @else {
-                  <i class="bi bi-check-circle me-2"></i>
-                  Save Changes
-                }
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  }
 </div>

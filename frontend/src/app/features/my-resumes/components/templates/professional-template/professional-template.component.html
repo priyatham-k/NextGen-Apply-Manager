@@ -1,0 +1,91 @@
+<div class="prof-resume">
+  <!-- Header -->
+  <div class="prof-header">
+    <div class="prof-header-left">
+      <h1 class="prof-name">{{ data().fullName || 'Your Name' }}</h1>
+      @if (data().summary) {
+        <p class="prof-tagline">{{ data().summary }}</p>
+      }
+    </div>
+    <div class="prof-header-right">
+      @if (data().email) {
+        <div class="prof-contact-item"><i class="bi bi-envelope"></i> {{ data().email }}</div>
+      }
+      @if (data().phone) {
+        <div class="prof-contact-item"><i class="bi bi-telephone"></i> {{ data().phone }}</div>
+      }
+      @if (data().location) {
+        <div class="prof-contact-item"><i class="bi bi-geo-alt"></i> {{ data().location }}</div>
+      }
+      @if (data().linkedin) {
+        <a class="prof-contact-item" [href]="data().linkedin" target="_blank">
+          <i class="bi bi-linkedin"></i> LinkedIn
+        </a>
+      }
+      @if (data().github) {
+        <a class="prof-contact-item" [href]="data().github" target="_blank">
+          <i class="bi bi-github"></i> GitHub
+        </a>
+      }
+      @if (data().website) {
+        <a class="prof-contact-item" [href]="data().website" target="_blank">
+          <i class="bi bi-globe"></i> Website
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Experience -->
+  @if (data().experiences.length > 0) {
+    <div class="prof-section">
+      <h3 class="prof-section-title">Professional Experience</h3>
+      @for (exp of data().experiences; track $index) {
+        <div class="prof-item">
+          <div class="prof-item-header">
+            <div>
+              <h4 class="prof-item-company">{{ exp.company || 'Company' }}</h4>
+              <span class="prof-item-position">{{ exp.position || 'Position' }}</span>
+            </div>
+            <span class="prof-item-date">
+              {{ exp.startDate || 'Start' }} - {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
+            </span>
+          </div>
+          <p class="prof-item-description">{{ exp.description }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Education -->
+  @if (data().education.length > 0) {
+    <div class="prof-section">
+      <h3 class="prof-section-title">Education</h3>
+      @for (edu of data().education; track $index) {
+        <div class="prof-item">
+          <div class="prof-item-header">
+            <div>
+              <h4 class="prof-item-company">{{ edu.school || 'School' }}</h4>
+              <span class="prof-item-position">{{ edu.degree || 'Degree' }} in {{ edu.field || 'Field' }}</span>
+            </div>
+            <span class="prof-item-date">{{ edu.startDate || 'Start' }} - {{ edu.endDate || 'End' }}</span>
+          </div>
+          @if (edu.description) {
+            <p class="prof-item-description">{{ edu.description }}</p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Skills -->
+  @if (data().skills.length > 0) {
+    <div class="prof-section">
+      <h3 class="prof-section-title">Core Competencies</h3>
+      <div class="prof-skills-grid">
+        @for (skill of data().skills; track skill) {
+          <div class="prof-skill-item">{{ skill }}</div>
+        }
+      </div>
+    </div>
+  }
+</div>

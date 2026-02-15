@@ -1,0 +1,225 @@
+<div class="card no-print">
+  <div class="card-body">
+    <form [formGroup]="resumeForm()">
+      <!-- Resume Title Section -->
+      <div class="form-section">
+        <h5 class="section-title">
+          <i class="bi bi-file-earmark-text me-2"></i>
+          Resume Title
+        </h5>
+        <div class="mb-3">
+          <label class="form-label">Title *</label>
+          <input type="text" class="form-control" formControlName="title" placeholder="My Professional Resume">
+          <small class="text-muted">Give your resume a unique name to save and identify it later</small>
+        </div>
+      </div>
+
+      <!-- Personal Information Section -->
+      <div class="form-section">
+        <h5 class="section-title">
+          <i class="bi bi-person-circle me-2"></i>
+          Personal Information
+        </h5>
+
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Full Name *</label>
+            <input type="text" class="form-control" formControlName="fullName" placeholder="John Doe">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-control" formControlName="email" placeholder="john&#64;example.com">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Phone *</label>
+            <input type="tel" class="form-control" formControlName="phone" placeholder="+1 (555) 123-4567">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Location *</label>
+            <input type="text" class="form-control" formControlName="location" placeholder="New York, NY">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">LinkedIn</label>
+            <input type="url" class="form-control" formControlName="linkedin" placeholder="linkedin.com/in/johndoe">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">GitHub</label>
+            <input type="url" class="form-control" formControlName="github" placeholder="github.com/johndoe">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Website</label>
+            <input type="url" class="form-control" formControlName="website" placeholder="johndoe.com">
+          </div>
+        </div>
+      </div>
+
+      <!-- Professional Summary Section -->
+      <div class="form-section">
+        <h5 class="section-title">
+          <i class="bi bi-file-text me-2"></i>
+          Professional Summary *
+        </h5>
+        <textarea class="form-control" formControlName="summary" rows="4"
+          placeholder="Write a brief summary about yourself, your experience, and your career goals..."></textarea>
+        <small class="text-muted">Minimum 50 characters</small>
+      </div>
+
+      <!-- Experience Section -->
+      <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="section-title mb-0">
+            <i class="bi bi-briefcase me-2"></i>
+            Work Experience *
+          </h5>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExperience.emit()">
+            <i class="bi bi-plus-circle me-1"></i>
+            Add Experience
+          </button>
+        </div>
+
+        <div formArrayName="experiences">
+          @for (exp of experiences.controls; track $index) {
+            <div [formGroupName]="$index" class="experience-item">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Experience {{ $index + 1 }}</h6>
+                @if (experiences.length > 1) {
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeExperience.emit($index)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Company *</label>
+                  <input type="text" class="form-control" formControlName="company" placeholder="Company Name">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Position *</label>
+                  <input type="text" class="form-control" formControlName="position" placeholder="Job Title">
+                </div>
+
+                <div class="col-md-5">
+                  <label class="form-label">Start Date *</label>
+                  <input type="month" class="form-control" formControlName="startDate">
+                </div>
+
+                <div class="col-md-5">
+                  <label class="form-label">End Date</label>
+                  <input type="month" class="form-control" formControlName="endDate" [disabled]="exp.get('current')?.value">
+                </div>
+
+                <div class="col-md-2">
+                  <label class="form-label d-block">&nbsp;</label>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="current" [id]="'current' + $index">
+                    <label class="form-check-label" [for]="'current' + $index">Current</label>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Description *</label>
+                  <textarea class="form-control" formControlName="description" rows="3"
+                    placeholder="Describe your responsibilities and achievements..."></textarea>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Education Section -->
+      <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="section-title mb-0">
+            <i class="bi bi-mortarboard me-2"></i>
+            Education *
+          </h5>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEducation.emit()">
+            <i class="bi bi-plus-circle me-1"></i>
+            Add Education
+          </button>
+        </div>
+
+        <div formArrayName="education">
+          @for (edu of education.controls; track $index) {
+            <div [formGroupName]="$index" class="education-item">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Education {{ $index + 1 }}</h6>
+                @if (education.length > 1) {
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeEducation.emit($index)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">School *</label>
+                  <input type="text" class="form-control" formControlName="school" placeholder="University Name">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Degree *</label>
+                  <input type="text" class="form-control" formControlName="degree" placeholder="Bachelor's, Master's, etc.">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Field of Study *</label>
+                  <input type="text" class="form-control" formControlName="field" placeholder="Computer Science, Business, etc.">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Start Date *</label>
+                  <input type="month" class="form-control" formControlName="startDate">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">End Date *</label>
+                  <input type="month" class="form-control" formControlName="endDate">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-control" formControlName="description" rows="2"
+                    placeholder="GPA, honors, relevant coursework..."></textarea>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Skills Section -->
+      <div class="form-section">
+        <h5 class="section-title">
+          <i class="bi bi-lightbulb me-2"></i>
+          Skills *
+        </h5>
+        <textarea class="form-control" formControlName="skills" rows="3"
+          placeholder="Enter skills separated by commas (e.g., JavaScript, React, Node.js, MongoDB, AWS)"></textarea>
+        <small class="text-muted">Separate skills with commas</small>
+      </div>
+
+      <!-- Save Button -->
+      <div class="text-end">
+        <button type="button" class="btn btn-primary btn-lg" (click)="save.emit()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Saving...
+          } @else {
+            <i class="bi bi-save me-2"></i>
+            Save Resume
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

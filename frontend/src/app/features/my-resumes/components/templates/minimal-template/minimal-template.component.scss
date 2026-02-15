@@ -1,0 +1,138 @@
+@import '../../../../../../assets/styles/variables';
+
+:host { display: block; }
+
+.minimal-resume {
+  padding: $spacing-8;
+  background: white;
+  color: $text;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+// Header
+.minimal-header {
+  text-align: center;
+  padding-bottom: $spacing-6;
+  border-bottom: 1px solid #d1d5db;
+  margin-bottom: $spacing-6;
+}
+
+.minimal-name {
+  font-size: $font-size-5xl;
+  font-weight: $font-weight-normal;
+  color: $text;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: $spacing-3;
+}
+
+.minimal-contact {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  font-size: $font-size-sm;
+  color: $muted;
+  margin-bottom: $spacing-2;
+
+  span {
+    &:not(:last-child)::after {
+      content: '|';
+      margin: 0 $spacing-3;
+      color: #d1d5db;
+    }
+  }
+}
+
+.minimal-links {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  font-size: $font-size-sm;
+
+  a {
+    color: $muted;
+    text-decoration: none;
+    &:hover { color: $text; }
+
+    &:not(:last-child)::after {
+      content: '|';
+      margin: 0 $spacing-3;
+      color: #d1d5db;
+    }
+  }
+}
+
+// Sections
+.minimal-section {
+  margin-bottom: $spacing-6;
+}
+
+.minimal-section-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: $muted;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: $spacing-2;
+  margin-bottom: $spacing-4;
+}
+
+.minimal-text {
+  color: $text;
+  line-height: $line-height-relaxed;
+  font-size: $font-size-md;
+  margin-bottom: 0;
+}
+
+// Items
+.minimal-item {
+  margin-bottom: $spacing-5;
+  &:last-child { margin-bottom: 0; }
+}
+
+.minimal-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-2;
+  gap: $spacing-4;
+}
+
+.minimal-item-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  color: $text;
+  margin-bottom: 0;
+}
+
+.minimal-item-subtitle {
+  font-size: $font-size-md;
+  color: $muted;
+}
+
+.minimal-item-date {
+  font-size: $font-size-sm;
+  color: $muted;
+  white-space: nowrap;
+}
+
+// Print
+@media print {
+  .minimal-resume { padding: 0; max-width: 100%; }
+  .minimal-name { font-size: $font-size-4xl; }
+}
+
+// Responsive
+@media (max-width: 767.98px) {
+  .minimal-resume { padding: $spacing-4; }
+  .minimal-name { font-size: $font-size-3xl; }
+  .minimal-contact { flex-direction: column; gap: $spacing-1;
+    span::after { display: none; }
+  }
+  .minimal-links { flex-direction: column; gap: $spacing-1;
+    a::after { display: none; }
+  }
+  .minimal-item-header { flex-direction: column; gap: $spacing-1; }
+}

@@ -306,3 +306,26 @@ a {
     color: $primary-dark;
   }
 }
+
+/* Print Styles — hide layout chrome, show only resume */
+@media print {
+  app-header,
+  app-sidebar,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .main-content {
+    padding: 0 !important;
+  }
+
+  body {
+    background-color: white;
+    font-size: 11pt;
+  }
+}

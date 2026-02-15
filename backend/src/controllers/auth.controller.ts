@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { User } from '../models/User.model';
 import { logger } from '../config/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production-12345';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as StringValue;
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, middleName, lastName } = req.body;
 
     // Validate input
     if (!email || !password || !firstName || !lastName) {
@@ -35,6 +36,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email,
       password,
       firstName,
+      middleName,
       lastName
     });
 
@@ -54,6 +56,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
           _id: user._id,
           email: user.email,
           firstName: user.firstName,
+          middleName: user.middleName,
           lastName: user.lastName,
           profilePicture: user.profilePicture,
           isActive: user.isActive,
@@ -133,6 +136,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           _id: user._id,
           email: user.email,
           firstName: user.firstName,
+          middleName: user.middleName,
           lastName: user.lastName,
           profilePicture: user.profilePicture,
           isActive: user.isActive,

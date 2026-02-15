@@ -1,0 +1,84 @@
+@import '../../../assets/styles/variables';
+
+.resume-builder-container {
+  padding: $spacing-8;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @media (max-width: 767.98px) {
+    padding: $spacing-4;
+  }
+}
+
+.page-header {
+  .page-title {
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    color: $text;
+    margin-bottom: $spacing-2;
+  }
+
+  .page-subtitle {
+    color: $muted;
+    font-size: $font-size-lg;
+    margin-bottom: 0;
+  }
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 200px;
+  font-family: inherit;
+  line-height: 1.6;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 0.2rem rgba($primary, 0.15);
+  }
+}
+
+.loading-state {
+  padding: $spacing-16 0;
+}
+
+// Print
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .resume-builder-container {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .card {
+    box-shadow: none;
+    border: none;
+  }
+}
+
+// Responsive
+@media (max-width: 991.98px) {
+  .resume-builder-container {
+    padding: $spacing-6;
+  }
+
+  .page-header {
+    .page-title {
+      font-size: $font-size-3xl;
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .page-header .page-title {
+    font-size: $font-size-2xl;
+  }
+}

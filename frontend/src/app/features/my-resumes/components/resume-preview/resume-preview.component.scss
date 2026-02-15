@@ -1,0 +1,42 @@
+@import '../../../../../assets/styles/variables';
+
+.resume-preview {
+  position: sticky;
+  top: $spacing-8;
+  max-height: calc(100vh - #{$spacing-16});
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow;
+
+  .card-body {
+    overflow: hidden;
+    border-radius: $border-radius-lg;
+  }
+
+  @media print {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+    box-shadow: none;
+    border: none;
+  }
+
+  @media (max-width: 991.98px) {
+    position: static;
+    max-height: none;
+    margin-top: $spacing-8;
+  }
+}
+
+// Print
+@media print {
+  .card {
+    box-shadow: none;
+    border: none;
+  }
+
+  .resume-preview {
+    page-break-after: avoid;
+  }
+}

@@ -5,7 +5,17 @@
       "Bash(node:*)",
       "Bash(ls:*)",
       "Bash(wc:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx ng build:*)",
+      "Bash(npm list:*)",
+      "Bash(dir:*)",
+      "Bash(where:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run build:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Work\\job-application-automation\\job-application-automation"
     ]
   }
 }

@@ -1,0 +1,86 @@
+<div class="minimal-resume">
+  <!-- Header -->
+  <div class="minimal-header">
+    <h1 class="minimal-name">{{ data().fullName || 'Your Name' }}</h1>
+    <div class="minimal-contact">
+      @if (data().email) {
+        <span>{{ data().email }}</span>
+      }
+      @if (data().phone) {
+        <span>{{ data().phone }}</span>
+      }
+      @if (data().location) {
+        <span>{{ data().location }}</span>
+      }
+    </div>
+    <div class="minimal-links">
+      @if (data().linkedin) {
+        <a [href]="data().linkedin" target="_blank">LinkedIn</a>
+      }
+      @if (data().github) {
+        <a [href]="data().github" target="_blank">GitHub</a>
+      }
+      @if (data().website) {
+        <a [href]="data().website" target="_blank">Portfolio</a>
+      }
+    </div>
+  </div>
+
+  <!-- Summary -->
+  @if (data().summary) {
+    <div class="minimal-section">
+      <h3 class="minimal-section-title">Summary</h3>
+      <p class="minimal-text">{{ data().summary }}</p>
+    </div>
+  }
+
+  <!-- Experience -->
+  @if (data().experiences.length > 0) {
+    <div class="minimal-section">
+      <h3 class="minimal-section-title">Experience</h3>
+      @for (exp of data().experiences; track $index) {
+        <div class="minimal-item">
+          <div class="minimal-item-header">
+            <div>
+              <h4 class="minimal-item-title">{{ exp.position || 'Position' }}</h4>
+              <span class="minimal-item-subtitle">{{ exp.company || 'Company' }}</span>
+            </div>
+            <span class="minimal-item-date">
+              {{ exp.startDate || 'Start' }} - {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
+            </span>
+          </div>
+          <p class="minimal-text">{{ exp.description }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Education -->
+  @if (data().education.length > 0) {
+    <div class="minimal-section">
+      <h3 class="minimal-section-title">Education</h3>
+      @for (edu of data().education; track $index) {
+        <div class="minimal-item">
+          <div class="minimal-item-header">
+            <div>
+              <h4 class="minimal-item-title">{{ edu.degree || 'Degree' }} in {{ edu.field || 'Field' }}</h4>
+              <span class="minimal-item-subtitle">{{ edu.school || 'School' }}</span>
+            </div>
+            <span class="minimal-item-date">{{ edu.startDate || 'Start' }} - {{ edu.endDate || 'End' }}</span>
+          </div>
+          @if (edu.description) {
+            <p class="minimal-text">{{ edu.description }}</p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Skills -->
+  @if (data().skills.length > 0) {
+    <div class="minimal-section">
+      <h3 class="minimal-section-title">Skills</h3>
+      <p class="minimal-text">{{ data().skills.join('  \u00B7  ') }}</p>
+    </div>
+  }
+</div>

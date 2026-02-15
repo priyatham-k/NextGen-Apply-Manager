@@ -3,8 +3,10 @@
 .app-header {
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
   box-shadow: $shadow-sm;
 }

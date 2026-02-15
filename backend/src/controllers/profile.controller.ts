@@ -1,8 +1,153 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.model';
+import { Profile } from '../models/Profile.model';
 import { logger } from '../config/logger';
 import fs from 'fs';
 import path from 'path';
+
+/**
+ * Get full profile (auto-creates if missing)
+ * GET /api/v1/auth/profile/full
+ */
+export const getFullProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    let profile = await Profile.findOne({ userId });
+
+    if (!profile) {
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      profile = await Profile.create({
+        userId,
+        personalInfo: {
+          firstName: user.firstName,
+          middleName: user.middleName || '',
+          lastName: user.lastName,
+          email: user.email
+        },
+        workExperience: [],
+        projects: [],
+        education: [],
+        skills: [],
+        certifications: [],
+        additionalInfo: {
+          awards: [],
+          publications: [],
+          languages: [],
+          volunteerExperience: []
+        }
+      });
+
+      logger.info(`Default profile created for user: ${userId}`);
+    }
+
+    res.status(200).json({ success: true, data: profile });
+  } catch (error: any) {
+    logger.error('Get full profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Update full profile (accepts partial data — any section)
+ * PATCH /api/v1/auth/profile/full
+ */
+export const updateFullProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    const updateData = req.body;
+
+    // Ensure profile exists
+    let profile = await Profile.findOne({ userId });
+    if (!profile) {
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      profile = await Profile.create({
+        userId,
+        personalInfo: {
+          firstName: user.firstName,
+          middleName: user.middleName || '',
+          lastName: user.lastName,
+          email: user.email
+        },
+        workExperience: [],
+        projects: [],
+        education: [],
+        skills: [],
+        certifications: [],
+        additionalInfo: {
+          awards: [],
+          publications: [],
+          languages: [],
+          volunteerExperience: []
+        }
+      });
+    }
+
+    // Build $set object from provided sections
+    const $set: Record<string, any> = {};
+
+    if (updateData.personalInfo) $set.personalInfo = updateData.personalInfo;
+    if (updateData.professionalSummary) $set.professionalSummary = updateData.professionalSummary;
+    if (updateData.workExperience) $set.workExperience = updateData.workExperience;
+    if (updateData.projects) $set.projects = updateData.projects;
+    if (updateData.education) $set.education = updateData.education;
+    if (updateData.skills) $set.skills = updateData.skills;
+    if (updateData.certifications) $set.certifications = updateData.certifications;
+    if (updateData.additionalInfo) $set.additionalInfo = updateData.additionalInfo;
+
+    const updatedProfile = await Profile.findOneAndUpdate(
+      { userId },
+      { $set },
+      { new: true, runValidators: true }
+    );
+
+    // Sync name/email back to User model when personalInfo changes
+    if (updateData.personalInfo) {
+      const pi = updateData.personalInfo;
+      const userUpdate: Record<string, any> = {};
+      if (pi.firstName) userUpdate.firstName = pi.firstName;
+      if (pi.lastName) userUpdate.lastName = pi.lastName;
+      if (pi.middleName !== undefined) userUpdate.middleName = pi.middleName || '';
+      if (pi.email) userUpdate.email = pi.email.toLowerCase();
+
+      if (Object.keys(userUpdate).length > 0) {
+        await User.findByIdAndUpdate(userId, userUpdate);
+      }
+    }
+
+    logger.info(`Profile updated for user: ${userId}, sections: ${Object.keys($set).join(', ')}`);
+
+    res.status(200).json({
+      success: true,
+      data: updatedProfile,
+      message: 'Profile updated successfully'
+    });
+  } catch (error: any) {
+    logger.error('Update full profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
 
 /**
  * Update user profile (firstName, lastName, email)
@@ -11,7 +156,7 @@ import path from 'path';
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
-    const { firstName, lastName, email } = req.body;
+    const { firstName, middleName, lastName, email } = req.body;
 
     if (!userId) {
       res.status(401).json({
@@ -55,13 +200,18 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     }
 
     // Update user
+    const updateData: any = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim()
+    };
+    if (middleName !== undefined) {
+      updateData.middleName = middleName ? middleName.trim() : '';
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase().trim()
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 

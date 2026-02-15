@@ -26,6 +26,7 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
+      middleName: [''],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -89,10 +90,11 @@ export class RegisterComponent {
     this.error.set('');
 
     try {
-      const { firstName, lastName, email, password } = this.registerForm.value;
+      const { firstName, middleName, lastName, email, password } = this.registerForm.value;
 
       await firstValueFrom(this.authService.register({
         firstName,
+        middleName,
         lastName,
         email,
         password

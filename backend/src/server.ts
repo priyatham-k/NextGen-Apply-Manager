@@ -16,6 +16,7 @@ import jobRoutes from './routes/job.routes';
 import applicationRoutes from './routes/application.routes';
 import profileRoutes from './routes/profile.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import resumeGeneratorRoutes from './routes/resumeGenerator.routes';
 
 // Load environment variables from root directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -49,6 +50,7 @@ app.use(`${API_PREFIX}/jobs`, jobRoutes);
 app.use(`${API_PREFIX}/applications`, applicationRoutes);
 app.use(`${API_PREFIX}/profile`, profileRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
+app.use(`${API_PREFIX}/resume-generator`, resumeGeneratorRoutes);
 
 // Error handling
 app.use(notFoundHandler);

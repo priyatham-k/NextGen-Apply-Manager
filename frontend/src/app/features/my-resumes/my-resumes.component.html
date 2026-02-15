@@ -48,337 +48,35 @@
     </div>
   </div>
 
+  <!-- Template Selector -->
+  <app-template-selector
+    [selectedTemplate]="selectedTemplate()"
+    (templateChange)="onTemplateChange($event)"
+    class="no-print"
+  />
+
   <div class="row g-4">
-    <!-- Left Side: Form (Hidden in preview mode) -->
+    <!-- Left: Form Editor -->
     @if (!previewMode()) {
       <div class="col-lg-6">
-        <div class="card no-print">
-          <div class="card-body">
-            <form [formGroup]="resumeForm">
-              <!-- Resume Title Section -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-file-earmark-text me-2"></i>
-                  Resume Title
-                </h5>
-                <div class="mb-3">
-                  <label class="form-label">Title *</label>
-                  <input type="text" class="form-control" formControlName="title" placeholder="My Professional Resume">
-                  <small class="text-muted">Give your resume a unique name to save and identify it later</small>
-                </div>
-              </div>
-
-              <!-- Personal Information Section -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-person-circle me-2"></i>
-                  Personal Information
-                </h5>
-
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" class="form-control" formControlName="fullName" placeholder="John Doe">
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Email *</label>
-                    <input type="email" class="form-control" formControlName="email" placeholder="john@example.com">
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Phone *</label>
-                    <input type="tel" class="form-control" formControlName="phone" placeholder="+1 (555) 123-4567">
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label">Location *</label>
-                    <input type="text" class="form-control" formControlName="location" placeholder="New York, NY">
-                  </div>
-
-                  <div class="col-md-4">
-                    <label class="form-label">LinkedIn</label>
-                    <input type="url" class="form-control" formControlName="linkedin" placeholder="linkedin.com/in/johndoe">
-                  </div>
-
-                  <div class="col-md-4">
-                    <label class="form-label">GitHub</label>
-                    <input type="url" class="form-control" formControlName="github" placeholder="github.com/johndoe">
-                  </div>
-
-                  <div class="col-md-4">
-                    <label class="form-label">Website</label>
-                    <input type="url" class="form-control" formControlName="website" placeholder="johndoe.com">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Professional Summary Section -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-file-text me-2"></i>
-                  Professional Summary *
-                </h5>
-                <textarea class="form-control" formControlName="summary" rows="4"
-                  placeholder="Write a brief summary about yourself, your experience, and your career goals..."></textarea>
-                <small class="text-muted">Minimum 50 characters</small>
-              </div>
-
-              <!-- Experience Section -->
-              <div class="form-section">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <h5 class="section-title mb-0">
-                    <i class="bi bi-briefcase me-2"></i>
-                    Work Experience *
-                  </h5>
-                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addExperience()">
-                    <i class="bi bi-plus-circle me-1"></i>
-                    Add Experience
-                  </button>
-                </div>
-
-                <div formArrayName="experiences">
-                  @for (exp of experiences.controls; track $index) {
-                    <div [formGroupName]="$index" class="experience-item">
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Experience {{ $index + 1 }}</h6>
-                        @if (experiences.length > 1) {
-                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeExperience($index)">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        }
-                      </div>
-
-                      <div class="row g-3">
-                        <div class="col-md-6">
-                          <label class="form-label">Company *</label>
-                          <input type="text" class="form-control" formControlName="company" placeholder="Company Name">
-                        </div>
-
-                        <div class="col-md-6">
-                          <label class="form-label">Position *</label>
-                          <input type="text" class="form-control" formControlName="position" placeholder="Job Title">
-                        </div>
-
-                        <div class="col-md-5">
-                          <label class="form-label">Start Date *</label>
-                          <input type="month" class="form-control" formControlName="startDate">
-                        </div>
-
-                        <div class="col-md-5">
-                          <label class="form-label">End Date</label>
-                          <input type="month" class="form-control" formControlName="endDate" [disabled]="exp.get('current')?.value">
-                        </div>
-
-                        <div class="col-md-2">
-                          <label class="form-label d-block">&nbsp;</label>
-                          <div class="form-check">
-                            <input type="checkbox" class="form-check-input" formControlName="current" id="current{{$index}}">
-                            <label class="form-check-label" [for]="'current' + $index">Current</label>
-                          </div>
-                        </div>
-
-                        <div class="col-12">
-                          <label class="form-label">Description *</label>
-                          <textarea class="form-control" formControlName="description" rows="3"
-                            placeholder="Describe your responsibilities and achievements..."></textarea>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <!-- Education Section -->
-              <div class="form-section">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <h5 class="section-title mb-0">
-                    <i class="bi bi-mortarboard me-2"></i>
-                    Education *
-                  </h5>
-                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addEducation()">
-                    <i class="bi bi-plus-circle me-1"></i>
-                    Add Education
-                  </button>
-                </div>
-
-                <div formArrayName="education">
-                  @for (edu of education.controls; track $index) {
-                    <div [formGroupName]="$index" class="education-item">
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Education {{ $index + 1 }}</h6>
-                        @if (education.length > 1) {
-                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeEducation($index)">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        }
-                      </div>
-
-                      <div class="row g-3">
-                        <div class="col-md-6">
-                          <label class="form-label">School *</label>
-                          <input type="text" class="form-control" formControlName="school" placeholder="University Name">
-                        </div>
-
-                        <div class="col-md-6">
-                          <label class="form-label">Degree *</label>
-                          <input type="text" class="form-control" formControlName="degree" placeholder="Bachelor's, Master's, etc.">
-                        </div>
-
-                        <div class="col-12">
-                          <label class="form-label">Field of Study *</label>
-                          <input type="text" class="form-control" formControlName="field" placeholder="Computer Science, Business, etc.">
-                        </div>
-
-                        <div class="col-md-6">
-                          <label class="form-label">Start Date *</label>
-                          <input type="month" class="form-control" formControlName="startDate">
-                        </div>
-
-                        <div class="col-md-6">
-                          <label class="form-label">End Date *</label>
-                          <input type="month" class="form-control" formControlName="endDate">
-                        </div>
-
-                        <div class="col-12">
-                          <label class="form-label">Description</label>
-                          <textarea class="form-control" formControlName="description" rows="2"
-                            placeholder="GPA, honors, relevant coursework..."></textarea>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <!-- Skills Section -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-lightbulb me-2"></i>
-                  Skills *
-                </h5>
-                <textarea class="form-control" formControlName="skills" rows="3"
-                  placeholder="Enter skills separated by commas (e.g., JavaScript, React, Node.js, MongoDB, AWS)"></textarea>
-                <small class="text-muted">Separate skills with commas</small>
-              </div>
-
-              <!-- Save Button -->
-              <div class="text-end">
-                <button type="button" class="btn btn-primary btn-lg" (click)="saveResume()" [disabled]="loading()">
-                  @if (loading()) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    Saving...
-                  } @else {
-                    <i class="bi bi-save me-2"></i>
-                    Save Resume
-                  }
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <app-resume-form-editor
+          [resumeForm]="resumeForm"
+          [loading]="loading()"
+          (save)="saveResume()"
+          (addExperience)="addExperience()"
+          (removeExperience)="removeExperience($event)"
+          (addEducation)="addEducation()"
+          (removeEducation)="removeEducation($event)"
+        />
       </div>
     }
 
-    <!-- Right Side: Preview -->
+    <!-- Right: Preview -->
     <div [class]="previewMode() ? 'col-12' : 'col-lg-6'">
-      <div class="card resume-preview">
-        <div class="card-body">
-          <div class="resume-content">
-            <!-- Header -->
-            <div class="resume-header">
-              <h1 class="resume-name">{{ resumeForm.get('fullName')?.value || 'Your Name' }}</h1>
-              <div class="resume-contact">
-                <span *ngIf="resumeForm.get('email')?.value">
-                  <i class="bi bi-envelope"></i> {{ resumeForm.get('email')?.value }}
-                </span>
-                <span *ngIf="resumeForm.get('phone')?.value">
-                  <i class="bi bi-telephone"></i> {{ resumeForm.get('phone')?.value }}
-                </span>
-                <span *ngIf="resumeForm.get('location')?.value">
-                  <i class="bi bi-geo-alt"></i> {{ resumeForm.get('location')?.value }}
-                </span>
-              </div>
-              <div class="resume-links">
-                <a *ngIf="resumeForm.get('linkedin')?.value" [href]="resumeForm.get('linkedin')?.value" target="_blank">
-                  <i class="bi bi-linkedin"></i> LinkedIn
-                </a>
-                <a *ngIf="resumeForm.get('github')?.value" [href]="resumeForm.get('github')?.value" target="_blank">
-                  <i class="bi bi-github"></i> GitHub
-                </a>
-                <a *ngIf="resumeForm.get('website')?.value" [href]="resumeForm.get('website')?.value" target="_blank">
-                  <i class="bi bi-globe"></i> Website
-                </a>
-              </div>
-            </div>
-
-            <!-- Summary -->
-            @if (resumeForm.get('summary')?.value) {
-              <div class="resume-section">
-                <h3 class="resume-section-title">Professional Summary</h3>
-                <p class="resume-summary">{{ resumeForm.get('summary')?.value }}</p>
-              </div>
-            }
-
-            <!-- Experience -->
-            @if (experiences.length > 0) {
-              <div class="resume-section">
-                <h3 class="resume-section-title">Work Experience</h3>
-                @for (exp of experiences.controls; track $index) {
-                  <div class="resume-item">
-                    <div class="resume-item-header">
-                      <div>
-                        <h4 class="resume-item-title">{{ exp.get('position')?.value || 'Position' }}</h4>
-                        <p class="resume-item-company">{{ exp.get('company')?.value || 'Company' }}</p>
-                      </div>
-                      <div class="resume-item-date">
-                        {{ exp.get('startDate')?.value || 'Start' }} -
-                        {{ exp.get('current')?.value ? 'Present' : (exp.get('endDate')?.value || 'End') }}
-                      </div>
-                    </div>
-                    <p class="resume-item-description">{{ exp.get('description')?.value }}</p>
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Education -->
-            @if (education.length > 0) {
-              <div class="resume-section">
-                <h3 class="resume-section-title">Education</h3>
-                @for (edu of education.controls; track $index) {
-                  <div class="resume-item">
-                    <div class="resume-item-header">
-                      <div>
-                        <h4 class="resume-item-title">{{ edu.get('degree')?.value || 'Degree' }} in {{ edu.get('field')?.value || 'Field' }}</h4>
-                        <p class="resume-item-company">{{ edu.get('school')?.value || 'School' }}</p>
-                      </div>
-                      <div class="resume-item-date">
-                        {{ edu.get('startDate')?.value || 'Start' }} - {{ edu.get('endDate')?.value || 'End' }}
-                      </div>
-                    </div>
-                    @if (edu.get('description')?.value) {
-                      <p class="resume-item-description">{{ edu.get('description')?.value }}</p>
-                    }
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Skills -->
-            @if (skillsArray.length > 0) {
-              <div class="resume-section">
-                <h3 class="resume-section-title">Skills</h3>
-                <div class="resume-skills">
-                  @for (skill of skillsArray; track skill) {
-                    <span class="skill-tag">{{ skill }}</span>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
+      <app-resume-preview
+        [data]="templateData()"
+        [template]="selectedTemplate()"
+      />
     </div>
   </div>
 </div>

@@ -12,6 +12,7 @@ interface LoginCredentials {
 
 interface RegisterData extends LoginCredentials {
   firstName: string;
+  middleName?: string;
   lastName: string;
 }
 

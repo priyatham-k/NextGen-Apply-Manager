@@ -38,10 +38,7 @@
 
   .dropdown-item {
     padding: $spacing-2 $spacing-4;
-
-    &:hover {
-      background-color: $background;
-    }
+    &:hover { background-color: $background; }
   }
 }
 
@@ -50,252 +47,7 @@
   font-size: $font-size-xs;
 }
 
-// Form Sections
-.form-section {
-  margin-bottom: $spacing-8;
-  padding-bottom: $spacing-8;
-  border-bottom: 1px solid #e5e7eb;
-
-  &:last-of-type {
-    border-bottom: none;
-  }
-}
-
-.section-title {
-  font-size: $font-size-2xl;
-  font-weight: $font-weight-semibold;
-  color: $text;
-  margin-bottom: $spacing-4;
-  display: flex;
-  align-items: center;
-
-  i {
-    color: $primary;
-  }
-}
-
-.form-label {
-  font-weight: $font-weight-semibold;
-  color: $text;
-  margin-bottom: $spacing-2;
-  font-size: $font-size-sm;
-}
-
-.form-control,
-textarea.form-control {
-  border-color: #d1d5db;
-  padding: $spacing-3 $spacing-4;
-
-  &:focus {
-    border-color: $primary;
-    box-shadow: 0 0 0 0.2rem rgba($primary, 0.25);
-  }
-}
-
-// Experience and Education Items
-.experience-item,
-.education-item {
-  background-color: $background;
-  padding: $card-padding;
-  border-radius: $border-radius;
-  margin-bottom: $spacing-4;
-  border: 1px solid #e5e7eb;
-
-  h6 {
-    color: $text;
-    font-weight: $font-weight-semibold;
-  }
-}
-
-// Resume Preview
-.resume-preview {
-  position: sticky;
-  top: $spacing-8;
-  max-height: calc(100vh - #{$spacing-16});
-  overflow-y: auto;
-
-  @media print {
-    position: static;
-    max-height: none;
-    overflow-y: visible;
-    box-shadow: none;
-    border: none;
-  }
-}
-
-.resume-content {
-  padding: $spacing-4;
-  background: white;
-
-  @media print {
-    padding: 0.5in;
-  }
-}
-
-// Resume Header
-.resume-header {
-  text-align: center;
-  padding-bottom: $spacing-6;
-  border-bottom: 2px solid $primary;
-  margin-bottom: $spacing-6;
-}
-
-.resume-name {
-  font-size: $font-size-4xl;
-  font-weight: $font-weight-bold;
-  color: $text;
-  margin-bottom: $spacing-2;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-
-  @media print {
-    font-size: $font-size-3xl;
-  }
-}
-
-.resume-contact {
-  display: flex;
-  justify-content: center;
-  gap: $spacing-6;
-  flex-wrap: wrap;
-  margin-bottom: $spacing-2;
-  font-size: $font-size-md;
-  color: $muted;
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: $spacing-1;
-  }
-
-  i {
-    color: $primary;
-  }
-}
-
-.resume-links {
-  display: flex;
-  justify-content: center;
-  gap: $spacing-4;
-  font-size: $font-size-sm;
-
-  a {
-    color: $primary;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: $spacing-1;
-
-    &:hover {
-      text-decoration: underline;
-    }
-
-    @media print {
-      color: $text;
-    }
-  }
-}
-
-// Resume Sections
-.resume-section {
-  margin-bottom: $spacing-6;
-}
-
-.resume-section-title {
-  font-size: $font-size-2xl;
-  font-weight: $font-weight-bold;
-  color: $text;
-  margin-bottom: $spacing-4;
-  padding-bottom: $spacing-2;
-  border-bottom: 1px solid $primary;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  @media print {
-    font-size: $font-size-xl;
-  }
-}
-
-.resume-summary {
-  color: $text;
-  line-height: $line-height-relaxed;
-  font-size: $font-size-md;
-  margin-bottom: 0;
-}
-
-// Resume Items (Experience & Education)
-.resume-item {
-  margin-bottom: $spacing-5;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.resume-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: $spacing-2;
-  gap: $spacing-4;
-}
-
-.resume-item-title {
-  font-size: $font-size-xl;
-  font-weight: $font-weight-semibold;
-  color: $text;
-  margin-bottom: $spacing-1;
-
-  @media print {
-    font-size: $font-size-lg;
-  }
-}
-
-.resume-item-company {
-  font-size: $font-size-md;
-  color: $muted;
-  font-weight: $font-weight-medium;
-  margin-bottom: 0;
-}
-
-.resume-item-date {
-  font-size: $font-size-sm;
-  color: $muted;
-  white-space: nowrap;
-  font-style: italic;
-}
-
-.resume-item-description {
-  color: $text;
-  line-height: $line-height-relaxed;
-  font-size: $font-size-md;
-  margin-bottom: 0;
-}
-
-// Skills
-.resume-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $spacing-2;
-}
-
-.skill-tag {
-  background-color: rgba($primary, 0.1);
-  color: $primary;
-  padding: $spacing-2 $spacing-3;
-  border-radius: 20px;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  border: 1px solid rgba($primary, 0.3);
-
-  @media print {
-    background-color: white;
-    border: 1px solid $text;
-    color: $text;
-  }
-}
-
-// Print Styles
+// Print
 @media print {
   .no-print {
     display: none !important;
@@ -306,9 +58,7 @@ textarea.form-control {
     max-width: 100%;
   }
 
-  .row {
-    display: block;
-  }
+  .row { display: block; }
 
   .col-12,
   .col-lg-6 {
@@ -321,21 +71,7 @@ textarea.form-control {
     border: none;
   }
 
-  .resume-preview {
-    page-break-after: avoid;
-  }
-
-  .resume-section {
-    page-break-inside: avoid;
-  }
-
-  .resume-item {
-    page-break-inside: avoid;
-  }
-
-  body {
-    font-size: 11pt;
-  }
+  body { font-size: 11pt; }
 }
 
 // Responsive
@@ -355,32 +91,10 @@ textarea.form-control {
       font-size: $font-size-3xl;
     }
   }
-
-  .resume-preview {
-    position: static;
-    max-height: none;
-    margin-top: $spacing-8;
-  }
 }
 
 @media (max-width: 767.98px) {
-  .page-header {
-    .page-title {
-      font-size: $font-size-2xl;
-    }
-  }
-
-  .resume-name {
+  .page-header .page-title {
     font-size: $font-size-2xl;
-  }
-
-  .resume-contact {
-    flex-direction: column;
-    gap: $spacing-2;
-  }
-
-  .resume-item-header {
-    flex-direction: column;
-    gap: $spacing-1;
   }
 }

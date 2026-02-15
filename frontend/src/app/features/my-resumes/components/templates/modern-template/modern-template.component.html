@@ -1,0 +1,105 @@
+<div class="modern-resume">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1 class="sidebar-name">{{ data().fullName || 'Your Name' }}</h1>
+    </div>
+
+    <!-- Contact -->
+    <div class="sidebar-section">
+      <h3 class="sidebar-section-title">Contact</h3>
+      @if (data().email) {
+        <div class="sidebar-item"><i class="bi bi-envelope"></i> {{ data().email }}</div>
+      }
+      @if (data().phone) {
+        <div class="sidebar-item"><i class="bi bi-telephone"></i> {{ data().phone }}</div>
+      }
+      @if (data().location) {
+        <div class="sidebar-item"><i class="bi bi-geo-alt"></i> {{ data().location }}</div>
+      }
+    </div>
+
+    <!-- Links -->
+    @if (data().linkedin || data().github || data().website) {
+      <div class="sidebar-section">
+        <h3 class="sidebar-section-title">Links</h3>
+        @if (data().linkedin) {
+          <a class="sidebar-link" [href]="data().linkedin" target="_blank">
+            <i class="bi bi-linkedin"></i> LinkedIn
+          </a>
+        }
+        @if (data().github) {
+          <a class="sidebar-link" [href]="data().github" target="_blank">
+            <i class="bi bi-github"></i> GitHub
+          </a>
+        }
+        @if (data().website) {
+          <a class="sidebar-link" [href]="data().website" target="_blank">
+            <i class="bi bi-globe"></i> Website
+          </a>
+        }
+      </div>
+    }
+
+    <!-- Skills -->
+    @if (data().skills.length > 0) {
+      <div class="sidebar-section">
+        <h3 class="sidebar-section-title">Skills</h3>
+        <div class="sidebar-skills">
+          @for (skill of data().skills; track skill) {
+            <span class="sidebar-skill-tag">{{ skill }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Summary -->
+    @if (data().summary) {
+      <div class="main-section">
+        <h3 class="main-section-title">Professional Summary</h3>
+        <p class="main-summary">{{ data().summary }}</p>
+      </div>
+    }
+
+    <!-- Experience -->
+    @if (data().experiences.length > 0) {
+      <div class="main-section">
+        <h3 class="main-section-title">Work Experience</h3>
+        @for (exp of data().experiences; track $index) {
+          <div class="main-item">
+            <div class="main-item-header">
+              <h4 class="main-item-title">{{ exp.position || 'Position' }}</h4>
+              <span class="main-item-date">
+                {{ exp.startDate || 'Start' }} - {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
+              </span>
+            </div>
+            <p class="main-item-company">{{ exp.company || 'Company' }}</p>
+            <p class="main-item-description">{{ exp.description }}</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Education -->
+    @if (data().education.length > 0) {
+      <div class="main-section">
+        <h3 class="main-section-title">Education</h3>
+        @for (edu of data().education; track $index) {
+          <div class="main-item">
+            <div class="main-item-header">
+              <h4 class="main-item-title">{{ edu.degree || 'Degree' }} in {{ edu.field || 'Field' }}</h4>
+              <span class="main-item-date">{{ edu.startDate || 'Start' }} - {{ edu.endDate || 'End' }}</span>
+            </div>
+            <p class="main-item-company">{{ edu.school || 'School' }}</p>
+            @if (edu.description) {
+              <p class="main-item-description">{{ edu.description }}</p>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
