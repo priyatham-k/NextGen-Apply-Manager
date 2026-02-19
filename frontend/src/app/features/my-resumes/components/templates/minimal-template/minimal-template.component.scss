@@ -1,11 +1,11 @@
-@import '../../../../../../assets/styles/variables';
+@import 'assets/styles/variables';
 
 :host { display: block; }
 
 .minimal-resume {
   padding: $spacing-8;
   background: white;
-  color: $text;
+  color: #4b5563;
   max-width: 800px;
   margin: 0 auto;
 }
@@ -21,7 +21,7 @@
 .minimal-name {
   font-size: $font-size-5xl;
   font-weight: $font-weight-normal;
-  color: $text;
+  color: #374151;
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: $spacing-3;
@@ -32,7 +32,7 @@
   justify-content: center;
   gap: 0;
   font-size: $font-size-sm;
-  color: $muted;
+  color: #6b7280;
   margin-bottom: $spacing-2;
 
   span {
@@ -73,14 +73,14 @@
   font-weight: $font-weight-semibold;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: $muted;
+  color: #6b7280;
   border-bottom: 1px solid #d1d5db;
   padding-bottom: $spacing-2;
   margin-bottom: $spacing-4;
 }
 
 .minimal-text {
-  color: $text;
+  color: #4b5563;
   line-height: $line-height-relaxed;
   font-size: $font-size-md;
   margin-bottom: 0;
@@ -103,18 +103,18 @@
 .minimal-item-title {
   font-size: $font-size-lg;
   font-weight: $font-weight-medium;
-  color: $text;
+  color: #374151;
   margin-bottom: 0;
 }
 
 .minimal-item-subtitle {
   font-size: $font-size-md;
-  color: $muted;
+  color: #6b7280;
 }
 
 .minimal-item-date {
   font-size: $font-size-sm;
-  color: $muted;
+  color: #6b7280;
   white-space: nowrap;
 }
 
@@ -122,6 +122,13 @@
 @media print {
   .minimal-resume { padding: 0; max-width: 100%; }
   .minimal-name { font-size: $font-size-4xl; }
+  .minimal-contact { flex-direction: row !important; gap: 0 !important;
+    span::after { display: inline !important; }
+  }
+  .minimal-links { flex-direction: row !important; gap: 0 !important;
+    a::after { display: inline !important; }
+  }
+  .minimal-item-header { flex-direction: row !important; gap: $spacing-4 !important; }
 }
 
 // Responsive

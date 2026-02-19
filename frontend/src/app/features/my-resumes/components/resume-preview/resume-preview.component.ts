@@ -22,4 +22,5 @@ import { ProfessionalTemplateComponent } from '../templates/professional-templat
 export class ResumePreviewComponent {
   data = input.required<ResumeTemplateData>();
   template = input.required<ResumeTemplate>();
+  fullPreview = input(false);
 }

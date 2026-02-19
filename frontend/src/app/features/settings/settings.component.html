@@ -1,0 +1,318 @@
+<div class="settings-container">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Manage your account, notifications, and preferences</p>
+  </div>
+
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-3">Loading settings...</p>
+    </div>
+  } @else {
+    <div class="row g-4">
+      <!-- Left Sidebar: Tab Navigation -->
+      <div class="col-lg-3">
+        <div class="card">
+          <div class="card-body p-2">
+            <nav class="settings-nav">
+              @for (tab of tabs; track tab.key) {
+                <button
+                  class="settings-nav-btn"
+                  [class.active]="activeTab() === tab.key"
+                  (click)="switchTab(tab.key)"
+                  type="button">
+                  <i class="bi {{ tab.icon }}"></i>
+                  <span>{{ tab.label }}</span>
+                </button>
+              }
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Content -->
+      <div class="col-lg-9">
+
+        <!-- ACCOUNT TAB -->
+        @if (activeTab() === 'account') {
+          <!-- Change Password -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title mb-1">Change Password</h5>
+              <p class="text-muted small mb-4">Update your password to keep your account secure</p>
+
+              <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+                <div class="row g-3">
+                  <div class="col-md-12">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" class="form-control" formControlName="currentPassword" placeholder="Enter current password" />
+                    @if (passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.hasError('required')) {
+                      <small class="text-danger">Current password is required</small>
+                    }
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-control" formControlName="newPassword" placeholder="Enter new password" />
+                    @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('required')) {
+                      <small class="text-danger">New password is required</small>
+                    }
+                    @if (passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')) {
+                      <small class="text-danger">Password must be at least 6 characters</small>
+                    }
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-control" formControlName="confirmPassword" placeholder="Confirm new password" />
+                    @if (passwordForm.get('confirmPassword')?.touched && passwordForm.get('confirmPassword')?.hasError('required')) {
+                      <small class="text-danger">Please confirm your password</small>
+                    }
+                  </div>
+                </div>
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary" [disabled]="changingPassword() || passwordForm.invalid">
+                    @if (changingPassword()) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>Changing...
+                    } @else {
+                      <i class="bi bi-key me-1"></i>Change Password
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="card danger-zone">
+            <div class="card-body">
+              <h5 class="card-title text-danger mb-1">Danger Zone</h5>
+              <p class="text-muted small mb-3">Irreversible actions for your account</p>
+              <div class="d-flex align-items-center justify-content-between p-3 border border-danger rounded">
+                <div>
+                  <strong class="d-block">Deactivate Account</strong>
+                  <small class="text-muted">Once deactivated, your account will be disabled and you won't be able to log in.</small>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm ms-3 flex-shrink-0">Deactivate</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- NOTIFICATIONS TAB -->
+        @if (activeTab() === 'notifications') {
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-1">Notification Preferences</h5>
+              <p class="text-muted small mb-4">Choose which notifications you'd like to receive</p>
+
+              <form [formGroup]="notificationsForm" (ngSubmit)="saveNotifications()">
+                <div class="settings-toggle-list">
+                  <div class="settings-toggle-item">
+                    <div class="toggle-info">
+                      <span class="toggle-label">Email Notifications</span>
+                      <span class="toggle-description">Receive email notifications about important updates</span>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" formControlName="emailNotifications" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="settings-toggle-item">
+                    <div class="toggle-info">
+                      <span class="toggle-label">Application Updates</span>
+                      <span class="toggle-description">Get notified when your application status changes</span>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" formControlName="applicationUpdates" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="settings-toggle-item">
+                    <div class="toggle-info">
+                      <span class="toggle-label">Job Recommendations</span>
+                      <span class="toggle-description">Receive notifications about new job matches</span>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" formControlName="jobRecommendations" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="settings-toggle-item">
+                    <div class="toggle-info">
+                      <span class="toggle-label">System Notifications</span>
+                      <span class="toggle-description">Important system updates and announcements</span>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" formControlName="systemNotifications" />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                    @if (saving()) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>Saving...
+                    } @else {
+                      <i class="bi bi-check-circle me-1"></i>Save Notifications
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- JOB PREFERENCES TAB -->
+        @if (activeTab() === 'jobPreferences') {
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-1">Job Preferences</h5>
+              <p class="text-muted small mb-4">Set your default job search preferences</p>
+
+              <form [formGroup]="jobPreferencesForm" (ngSubmit)="saveJobPreferences()">
+                <div class="row g-4">
+                  <!-- Preferred Job Types -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Preferred Job Types</label>
+                    <div class="d-flex flex-wrap gap-2">
+                      @for (type of jobTypeOptions; track type) {
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          [class.btn-primary]="isJobTypeSelected(type)"
+                          [class.btn-outline-secondary]="!isJobTypeSelected(type)"
+                          (click)="toggleJobType(type)">
+                          {{ type }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Preferred Locations -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Preferred Locations</label>
+                    <input type="text" class="form-control" formControlName="preferredLocations"
+                      placeholder="e.g., New York, San Francisco, Remote (comma-separated)" />
+                    <small class="text-muted">Enter multiple locations separated by commas</small>
+                  </div>
+
+                  <!-- Salary -->
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Minimum Salary</label>
+                    <input type="number" class="form-control" formControlName="salaryMin"
+                      placeholder="e.g., 80000" min="0" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Currency</label>
+                    <select class="form-select" formControlName="salaryCurrency">
+                      @for (currency of currencyOptions; track currency) {
+                        <option [value]="currency">{{ currency }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Willing to Relocate -->
+                  <div class="col-12">
+                    <div class="settings-toggle-item standalone">
+                      <div class="toggle-info">
+                        <span class="toggle-label">Willing to Relocate</span>
+                        <span class="toggle-description">Open to relocating for the right opportunity</span>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="willingToRelocate" />
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                    @if (saving()) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>Saving...
+                    } @else {
+                      <i class="bi bi-check-circle me-1"></i>Save Preferences
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- PRIVACY TAB -->
+        @if (activeTab() === 'privacy') {
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-1">Privacy Settings</h5>
+              <p class="text-muted small mb-4">Control your profile visibility and data sharing</p>
+
+              <form [formGroup]="privacyForm" (ngSubmit)="savePrivacy()">
+                <!-- Profile Visibility -->
+                <div class="mb-4">
+                  <label class="form-label fw-semibold">Profile Visibility</label>
+                  <div class="d-flex flex-column gap-2">
+                    <label class="privacy-radio-card" [class.selected]="privacyForm.get('profileVisibility')?.value === 'public'">
+                      <input type="radio" formControlName="profileVisibility" value="public" class="d-none" />
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="radio-indicator">
+                          <div class="radio-dot"></div>
+                        </div>
+                        <div>
+                          <strong class="d-block">Public</strong>
+                          <small class="text-muted">Your profile is visible to employers and recruiters</small>
+                        </div>
+                      </div>
+                    </label>
+                    <label class="privacy-radio-card" [class.selected]="privacyForm.get('profileVisibility')?.value === 'private'">
+                      <input type="radio" formControlName="profileVisibility" value="private" class="d-none" />
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="radio-indicator">
+                          <div class="radio-dot"></div>
+                        </div>
+                        <div>
+                          <strong class="d-block">Private</strong>
+                          <small class="text-muted">Only you can see your profile details</small>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Show Email -->
+                <div class="settings-toggle-item standalone">
+                  <div class="toggle-info">
+                    <span class="toggle-label">Show Email Address</span>
+                    <span class="toggle-description">Allow your email to be visible on your public profile</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="showEmail" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                    @if (saving()) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>Saving...
+                    } @else {
+                      <i class="bi bi-check-circle me-1"></i>Save Privacy Settings
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+</div>

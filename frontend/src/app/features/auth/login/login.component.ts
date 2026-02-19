@@ -52,8 +52,8 @@ export class LoginComponent {
     this.error.set('');
 
     try {
-      const { email, password } = this.loginForm.value;
-      await firstValueFrom(this.authService.login({ email, password }));
+      const { email, password, rememberMe } = this.loginForm.value;
+      await firstValueFrom(this.authService.login({ email, password }, rememberMe));
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       this.error.set(err.error?.message || 'Invalid email or password');

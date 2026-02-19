@@ -12,7 +12,19 @@
       "Bash(dir:*)",
       "Bash(where:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(del \"c:\\\\Work\\\\job-application-automation\\\\job-application-automation\\\\frontend\\\\src\\\\app\\\\features\\\\analytics\\\\analytics.component.html\")",
+      "Bash(del \"c:\\\\Work\\\\job-application-automation\\\\job-application-automation\\\\frontend\\\\src\\\\app\\\\features\\\\analytics\\\\analytics.component.scss\")",
+      "Bash(del \"c:\\\\Work\\\\job-application-automation\\\\job-application-automation\\\\frontend\\\\src\\\\app\\\\features\\\\top-matches\\\\top-matches.component.html\")",
+      "Bash(del \"c:\\\\Work\\\\job-application-automation\\\\job-application-automation\\\\frontend\\\\src\\\\app\\\\features\\\\top-matches\\\\top-matches.component.scss\")",
+      "Bash(\"c:\\\\Work\\\\job-application-automation\\\\job-application-automation\\\\.env\" << 'ENVEOF'\n# ============================================\n# DATABASE CONFIGURATION\n# ============================================\nMONGODB_URI=mongodb://localhost:27017/job-automation\n\n# ============================================\n# API SERVER CONFIGURATION\n# ============================================\nPORT=3000\nNODE_ENV=development\nAPI_VERSION=v1\nJWT_SECRET=job-automation-secret-key-2024-change-in-production\nJWT_EXPIRES_IN=7d\nCORS_ORIGIN=http://localhost:4200\n\n# ============================================\n# JOB API INTEGRATIONS\n# ============================================\n\n# JSearch \\(RapidAPI\\)\nJSEARCH_API_KEY=3bd3858de1mshe6b4218320aebecp1e1779jsn35743e867938\nJSEARCH_API_HOST=jsearch.p.rapidapi.com\n\n# ============================================\n# JOB FETCHER CONFIGURATION\n# ============================================\nFETCH_MAX_PAGES=2\nJOB_KEYWORDS=MERN Stack,Full Stack Developer,Node.js Developer,React Developer,Angular Developer\nJOB_LOCATIONS=Remote,New York,San Francisco\n\n# ============================================\n# LOGGING\n# ============================================\nLOG_LEVEL=info\nENVEOF)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 81896 /F\")",
+      "Bash(powershell -Command:*)"
     ],
     "additionalDirectories": [
       "c:\\Work\\job-application-automation\\job-application-automation"

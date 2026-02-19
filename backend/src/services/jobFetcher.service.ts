@@ -174,6 +174,113 @@ async function upsertJob(jobData: Partial<IJob>): Promise<'new' | 'updated'> {
   }
 }
 
+// Internet search types
+export interface CompanyJobEntry {
+  id: string;
+  title: string;
+  location: string;
+  remote: boolean;
+  jobType: string;
+  experienceLevel: string;
+  applicationUrl: string;
+  salary?: { min?: number; max?: number; currency: string };
+  postedDate: Date;
+}
+
+export interface CompanyGroup {
+  company: string;
+  companyWebsite: string | null;
+  companyLogo: string | null;
+  jobCount: number;
+  jobs: CompanyJobEntry[];
+}
+
+export interface SearchFetchResult {
+  totalJobs: number;
+  newJobs: number;
+  updatedJobs: number;
+  companies: CompanyGroup[];
+}
+
+export async function searchAndFetchJobs(
+  query: string,
+  location?: string,
+  page: number = 1
+): Promise<SearchFetchResult> {
+  const fullQuery = location
+    ? (location.toLowerCase() === 'remote' ? `${query} remote` : `${query} in ${location}`)
+    : query;
+
+  logger.info(`Internet search: "${fullQuery}" (page ${page})`);
+
+  const rawJobs = await fetchFromJSearch(fullQuery, page);
+
+  const result: SearchFetchResult = {
+    totalJobs: rawJobs.length,
+    newJobs: 0,
+    updatedJobs: 0,
+    companies: []
+  };
+
+  const companyMap = new Map<string, {
+    website: string | null;
+    logo: string | null;
+    jobs: CompanyJobEntry[];
+  }>();
+
+  for (const rawJob of rawJobs) {
+    try {
+      const normalized = normalizeJSearchJob(rawJob);
+      const action = await upsertJob(normalized);
+      if (action === 'new') result.newJobs++;
+      else result.updatedJobs++;
+
+      // Find persisted document to get MongoDB _id
+      const persisted = await Job.findOne({
+        source: normalized.source,
+        sourceId: normalized.sourceId
+      });
+
+      const company = normalized.company || 'Unknown';
+      if (!companyMap.has(company)) {
+        companyMap.set(company, {
+          website: normalized.companyWebsite || null,
+          logo: normalized.companyLogo || null,
+          jobs: []
+        });
+      }
+
+      companyMap.get(company)!.jobs.push({
+        id: persisted ? persisted._id.toString() : normalized.sourceId!,
+        title: normalized.title!,
+        location: normalized.location!,
+        remote: normalized.remote || false,
+        jobType: normalized.jobType || 'full_time',
+        experienceLevel: normalized.experienceLevel || 'mid',
+        applicationUrl: normalized.applicationUrl!,
+        salary: normalized.salary,
+        postedDate: normalized.postedDate || new Date()
+      });
+    } catch (error: any) {
+      logger.error(`Error processing job ${rawJob.job_id}:`, error.message);
+    }
+  }
+
+  // Convert map to array, sorted by job count descending
+  result.companies = Array.from(companyMap.entries())
+    .map(([company, data]) => ({
+      company,
+      companyWebsite: data.website,
+      companyLogo: data.logo,
+      jobCount: data.jobs.length,
+      jobs: data.jobs
+    }))
+    .sort((a, b) => b.jobCount - a.jobCount);
+
+  logger.info(`Internet search complete: ${result.totalJobs} total, ${result.newJobs} new, ${result.companies.length} companies`);
+  return result;
+}
+
 export async function fetchJobs(): Promise<FetchResult> {
   const result: FetchResult = { newJobs: 0, updatedJobs: 0, errors: 0 };
 

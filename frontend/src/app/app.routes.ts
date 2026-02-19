@@ -43,8 +43,20 @@ export const routes: Routes = [
         loadChildren: () => import('./features/my-resumes/my-resumes.routes').then(m => m.MY_RESUMES_ROUTES)
       },
       {
+        path: 'notifications',
+        loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATION_ROUTES)
+      },
+      {
         path: 'profile',
         loadChildren: () => import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES)
+      },
+      {
+        path: 'settings',
+        loadChildren: () => import('./features/settings/settings.routes').then(m => m.SETTINGS_ROUTES)
+      },
+      {
+        path: 'docs',
+        loadChildren: () => import('./features/docs/docs.routes').then(m => m.DOCS_ROUTES)
       },
       {
         path: '',

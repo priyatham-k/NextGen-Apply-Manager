@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import { createServer } from 'http';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -7,6 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { connectDatabase } from './config/database';
 import { logger } from './config/logger';
+import { initializeSocket } from './config/socket';
 import errorHandler from './middleware/errorHandler';
 import notFoundHandler from './middleware/notFoundHandler';
 
@@ -17,11 +19,15 @@ import applicationRoutes from './routes/application.routes';
 import profileRoutes from './routes/profile.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import resumeGeneratorRoutes from './routes/resumeGenerator.routes';
+import notificationRoutes from './routes/notification.routes';
+import settingsRoutes from './routes/settings.routes';
+import resumeRoutes from './routes/resume.routes';
 
 // Load environment variables from root directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app: Express = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -51,6 +57,9 @@ app.use(`${API_PREFIX}/applications`, applicationRoutes);
 app.use(`${API_PREFIX}/profile`, profileRoutes);
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
 app.use(`${API_PREFIX}/resume-generator`, resumeGeneratorRoutes);
+app.use(`${API_PREFIX}/notifications`, notificationRoutes);
+app.use(`${API_PREFIX}/settings`, settingsRoutes);
+app.use(`${API_PREFIX}/resumes`, resumeRoutes);
 
 // Error handling
 app.use(notFoundHandler);
@@ -60,8 +69,11 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDatabase();
-    
-    app.listen(PORT, () => {
+
+    // Initialize Socket.IO
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       logger.info(`🚀 Server is running on port ${PORT}`);
       logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`🔗 API URL: http://localhost:${PORT}${API_PREFIX}`);
@@ -75,12 +87,14 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, closing server gracefully...');
+  httpServer.close();
   await mongoose.connection.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, closing server gracefully...');
+  httpServer.close();
   await mongoose.connection.close();
   process.exit(0);
 });

@@ -13,72 +13,88 @@
   <!-- Navigation -->
   <nav class="sidebar-nav">
     <ul class="nav-list">
+      <!-- Overview -->
+      <li class="nav-section-label">Overview</li>
       <li class="nav-item">
         <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-house-door nav-icon"></i>
+          <i class="bi bi-grid-1x2 nav-icon"></i>
           <span class="nav-text">Dashboard</span>
         </a>
       </li>
 
+      <!-- Discover & Apply -->
+      <li class="nav-section-label">Discover & Apply</li>
       <li class="nav-item">
         <a routerLink="/jobs" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-briefcase nav-icon"></i>
-          <span class="nav-text">Jobs</span>
-          <span class="badge badge-primary nav-badge">12</span>
+          <i class="bi bi-search nav-icon"></i>
+          <span class="nav-text">Job Search</span>
         </a>
       </li>
-
+      <li class="nav-item">
+        <a routerLink="/top-matches" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-stars nav-icon"></i>
+          <span class="nav-text">Top Matches</span>
+        </a>
+      </li>
       <li class="nav-item">
         <a routerLink="/applications" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-file-text nav-icon"></i>
+          <i class="bi bi-kanban nav-icon"></i>
           <span class="nav-text">Applications</span>
         </a>
       </li>
 
-      <li class="nav-item">
-        <a routerLink="/analytics" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-bar-chart nav-icon"></i>
-          <span class="nav-text">Analytics</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a routerLink="/resume-builder" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-file-earmark-text nav-icon"></i>
-          <span class="nav-text">Resume Builder</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a routerLink="/resume-score" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-star nav-icon"></i>
-          <span class="nav-text">Resume Score</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a routerLink="/top-matches" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
-          <i class="bi bi-trophy nav-icon"></i>
-          <span class="nav-text">Top Matching Jobs</span>
-        </a>
-      </li>
-
+      <!-- Preparation Tools -->
+      <li class="nav-section-label">Tools</li>
       <li class="nav-item">
         <a routerLink="/my-resumes" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
           <i class="bi bi-file-earmark-person nav-icon"></i>
           <span class="nav-text">My Resumes</span>
         </a>
       </li>
+      <li class="nav-item">
+        <a routerLink="/cover-letters" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-envelope-paper nav-icon"></i>
+          <span class="nav-text">Cover Letters</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/resume-builder" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-tools nav-icon"></i>
+          <span class="nav-text">Resume Builder</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/resume-score" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-speedometer2 nav-icon"></i>
+          <span class="nav-text">ATS Score</span>
+        </a>
+      </li>
+
+      <!-- Insights -->
+      <li class="nav-section-label">Insights</li>
+      <li class="nav-item">
+        <a routerLink="/analytics" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-graph-up nav-icon"></i>
+          <span class="nav-text">Analytics</span>
+        </a>
+      </li>
 
       <li class="nav-divider"></li>
 
+      <!-- Account -->
+      <li class="nav-item">
+        <a routerLink="/notifications" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
+          <i class="bi bi-bell nav-icon"></i>
+          <span class="nav-text">Notifications</span>
+          <span class="badge badge-primary nav-badge" [class.d-none]="unreadCount() === 0">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+        </a>
+      </li>
       <li class="nav-item">
         <a routerLink="/profile" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
           <i class="bi bi-person nav-icon"></i>
           <span class="nav-text">Profile</span>
         </a>
       </li>
-
       <li class="nav-item">
         <a routerLink="/settings" routerLinkActive="active" class="nav-link" (click)="onNavigate()">
           <i class="bi bi-gear nav-icon"></i>
@@ -93,7 +109,7 @@
     <div class="help-card">
       <i class="bi bi-question-circle help-icon"></i>
       <p class="help-text">Need help?</p>
-      <a href="#" class="help-link">Documentation</a>
+      <a routerLink="/docs" class="help-link" (click)="onNavigate()">Documentation</a>
     </div>
   </div>
 </aside>

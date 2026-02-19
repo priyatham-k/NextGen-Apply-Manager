@@ -1,0 +1,473 @@
+<div class="app-list-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">My Applications</h1>
+      <p class="page-subtitle">Track and manage your job applications</p>
+    </div>
+    <button class="btn-add" (click)="openAddModal()">
+      <i class="bi bi-plus-lg me-2"></i>
+      Add Application
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon total"><i class="bi bi-stack"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-label">Total</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon submitted"><i class="bi bi-send-check"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().submitted }}</span>
+        <span class="stat-label">Submitted</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon review"><i class="bi bi-eye"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().inReview }}</span>
+        <span class="stat-label">In Review</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon interview"><i class="bi bi-calendar-event"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().interview }}</span>
+        <span class="stat-label">Interviews</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon offer"><i class="bi bi-trophy"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().offers }}</span>
+        <span class="stat-label">Offers</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon rejected"><i class="bi bi-x-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats().rejected }}</span>
+        <span class="stat-label">Rejected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="filters-card">
+    <div class="search-row">
+      <div class="search-input-wrapper">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          placeholder="Search by company, position, or notes..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          (keyup.enter)="onSearch()"
+        />
+        @if (searchQuery()) {
+          <button class="clear-btn" (click)="searchQuery.set(''); onSearch()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        }
+        <button class="search-btn" (click)="onSearch()">Search</button>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Status</label>
+        <select
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="selectedStatus.set($event); onFilterChange()"
+        >
+          <option value="">All Statuses</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ formatStatus(status) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Submission Type</label>
+        <select
+          [ngModel]="selectedType()"
+          (ngModelChange)="selectedType.set($event); onFilterChange()"
+        >
+          <option value="">All Types</option>
+          @for (type of submissionTypes; track type) {
+            <option [value]="type">{{ formatType(type) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select
+          [ngModel]="sortBy()"
+          (ngModelChange)="onSortChange($event)"
+        >
+          <option value="appliedDate">Date Applied</option>
+          <option value="status">Status</option>
+          <option value="company">Company</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        @if (hasActiveFilters) {
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="bi bi-x-circle"></i>
+            Clear Filters
+          </button>
+        }
+        <button
+          class="sort-toggle"
+          (click)="sortOrder.set(sortOrder() === 'asc' ? 'desc' : 'asc'); loadApplications()"
+        >
+          <i class="bi" [class.bi-sort-down]="sortOrder() === 'desc'" [class.bi-sort-up]="sortOrder() === 'asc'"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p class="loading-text">Loading applications...</p>
+    </div>
+  } @else if (applications().length === 0) {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-inbox"></i>
+      </div>
+      <h4>No applications yet</h4>
+      <p>
+        @if (hasActiveFilters) {
+          No applications match your current filters. Try adjusting them.
+        } @else {
+          Start tracking your job applications by adding them manually or applying through jobs.
+        }
+      </p>
+      <div class="d-flex justify-content-center gap-2">
+        @if (hasActiveFilters) {
+          <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">Clear Filters</button>
+        }
+        <button class="btn-add" (click)="openAddModal()">
+          <i class="bi bi-plus-lg me-2"></i>Add Application
+        </button>
+      </div>
+    </div>
+  } @else {
+    <!-- Applications Table -->
+    <div class="table-wrapper">
+      <table class="app-table">
+        <thead>
+          <tr>
+            <th class="th-company" (click)="onSortChange('company')">
+              Company / Position
+              @if (sortBy() === 'company') {
+                <i class="bi" [class.bi-chevron-up]="sortOrder() === 'asc'" [class.bi-chevron-down]="sortOrder() === 'desc'"></i>
+              }
+            </th>
+            <th class="th-status" (click)="onSortChange('status')">
+              Status
+              @if (sortBy() === 'status') {
+                <i class="bi" [class.bi-chevron-up]="sortOrder() === 'asc'" [class.bi-chevron-down]="sortOrder() === 'desc'"></i>
+              }
+            </th>
+            <th class="th-type">Type</th>
+            <th class="th-date" (click)="onSortChange('appliedDate')">
+              Applied
+              @if (sortBy() === 'appliedDate') {
+                <i class="bi" [class.bi-chevron-up]="sortOrder() === 'asc'" [class.bi-chevron-down]="sortOrder() === 'desc'"></i>
+              }
+            </th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (app of applications(); track app.id) {
+            <tr class="app-row" [routerLink]="['/applications', app.id]">
+              <!-- Company & Position -->
+              <td class="td-company">
+                <div class="company-cell">
+                  <div class="company-avatar">
+                    @if (app.job?.companyLogo) {
+                      <img [src]="app.job!.companyLogo" [alt]="app.job?.company" />
+                    } @else {
+                      <i class="bi bi-building"></i>
+                    }
+                  </div>
+                  <div class="company-details">
+                    <span class="position-name">{{ app.job?.title || 'Unknown Position' }}</span>
+                    <span class="company-name">{{ app.job?.company || 'Unknown Company' }}</span>
+                    @if (app.job?.location) {
+                      <span class="company-location">
+                        <i class="bi bi-geo-alt"></i> {{ app.job!.location }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td class="td-status">
+                <div class="status-cell" (click)="$event.stopPropagation()">
+                  <select
+                    class="status-select {{ getStatusClass(app.status) }}"
+                    [ngModel]="app.status"
+                    (ngModelChange)="updateStatus(app, $event, $event)"
+                    (click)="$event.stopPropagation()"
+                  >
+                    @for (status of statuses; track status) {
+                      <option [value]="status">{{ formatStatus(status) }}</option>
+                    }
+                  </select>
+                </div>
+              </td>
+
+              <!-- Submission Type -->
+              <td class="td-type">
+                <span class="type-badge {{ app.submissionType }}">
+                  {{ formatType(app.submissionType) }}
+                </span>
+              </td>
+
+              <!-- Date Applied -->
+              <td class="td-date">
+                <span class="date-value">{{ formatDate(app.appliedDate) }}</span>
+                <span class="date-ago">{{ getTimeAgo(app.appliedDate) }}</span>
+              </td>
+
+              <!-- Actions -->
+              <td class="td-actions" (click)="$event.stopPropagation()">
+                <div class="actions-cell">
+                  @if (app.status === 'failed') {
+                    <button
+                      class="action-btn retry"
+                      title="Retry application"
+                      (click)="retryApplication(app, $event)"
+                    >
+                      <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                  }
+                  <a
+                    class="action-btn view"
+                    [routerLink]="['/applications', app.id]"
+                    title="View details"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <button
+                    class="action-btn delete"
+                    title="Delete application"
+                    (click)="confirmDelete(app, $event)"
+                  >
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Results & Pagination -->
+    <div class="table-footer">
+      <span class="results-count">
+        Showing <strong>{{ applications().length }}</strong> of <strong>{{ totalApplications() }}</strong> applications
+      </span>
+
+      @if (totalPages() > 1) {
+        <div class="pagination-wrapper">
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+
+          @for (page of getPageNumbers(); track page) {
+            <button
+              class="page-btn"
+              [class.active]="page === currentPage()"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Add Application Modal -->
+@if (showAddModal()) {
+  <div class="modal-overlay" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Application Manually</h3>
+        <button class="modal-close" (click)="closeAddModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Company <span class="required">*</span></label>
+            <input
+              type="text"
+              placeholder="e.g. Google"
+              [ngModel]="addForm().company"
+              (ngModelChange)="updateAddForm('company', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>Position <span class="required">*</span></label>
+            <input
+              type="text"
+              placeholder="e.g. Software Engineer"
+              [ngModel]="addForm().position"
+              (ngModelChange)="updateAddForm('position', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Location</label>
+            <input
+              type="text"
+              placeholder="e.g. San Francisco, CA"
+              [ngModel]="addForm().location"
+              (ngModelChange)="updateAddForm('location', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>Application URL</label>
+            <input
+              type="url"
+              placeholder="https://..."
+              [ngModel]="addForm().applicationUrl"
+              (ngModelChange)="updateAddForm('applicationUrl', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select
+              [ngModel]="addForm().status"
+              (ngModelChange)="updateAddForm('status', $event)"
+            >
+              @for (status of statuses; track status) {
+                <option [value]="status">{{ formatStatus(status) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date Applied</label>
+            <input
+              type="date"
+              [ngModel]="addForm().appliedDate"
+              (ngModelChange)="updateAddForm('appliedDate', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Notes</label>
+          <textarea
+            rows="3"
+            placeholder="Any additional notes about this application..."
+            [ngModel]="addForm().notes"
+            (ngModelChange)="updateAddForm('notes', $event)"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+        <button
+          class="btn-save"
+          (click)="submitManualApplication()"
+          [disabled]="saving() || !addForm().company || !addForm().position"
+        >
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Saving...
+          } @else {
+            <i class="bi bi-plus-lg me-2"></i>
+            Add Application
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirm()) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal-content modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header danger">
+        <h3>Delete Application</h3>
+        <button class="modal-close" (click)="cancelDelete()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delete-warning">
+          <div class="warning-icon">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <p>Are you sure you want to delete this application?</p>
+          @if (deleteTarget()) {
+            <p class="delete-detail">
+              <strong>{{ deleteTarget()?.job?.title }}</strong> at <strong>{{ deleteTarget()?.job?.company }}</strong>
+            </p>
+          }
+          <p class="text-muted small">This action cannot be undone.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button
+          class="btn-delete"
+          (click)="deleteApplication()"
+          [disabled]="deleting()"
+        >
+          @if (deleting()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Deleting...
+          } @else {
+            <i class="bi bi-trash3 me-2"></i>
+            Delete
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -99,7 +99,7 @@ export class RegisterComponent {
         email,
         password
       }));
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/profile'], { queryParams: { onboarding: 'true' } });
     } catch (err: any) {
       this.error.set(err.error?.message || 'Registration failed. Please try again.');
     } finally {

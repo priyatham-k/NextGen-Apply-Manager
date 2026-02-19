@@ -5,6 +5,41 @@
     <p class="page-subtitle">Manage your comprehensive professional profile</p>
   </div>
 
+  <!-- Resume Upload Banner -->
+  @if (showUploadBanner() && !loading()) {
+    <div class="resume-upload-banner"
+         [class.drag-over]="dragOver()"
+         [class.onboarding]="onboardingMode()"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onResumeDropped($event)">
+      <input #resumeInput type="file" class="d-none" accept=".pdf" (change)="onResumeSelected($event)" />
+      @if (parsingResume()) {
+        <div class="parsing-state">
+          <div class="spinner-border text-primary mb-3" style="width: 2.5rem; height: 2.5rem;" role="status">
+            <span class="visually-hidden">Parsing...</span>
+          </div>
+          <h5>Parsing your resume...</h5>
+          <p class="text-muted mb-0">Our AI is extracting your details. This may take a few seconds.</p>
+        </div>
+      } @else {
+        <div class="upload-icon mb-3">
+          <i class="bi bi-file-earmark-pdf"></i>
+        </div>
+        @if (onboardingMode()) {
+          <h4>Welcome! Upload your resume to get started</h4>
+          <p class="text-muted">Drop your PDF resume here and we'll auto-fill your entire profile using AI.</p>
+        } @else {
+          <h5>Upload your resume to auto-fill your profile</h5>
+          <p class="text-muted">Drop a PDF here or click to browse. Our AI will extract your details automatically.</p>
+        }
+        <button type="button" class="btn btn-primary btn-sm mt-1" (click)="resumeInput.click()">
+          <i class="bi bi-upload me-1"></i>Choose PDF
+        </button>
+      }
+    </div>
+  }
+
   @if (loading()) {
     <div class="text-center py-5">
       <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">

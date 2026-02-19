@@ -1,4 +1,4 @@
-<div class="card resume-preview">
+<div class="card resume-preview" [class.full-preview]="fullPreview()">
   <div class="card-body p-0">
     @switch (template()) {
       @case ('classic') {

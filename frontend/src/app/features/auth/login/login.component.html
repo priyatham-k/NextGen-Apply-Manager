@@ -1,157 +1,259 @@
-<div class="auth-container">
-  <div class="auth-card fade-in">
-    <!-- Logo/Header -->
-    <div class="text-center mb-4">
-      <div class="logo-circle">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+<div class="auth-wrapper">
+  <!-- Left Panel - Illustration -->
+  <div class="auth-left">
+    <div class="auth-left-content">
+      <!-- Animated SVG Illustration -->
+      <div class="illustration">
+        <svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Elements -->
+          <circle cx="250" cy="200" r="160" fill="rgba(255,255,255,0.05)" />
+          <circle cx="250" cy="200" r="120" fill="rgba(255,255,255,0.05)" />
+
+          <!-- Desk -->
+          <rect x="120" y="260" width="260" height="8" rx="4" fill="rgba(255,255,255,0.2)" />
+          <rect x="140" y="268" width="8" height="60" rx="2" fill="rgba(255,255,255,0.15)" />
+          <rect x="352" y="268" width="8" height="60" rx="2" fill="rgba(255,255,255,0.15)" />
+
+          <!-- Laptop -->
+          <rect x="160" y="200" width="180" height="60" rx="6" fill="rgba(255,255,255,0.25)" class="float-anim" />
+          <rect x="170" y="208" width="160" height="44" rx="3" fill="rgba(255,255,255,0.1)" />
+          <!-- Screen content - code lines -->
+          <rect x="180" y="218" width="60" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+          <rect x="180" y="228" width="100" height="4" rx="2" fill="#1DA1F2" opacity="0.6" />
+          <rect x="180" y="238" width="80" height="4" rx="2" fill="rgba(255,255,255,0.2)" />
+          <!-- Laptop base -->
+          <path d="M140 260 L160 260 L160 262 L340 262 L340 260 L360 260 L355 268 L145 268 Z" fill="rgba(255,255,255,0.2)" />
+
+          <!-- Resume/Document floating left -->
+          <g class="float-anim-slow" transform="translate(60, 120)">
+            <rect width="70" height="90" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" />
+            <rect x="10" y="12" width="50" height="5" rx="2" fill="rgba(255,255,255,0.3)" />
+            <rect x="10" y="23" width="40" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="30" width="45" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="37" width="35" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="48" width="50" height="5" rx="2" fill="#1DA1F2" opacity="0.4" />
+            <rect x="10" y="58" width="40" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="65" width="45" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="72" width="30" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+          </g>
+
+          <!-- Checkmark badge floating right -->
+          <g class="float-anim-delay" transform="translate(370, 100)">
+            <circle cx="30" cy="30" r="28" fill="rgba(34,197,94,0.25)" stroke="rgba(34,197,94,0.4)" stroke-width="2" />
+            <path d="M18 30 L26 38 L42 22" stroke="#22C55E" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+
+          <!-- Job cards floating -->
+          <g class="float-anim-delay2" transform="translate(340, 170)">
+            <rect width="90" height="55" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            <circle cx="18" cy="18" r="8" fill="rgba(29,161,242,0.3)" />
+            <rect x="32" y="12" width="45" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+            <rect x="32" y="20" width="35" height="3" rx="1.5" fill="rgba(255,255,255,0.15)" />
+            <rect x="10" y="34" width="25" height="12" rx="3" fill="rgba(29,161,242,0.25)" />
+            <rect x="40" y="34" width="25" height="12" rx="3" fill="rgba(34,197,94,0.2)" />
+          </g>
+
+          <!-- Briefcase icon top center -->
+          <g class="float-anim" transform="translate(220, 80)">
+            <rect x="5" y="12" width="50" height="38" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+            <path d="M20 12 V8 C20 5 23 3 27 3 L33 3 C37 3 40 5 40 8 V12" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+            <rect x="22" y="28" width="16" height="6" rx="2" fill="#1DA1F2" opacity="0.5" />
+          </g>
+
+          <!-- Decorative dots -->
+          <circle cx="100" cy="280" r="3" fill="rgba(255,255,255,0.15)" />
+          <circle cx="115" cy="290" r="2" fill="rgba(255,255,255,0.1)" />
+          <circle cx="400" cy="270" r="3" fill="rgba(255,255,255,0.15)" />
+          <circle cx="385" cy="285" r="2" fill="rgba(255,255,255,0.1)" />
+          <circle cx="80" cy="180" r="2" fill="rgba(255,255,255,0.1)" />
+          <circle cx="420" cy="250" r="2" fill="rgba(255,255,255,0.1)" />
         </svg>
       </div>
-      <h2 class="auth-title">Welcome Back</h2>
-      <p class="auth-subtitle">Sign in to your account to continue</p>
-    </div>
 
-    <!-- Error Alert -->
-    @if (error()) {
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {{ error() }}
-        <button type="button" class="btn-close" (click)="error.set('')"></button>
-      </div>
-    }
-
-    <!-- Login Form -->
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <!-- Email Field -->
-      <div class="mb-3">
-        <label for="email" class="form-label">Email Address</label>
-        <div class="input-group">
-          <span class="input-group-text">
+      <!-- Text Content -->
+      <div class="auth-left-text">
+        <h1>Job Application Automation</h1>
+        <p>Streamline your job search. Track applications, discover opportunities, and land your dream job faster.</p>
+        <div class="features-list">
+          <div class="feature-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          </span>
-          <input
-            type="email"
-            id="email"
-            class="form-control"
-            formControlName="email"
-            placeholder="you@example.com"
-            [class.is-invalid]="email?.invalid && email?.touched"
-          />
-        </div>
-        @if (email?.invalid && email?.touched) {
-          <div class="invalid-feedback d-block">
-            @if (email?.errors?.['required']) {
-              Email is required
-            }
-            @if (email?.errors?.['email']) {
-              Please enter a valid email
-            }
+            <span>Smart Job Search</span>
           </div>
-        }
-      </div>
-
-      <!-- Password Field -->
-      <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <div class="input-group">
-          <span class="input-group-text">
+          <div class="feature-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
-          </span>
-          <input
-            [type]="showPassword() ? 'text' : 'password'"
-            id="password"
-            class="form-control"
-            formControlName="password"
-            placeholder="Enter your password"
-            [class.is-invalid]="password?.invalid && password?.touched"
-          />
-          <button
-            type="button"
-            class="input-group-text btn-password-toggle"
-            (click)="togglePasswordVisibility()"
-          >
-            @if (showPassword()) {
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-              </svg>
-            } @else {
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            }
-          </button>
-        </div>
-        @if (password?.invalid && password?.touched) {
-          <div class="invalid-feedback d-block">
-            @if (password?.errors?.['required']) {
-              Password is required
-            }
-            @if (password?.errors?.['minlength']) {
-              Password must be at least 6 characters
-            }
+            <span>Application Tracking</span>
           </div>
-        }
-      </div>
-
-      <!-- Remember Me & Forgot Password -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="form-check">
-          <input
-            type="checkbox"
-            class="form-check-input"
-            id="rememberMe"
-            formControlName="rememberMe"
-          />
-          <label class="form-check-label" for="rememberMe">
-            Remember me
-          </label>
+          <div class="feature-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Resume Builder</span>
+          </div>
         </div>
-        <a href="#" class="text-primary forgot-password">Forgot password?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel - Login Form -->
+  <div class="auth-right">
+    <div class="auth-form-wrapper fade-in">
+      <!-- Logo/Header -->
+      <div class="text-center mb-4">
+        <div class="logo-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to your account to continue</p>
       </div>
 
-      <!-- Submit Button -->
-      <button
-        type="submit"
-        class="btn btn-primary w-100 btn-lg"
-        [disabled]="loading()"
-      >
-        @if (loading()) {
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          Signing in...
-        } @else {
-          Sign In
-        }
-      </button>
-    </form>
+      <!-- Error Alert -->
+      @if (error()) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ error() }}
+          <button type="button" class="btn-close" (click)="error.set('')"></button>
+        </div>
+      }
 
-    <!-- Divider -->
-    <div class="divider">
-      <span>or</span>
-    </div>
+      <!-- Login Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Email Field -->
+        <div class="mb-3">
+          <label for="email" class="form-label">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            </span>
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              formControlName="email"
+              placeholder="you@example.com"
+              [class.is-invalid]="email?.invalid && email?.touched"
+            />
+          </div>
+          @if (email?.invalid && email?.touched) {
+            <div class="invalid-feedback d-block">
+              @if (email?.errors?.['required']) {
+                Email is required
+              }
+              @if (email?.errors?.['email']) {
+                Please enter a valid email
+              }
+            </div>
+          }
+        </div>
 
-    <!-- Social Login -->
-    <div class="social-login">
-      <button type="button" class="btn btn-outline-secondary w-100 mb-2">
-        <span>Continue with Google</span>
-      </button>
-      <button type="button" class="btn btn-outline-secondary w-100">
-        <span>Continue with GitHub</span>
-      </button>
-    </div>
+        <!-- Password Field -->
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              id="password"
+              class="form-control"
+              formControlName="password"
+              placeholder="Enter your password"
+              [class.is-invalid]="password?.invalid && password?.touched"
+            />
+            <button
+              type="button"
+              class="input-group-text btn-password-toggle"
+              (click)="togglePasswordVisibility()"
+            >
+              @if (showPassword()) {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              }
+            </button>
+          </div>
+          @if (password?.invalid && password?.touched) {
+            <div class="invalid-feedback d-block">
+              @if (password?.errors?.['required']) {
+                Password is required
+              }
+              @if (password?.errors?.['minlength']) {
+                Password must be at least 6 characters
+              }
+            </div>
+          }
+        </div>
 
-    <!-- Sign Up Link -->
-    <div class="text-center mt-4">
-      <p class="mb-0 text-muted">
-        Don't have an account?
-        <a routerLink="/auth/register" class="fw-bold">Sign up</a>
-      </p>
+        <!-- Remember Me & Forgot Password -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="rememberMe"
+              formControlName="rememberMe"
+            />
+            <label class="form-check-label" for="rememberMe">
+              Remember me
+            </label>
+          </div>
+          <a routerLink="/auth/forgot-password" class="text-primary forgot-password">Forgot password?</a>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn btn-primary w-100 btn-lg"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Signing in...
+          } @else {
+            Sign In
+          }
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div class="divider">
+        <span>or</span>
+      </div>
+
+      <!-- Social Login -->
+      <div class="social-login">
+        <button type="button" class="btn btn-outline-secondary w-100 mb-2">
+          <span>Continue with Google</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary w-100">
+          <span>Continue with GitHub</span>
+        </button>
+      </div>
+
+      <!-- Sign Up Link -->
+      <div class="text-center mt-4">
+        <p class="mb-0 text-muted">
+          Don't have an account?
+          <a routerLink="/auth/register" class="fw-bold">Sign up</a>
+        </p>
+      </div>
     </div>
   </div>
 </div>

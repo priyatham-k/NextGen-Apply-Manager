@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <!-- Magnifying glass -->
+  <circle cx="14" cy="14" r="5.5" fill="none" stroke="#fff" stroke-width="2"/>
+  <line x1="18" y1="18" x2="23" y2="23" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <!-- Document inside lens -->
+  <rect x="12" y="11.5" width="4" height="5" rx="0.5" fill="none" stroke="#fff" stroke-width="0.8"/>
+  <line x1="13" y1="13.5" x2="15" y2="13.5" stroke="#fff" stroke-width="0.6"/>
+  <line x1="13" y1="14.8" x2="15" y2="14.8" stroke="#fff" stroke-width="0.6"/>
+</svg>

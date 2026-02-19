@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { Application, ApplicationStatus } from '../models/Application.model';
+import { NotificationType } from '../models/Notification.model';
+import { createNotification } from '../services/notification.service';
 import { logger } from '../config/logger';
 
 // GET /api/v1/applications
@@ -145,13 +147,26 @@ export const createApplication = async (req: Request, res: Response): Promise<vo
       return;
     }
 
+    const userId = req.user?.userId;
+
     const application = await Application.create({
-      userId: req.user?.userId,
+      userId,
       jobId,
       resumeId,
       coverLetterId,
       status: ApplicationStatus.PENDING
     });
+
+    // Send notification (non-blocking)
+    if (userId) {
+      createNotification(
+        userId,
+        NotificationType.APPLICATION_SUBMITTED,
+        'Application Submitted',
+        'Your application has been submitted successfully',
+        { applicationId: application._id.toString() }
+      ).catch(err => logger.error('Notification error:', err));
+    }
 
     res.status(201).json({
       success: true,
@@ -191,8 +206,10 @@ export const updateApplicationStatus = async (req: Request, res: Response): Prom
     const update: Record<string, any> = { status };
     if (notes !== undefined) update.notes = notes;
 
+    const userId = req.user?.userId;
+
     const application = await Application.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user?.userId },
+      { _id: req.params.id, userId },
       { $set: update },
       { new: true }
     );
@@ -203,6 +220,18 @@ export const updateApplicationStatus = async (req: Request, res: Response): Prom
         message: 'Application not found'
       });
       return;
+    }
+
+    // Send notification (non-blocking)
+    if (userId) {
+      const statusLabel = status.replace(/_/g, ' ');
+      createNotification(
+        userId,
+        NotificationType.APPLICATION_STATUS_CHANGED,
+        'Application Status Updated',
+        `Your application status changed to ${statusLabel}`,
+        { applicationId: application._id.toString() }
+      ).catch(err => logger.error('Notification error:', err));
     }
 
     res.status(200).json({

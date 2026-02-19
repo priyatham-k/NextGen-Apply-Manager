@@ -47,3 +47,40 @@ export const upload = multer({
 
 // Export upload directory path for use in controllers
 export const profilePicturesDir = uploadDir;
+
+// ─── Document Upload (PDF resumes) ───────────────────────────
+const resumeUploadDir = path.join(__dirname, '../../uploads/resumes');
+
+if (!fs.existsSync(resumeUploadDir)) {
+  fs.mkdirSync(resumeUploadDir, { recursive: true });
+  logger.info(`Created resume upload directory: ${resumeUploadDir}`);
+}
+
+const documentStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, resumeUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const userId = req.user?.userId || 'unknown';
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${userId}-${timestamp}${ext}`);
+  }
+});
+
+const documentFileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedTypes = ['application/pdf'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF files are allowed.'));
+  }
+};
+
+export const documentUpload = multer({
+  storage: documentStorage,
+  fileFilter: documentFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB max
+  }
+});

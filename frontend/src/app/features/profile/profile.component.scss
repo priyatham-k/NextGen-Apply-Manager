@@ -1,39 +1,110 @@
-@import '../../../assets/styles/variables';
+@import 'assets/styles/variables';
 
 .profile-container {
-  padding: 2rem;
+  padding: 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
 
-  @media (max-width: 767.98px) {
-    padding: 1rem;
-  }
+  @media (max-width: 767.98px) { padding: 1rem; }
 }
 
 .page-header {
+  margin-bottom: 1.5rem;
+
   .page-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: $text;
-    margin-bottom: 0.5rem;
+    color: $dark-base;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
   }
 
   .page-subtitle {
     color: $muted;
-    font-size: 1rem;
+    font-size: $font-size-sm;
     margin-bottom: 0;
   }
 }
 
+// Resume Upload Banner
+.resume-upload-banner {
+  border: 2px dashed #cbd5e1;
+  border-radius: $border-radius-xl;
+  padding: 2rem;
+  text-align: center;
+  background: rgba($primary, 0.02);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+
+  &:hover {
+    border-color: lighten($primary, 10%);
+    background: rgba($primary, 0.04);
+  }
+
+  &.drag-over {
+    border-color: $primary;
+    background: rgba($primary, 0.06);
+    transform: scale(1.005);
+  }
+
+  &.onboarding {
+    padding: 3rem 2rem;
+    border-color: lighten($primary, 20%);
+    background: rgba($primary, 0.03);
+
+    h4 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: $dark-base;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .upload-icon {
+    i {
+      font-size: 2.5rem;
+      color: $primary;
+      opacity: 0.7;
+    }
+  }
+
+  h5 {
+    font-weight: 600;
+    color: $dark-base;
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    max-width: 500px;
+    margin: 0 auto 0.5rem;
+  }
+
+  .parsing-state {
+    padding: 1rem 0;
+
+    h5 {
+      color: $primary;
+    }
+  }
+}
+
+// Cards
 .card {
-  border: 1px solid #e5e7eb;
-  border-radius: $border-radius-lg;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: $border-radius-xl;
+  box-shadow: none;
+
+  .card-body { padding: 1.25rem; }
 
   .card-title {
-    font-size: 1rem;
+    font-size: $font-size-sm;
     font-weight: 600;
-    color: $text;
+    color: $dark-base;
   }
 }
 
@@ -41,41 +112,45 @@
 .profile-picture-card {
   .profile-picture-wrapper {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     margin: 0 auto;
   }
 
   .profile-picture,
   .profile-picture-placeholder {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid $background;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   }
 
   .profile-picture-placeholder {
-    background: linear-gradient(135deg, $primary 0%, lighten($primary, 10%) 100%);
+    background: linear-gradient(135deg, $primary, darken($primary, 12%));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    i { font-size: 48px; }
+    color: #fff;
+    i { font-size: 2.5rem; }
   }
 
   .picture-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+  }
+
+  .profile-picture-wrapper:hover .picture-overlay {
+    opacity: 1;
   }
 }
 
@@ -83,7 +158,7 @@
 .account-info-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .info-item {
@@ -91,140 +166,142 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  background-color: $background;
+  background: $background;
   border-radius: $border-radius;
 
   .info-label {
-    font-size: 0.8rem;
+    font-size: $font-size-xs;
     color: $muted;
     font-weight: 500;
   }
 
   .info-value {
-    font-size: 0.8rem;
-    color: $text;
+    font-size: $font-size-xs;
+    color: $dark-base;
     font-weight: 600;
   }
 }
 
 // Progress bar
 .progress {
-  background-color: #e9ecef;
+  background: #f1f5f9;
   border-radius: $border-radius;
+  height: 6px;
+  overflow: hidden;
 
   .progress-bar {
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: $font-size-xs;
     transition: width 0.5s ease;
+    border-radius: $border-radius;
   }
 }
 
 // Tab Navigation
 .profile-tabs {
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #f1f5f9;
   overflow-x: auto;
   flex-wrap: nowrap;
   -webkit-overflow-scrolling: touch;
+  gap: 0;
 
-  &::-webkit-scrollbar {
-    height: 0;
-  }
+  &::-webkit-scrollbar { height: 0; }
 
-  .nav-item {
-    white-space: nowrap;
-  }
+  .nav-item { white-space: nowrap; }
 
   .nav-link {
     border: none;
     color: $muted;
     font-weight: 500;
-    padding: 0.875rem 1rem;
-    font-size: 0.875rem;
-    transition: color 0.2s, border-color 0.2s;
-    border-bottom: 3px solid transparent;
+    padding: 0.75rem 0.875rem;
+    font-size: $font-size-xs;
+    transition: all 0.15s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: 0;
+    background: transparent;
 
     &:hover {
       color: $primary;
-      background-color: transparent;
+      background: transparent;
     }
 
     &.active {
       color: $primary;
-      background-color: transparent;
+      background: transparent;
       border-bottom-color: $primary;
+      font-weight: 600;
     }
   }
 }
 
 // Tab Content
 .tab-content {
-  min-height: 400px;
+  min-height: 300px;
 }
 
-// Array item cards (skills, experiences, etc.)
+// Array item cards
 .array-item-card {
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-left: 3px solid $primary;
   border-radius: $border-radius;
-  background-color: #fafbfc;
+  background: #fafbfc;
+  transition: border-color 0.15s ease;
+
+  &:hover { border-left-color: darken($primary, 10%); }
 }
 
-// Section blocks (inside Additional tab)
+// Section blocks
 .section-block {
   padding-bottom: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-of-type {
-    border-bottom: none;
-  }
+  border-bottom: 1px solid #f1f5f9;
+  &:last-of-type { border-bottom: none; }
 }
 
 // Form styles
 form {
   .form-label {
-    font-weight: 500;
+    font-weight: 600;
     color: $text;
     margin-bottom: 0.375rem;
-    font-size: 0.8rem;
+    font-size: $font-size-xs;
   }
 
   .form-control,
   .form-select {
+    font-size: $font-size-sm;
+    border-color: #e2e8f0;
+
     &:focus {
       border-color: $primary;
-      box-shadow: 0 0 0 0.15rem rgba($primary, 0.15);
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
     }
   }
 }
 
+// Buttons
+.btn-sm {
+  font-size: $font-size-xs;
+  padding: 0.375rem 0.75rem;
+  border-radius: $border-radius;
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 // Responsive
 @media (max-width: 991.98px) {
-  .profile-container {
-    padding: 1.5rem;
-  }
-
-  .page-header .page-title {
-    font-size: 1.75rem;
-  }
-
-  .profile-tabs .nav-link {
-    padding: 0.75rem 0.75rem;
-    font-size: 0.8rem;
-  }
+  .profile-container { padding: 1.25rem; }
+  .page-header .page-title { font-size: 1.5rem; }
+  .profile-tabs .nav-link { padding: 0.625rem 0.625rem; }
 }
 
 @media (max-width: 767.98px) {
-  .page-header .page-title {
-    font-size: 1.5rem;
-  }
-
-  .tab-icon {
-    display: none;
-  }
-
-  .profile-tabs .nav-link {
-    padding: 0.625rem 0.5rem;
-    font-size: 0.75rem;
-  }
+  .page-header .page-title { font-size: 1.25rem; }
+  .tab-icon { display: none; }
+  .profile-tabs .nav-link { padding: 0.5rem 0.5rem; font-size: 0.7rem; }
 }

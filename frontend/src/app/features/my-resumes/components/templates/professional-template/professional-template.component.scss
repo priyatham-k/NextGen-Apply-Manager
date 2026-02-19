@@ -1,4 +1,4 @@
-@import '../../../../../../assets/styles/variables';
+@import 'assets/styles/variables';
 
 $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 
@@ -7,7 +7,7 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 .prof-resume {
   padding: $spacing-6;
   background: white;
-  border-top: 4px solid $dark-base;
+  border-top: 4px solid #9ca3af;
 }
 
 // Header
@@ -29,13 +29,13 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
   font-family: $font-family-serif;
   font-size: $font-size-4xl;
   font-weight: $font-weight-bold;
-  color: $dark-base;
+  color: #374151;
   margin-bottom: $spacing-2;
   line-height: $line-height-tight;
 }
 
 .prof-tagline {
-  color: $muted;
+  color: #6b7280;
   font-size: $font-size-sm;
   line-height: $line-height-relaxed;
   margin-bottom: 0;
@@ -50,23 +50,23 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 .prof-contact-item {
   display: block;
   font-size: $font-size-sm;
-  color: $muted;
+  color: #6b7280;
   margin-bottom: $spacing-1;
   text-decoration: none;
 
   i {
-    color: $dark-base;
+    color: #6b7280;
     width: 16px;
     display: inline-block;
     text-align: center;
   }
 
-  &:hover { color: $text; }
+  &:hover { color: #374151; }
 }
 
 a.prof-contact-item {
-  color: $primary;
-  &:hover { color: $primary-dark; }
+  color: #6b7280;
+  &:hover { color: #374151; }
 }
 
 // Sections
@@ -78,8 +78,8 @@ a.prof-contact-item {
   font-family: $font-family-serif;
   font-size: $font-size-xl;
   font-weight: $font-weight-bold;
-  color: $dark-base;
-  border-bottom: 2px solid $dark-base;
+  color: #374151;
+  border-bottom: 2px solid #9ca3af;
   padding-bottom: $spacing-2;
   margin-bottom: $spacing-4;
 }
@@ -102,24 +102,24 @@ a.prof-contact-item {
   font-family: $font-family-serif;
   font-size: $font-size-lg;
   font-weight: $font-weight-bold;
-  color: $dark-base;
+  color: #374151;
   margin-bottom: 0;
 }
 
 .prof-item-position {
   font-size: $font-size-md;
-  color: $muted;
+  color: #6b7280;
   font-style: italic;
 }
 
 .prof-item-date {
   font-size: $font-size-sm;
-  color: $muted;
+  color: #6b7280;
   white-space: nowrap;
 }
 
 .prof-item-description {
-  color: $text;
+  color: #4b5563;
   line-height: $line-height-relaxed;
   font-size: $font-size-md;
   margin-bottom: 0;
@@ -134,13 +134,13 @@ a.prof-contact-item {
 
 .prof-skill-item {
   font-size: $font-size-sm;
-  color: $text;
+  color: #4b5563;
   padding-left: $spacing-3;
   position: relative;
 
   &::before {
     content: '\2022';
-    color: $dark-base;
+    color: #6b7280;
     font-weight: bold;
     position: absolute;
     left: 0;
@@ -151,6 +151,10 @@ a.prof-contact-item {
 @media print {
   .prof-resume { padding: 0; border-top-width: 3px; }
   .prof-name { font-size: $font-size-3xl; }
+  .prof-header { flex-direction: row !important; gap: $spacing-6 !important; }
+  .prof-header-right { text-align: right !important; }
+  .prof-item-header { flex-direction: row !important; gap: $spacing-4 !important; }
+  .prof-skills-grid { grid-template-columns: repeat(3, 1fr) !important; }
 }
 
 // Responsive

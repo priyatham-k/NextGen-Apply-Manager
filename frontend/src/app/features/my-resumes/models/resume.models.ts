@@ -19,6 +19,7 @@ export interface ResumeEducation {
 }
 
 export interface ResumeData {
+  _id?: string;
   title: string;
   template: ResumeTemplate;
   fullName: string;

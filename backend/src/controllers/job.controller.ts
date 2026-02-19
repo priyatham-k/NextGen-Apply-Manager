@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { Job, JobStatus } from '../models/Job.model';
-import { fetchJobs } from '../services/jobFetcher.service';
+import { NotificationType } from '../models/Notification.model';
+import { fetchJobs, searchAndFetchJobs } from '../services/jobFetcher.service';
+import { createNotification } from '../services/notification.service';
 import { logger } from '../config/logger';
 
 // GET /api/v1/jobs
@@ -181,6 +183,62 @@ export const triggerJobFetch = async (_req: Request, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       message: 'Server error during job fetch',
+      error: error.message
+    });
+  }
+};
+
+// POST /api/v1/jobs/search-internet
+export const searchInternetJobs = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { query, location, page } = req.body;
+
+    if (!query || typeof query !== 'string' || query.trim().length < 2) {
+      res.status(400).json({
+        success: false,
+        message: 'Search query is required (at least 2 characters)'
+      });
+      return;
+    }
+
+    const userId = req.user?.userId;
+
+    logger.info(`Internet job search: "${query}"${location ? ` in ${location}` : ''}`);
+
+    const result = await searchAndFetchJobs(query.trim(), location?.trim(), page || 1);
+
+    // Motivational notification when new jobs are found (non-blocking)
+    if (userId && result.totalJobs > 0) {
+      const messages = [
+        `Great news! We found ${result.totalJobs} jobs matching "${query}" from ${result.companies.length} companies. Don't wait - apply now!`,
+        `${result.totalJobs} opportunities are waiting for you! "${query}" search found matches from ${result.companies.length} companies. Go get them!`,
+        `Your job search for "${query}" uncovered ${result.totalJobs} positions. The perfect role could be right here - start applying!`
+      ];
+      const message = messages[Math.floor(Math.random() * messages.length)];
+
+      createNotification(
+        userId,
+        NotificationType.JOB_MATCH,
+        'New Jobs Found!',
+        message
+      ).catch(err => logger.error('Job match notification error:', err));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalJobs: result.totalJobs,
+        newJobs: result.newJobs,
+        updatedJobs: result.updatedJobs,
+        companies: result.companies
+      },
+      message: `Found ${result.totalJobs} jobs from ${result.companies.length} companies`
+    });
+  } catch (error: any) {
+    logger.error('Internet search error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during internet job search',
       error: error.message
     });
   }

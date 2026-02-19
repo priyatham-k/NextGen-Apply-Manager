@@ -5,7 +5,8 @@ import {
   getJobById,
   updateJobStatus,
   triggerJobFetch,
-  getJobStats
+  getJobStats,
+  searchInternetJobs
 } from '../controllers/job.controller';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.use(authMiddleware);
 // Static routes BEFORE parameterized routes
 router.get('/stats', getJobStats);
 router.post('/fetch', triggerJobFetch);
+router.post('/search-internet', searchInternetJobs);
 
 // Parameterized routes
 router.get('/', getJobs);

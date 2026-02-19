@@ -31,32 +31,47 @@ export class AuthService {
   // Using signals for reactive state
   private currentUserSignal = signal<User | null>(null);
   private tokenSignal = signal<string | null>(null);
-  
+  private rememberMe = false;
+
   // Computed signals
   isAuthenticated = computed(() => !!this.currentUserSignal() && !!this.tokenSignal());
   currentUser = this.currentUserSignal.asReadonly();
-  
+
   constructor() {
     this.loadFromStorage();
   }
-  
+
+  private get storage(): Storage {
+    return this.rememberMe ? localStorage : sessionStorage;
+  }
+
   private loadFromStorage(): void {
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('current_user');
-    
+    // Check localStorage first (remember me), then sessionStorage
+    let token = localStorage.getItem('auth_token');
+    let userStr = localStorage.getItem('current_user');
+
+    if (token && userStr) {
+      this.rememberMe = true;
+    } else {
+      token = sessionStorage.getItem('auth_token');
+      userStr = sessionStorage.getItem('current_user');
+      this.rememberMe = false;
+    }
+
     if (token && userStr) {
       this.tokenSignal.set(token);
       this.currentUserSignal.set(JSON.parse(userStr));
     }
   }
   
-  login(credentials: LoginCredentials): Observable<ApiResponse<AuthResponse>> {
+  login(credentials: LoginCredentials, rememberMe = false): Observable<ApiResponse<AuthResponse>> {
     return this.http.post<ApiResponse<AuthResponse>>(
       `${environment.apiUrl}/auth/login`,
       credentials
     ).pipe(
       tap(response => {
         if (response.success && response.data) {
+          this.rememberMe = rememberMe;
           this.setAuth(response.data);
         }
       })
@@ -81,6 +96,8 @@ export class AuthService {
     this.tokenSignal.set(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('current_user');
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('current_user');
     this.router.navigate(['/auth/login']);
   }
   
@@ -91,8 +108,13 @@ export class AuthService {
   private setAuth(authData: AuthResponse): void {
     this.tokenSignal.set(authData.token);
     this.currentUserSignal.set(authData.user);
-    localStorage.setItem('auth_token', authData.token);
-    localStorage.setItem('current_user', JSON.stringify(authData.user));
+    // Clear both storages first, then save to the correct one
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('current_user');
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('current_user');
+    this.storage.setItem('auth_token', authData.token);
+    this.storage.setItem('current_user', JSON.stringify(authData.user));
   }
   
   refreshToken(): Observable<ApiResponse<{ token: string }>> {
@@ -103,7 +125,7 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           this.tokenSignal.set(response.data.token);
-          localStorage.setItem('auth_token', response.data.token);
+          this.storage.setItem('auth_token', response.data.token);
         }
       })
     );
@@ -117,7 +139,7 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           this.currentUserSignal.set(response.data);
-          localStorage.setItem('current_user', JSON.stringify(response.data));
+          this.storage.setItem('current_user', JSON.stringify(response.data));
         }
       })
     );
@@ -134,7 +156,7 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           this.currentUserSignal.set(response.data);
-          localStorage.setItem('current_user', JSON.stringify(response.data));
+          this.storage.setItem('current_user', JSON.stringify(response.data));
         }
       })
     );
@@ -147,9 +169,23 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           this.currentUserSignal.set(response.data);
-          localStorage.setItem('current_user', JSON.stringify(response.data));
+          this.storage.setItem('current_user', JSON.stringify(response.data));
         }
       })
+    );
+  }
+
+  forgotPassword(email: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${environment.apiUrl}/auth/forgot-password`,
+      { email }
+    );
+  }
+
+  resetPassword(email: string, token: string, newPassword: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${environment.apiUrl}/auth/reset-password`,
+      { email, token, newPassword }
     );
   }
 }

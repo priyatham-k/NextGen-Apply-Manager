@@ -401,3 +401,86 @@ export interface DateRange {
   start: Date;
   end: Date;
 }
+
+// Internet Search Types (grouped by company)
+export interface CompanyJobEntry {
+  id: string;
+  title: string;
+  location: string;
+  remote: boolean;
+  jobType: string;
+  experienceLevel: string;
+  applicationUrl: string;
+  salary?: { min?: number; max?: number; currency: string };
+  postedDate: Date;
+}
+
+export interface CompanyJobGroup {
+  company: string;
+  companyWebsite: string | null;
+  companyLogo: string | null;
+  jobCount: number;
+  jobs: CompanyJobEntry[];
+}
+
+export interface InternetSearchResult {
+  totalJobs: number;
+  newJobs: number;
+  updatedJobs: number;
+  companies: CompanyJobGroup[];
+}
+
+// User Settings
+export interface UserSettings {
+  _id?: string;
+  notifications: {
+    emailNotifications: boolean;
+    applicationUpdates: boolean;
+    jobRecommendations: boolean;
+    systemNotifications: boolean;
+  };
+  jobPreferences: {
+    preferredJobTypes: string[];
+    preferredLocations: string[];
+    salaryMin?: number;
+    salaryCurrency: string;
+    willingToRelocate: boolean;
+  };
+  privacy: {
+    profileVisibility: 'public' | 'private';
+    showEmail: boolean;
+  };
+}
+
+// Analytics AI Insights
+export interface AnalyticsInsight {
+  type: 'positive' | 'warning' | 'tip';
+  title: string;
+  message: string;
+}
+
+export interface AnalyticsInsightsResponse {
+  insights: AnalyticsInsight[];
+  generatedAt: string;
+}
+
+// Notification Models
+export enum NotificationType {
+  APPLICATION_SUBMITTED = 'application_submitted',
+  APPLICATION_STATUS_CHANGED = 'application_status_changed',
+  JOB_MATCH = 'job_match',
+  SYSTEM = 'system'
+}
+
+export interface AppNotification {
+  _id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  data?: {
+    applicationId?: string;
+    jobId?: string;
+  };
+  createdAt: Date;
+}

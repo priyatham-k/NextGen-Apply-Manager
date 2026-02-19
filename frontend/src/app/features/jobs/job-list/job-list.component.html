@@ -1,13 +1,13 @@
 <div class="job-list-container">
   <!-- Page Header -->
-  <div class="page-header mb-4">
+  <div class="page-header">
     <div class="d-flex justify-content-between align-items-center">
       <div>
         <h1 class="page-title">Job Search</h1>
         <p class="page-subtitle">Browse and discover job opportunities</p>
       </div>
       <button
-        class="btn btn-primary"
+        class="btn-fetch"
         (click)="fetchNewJobs()"
         [disabled]="fetching()"
       >
@@ -23,247 +23,239 @@
   </div>
 
   <!-- Search & Filters -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <!-- Search Bar -->
-      <div class="row g-3">
-        <div class="col-12">
-          <div class="input-group input-group-lg">
-            <span class="input-group-text">
-              <i class="bi bi-search"></i>
-            </span>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Search jobs by title, company, or keywords..."
-              [ngModel]="searchQuery()"
-              (ngModelChange)="searchQuery.set($event)"
-              (keyup.enter)="onSearch()"
-            />
-            @if (searchQuery()) {
-              <button class="btn btn-outline-secondary" (click)="searchQuery.set(''); onSearch()">
-                <i class="bi bi-x-lg"></i>
-              </button>
-            }
-            <button class="btn btn-primary" (click)="onSearch()">Search</button>
-          </div>
-        </div>
+  <div class="filters-card">
+    <!-- Search Bar -->
+    <div class="search-input-wrapper">
+      <i class="bi bi-search search-icon"></i>
+      <input
+        type="text"
+        placeholder="Search jobs by title, company, or keywords..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        (keyup.enter)="onSearch()"
+      />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="searchQuery.set(''); onSearch()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      }
+      <button class="search-btn" (click)="onSearch()">
+        <i class="bi bi-search me-1"></i>Search
+      </button>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Job Type</label>
+        <select
+          [ngModel]="selectedJobType()"
+          (ngModelChange)="selectedJobType.set($event); onFilterChange()"
+        >
+          <option value="">All Types</option>
+          @for (type of jobTypes; track type) {
+            <option [value]="type">{{ formatJobType(type) }}</option>
+          }
+        </select>
       </div>
 
-      <!-- Filter Row -->
-      <div class="row g-3 mt-1">
-        <div class="col-md-3">
-          <label class="form-label small text-muted">Job Type</label>
-          <select
-            class="form-select"
-            [ngModel]="selectedJobType()"
-            (ngModelChange)="selectedJobType.set($event); onFilterChange()"
-          >
-            <option value="">All Types</option>
-            @for (type of jobTypes; track type) {
-              <option [value]="type">{{ formatJobType(type) }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label small text-muted">Experience Level</label>
-          <select
-            class="form-select"
-            [ngModel]="selectedExperience()"
-            (ngModelChange)="selectedExperience.set($event); onFilterChange()"
-          >
-            <option value="">All Levels</option>
-            @for (level of experienceLevels; track level) {
-              <option [value]="level">{{ formatJobType(level) }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label small text-muted">Sort By</label>
-          <select
-            class="form-select"
-            [ngModel]="sortBy()"
-            (ngModelChange)="onSortChange($event)"
-          >
-            <option value="postedDate">Date Posted</option>
-            <option value="matchScore">Match Score</option>
-            <option value="salary">Salary</option>
-            <option value="company">Company</option>
-          </select>
-        </div>
-
-        <div class="col-md-3 d-flex align-items-end gap-2">
-          <div class="form-check mt-2">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="remoteOnly"
-              [ngModel]="remoteOnly()"
-              (ngModelChange)="remoteOnly.set($event); onFilterChange()"
-            />
-            <label class="form-check-label" for="remoteOnly">Remote Only</label>
-          </div>
-
-          @if (hasActiveFilters) {
-            <button class="btn btn-sm btn-outline-secondary ms-auto" (click)="clearFilters()">
-              <i class="bi bi-x-circle me-1"></i>Clear
-            </button>
+      <div class="filter-group">
+        <label>Experience</label>
+        <select
+          [ngModel]="selectedExperience()"
+          (ngModelChange)="selectedExperience.set($event); onFilterChange()"
+        >
+          <option value="">All Levels</option>
+          @for (level of experienceLevels; track level) {
+            <option [value]="level">{{ formatJobType(level) }}</option>
           }
-        </div>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select
+          [ngModel]="sortBy()"
+          (ngModelChange)="onSortChange($event)"
+        >
+          <option value="postedDate">Date Posted</option>
+          <option value="matchScore">Match Score</option>
+          <option value="salary">Salary</option>
+          <option value="company">Company</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <label
+          class="remote-toggle"
+          [class.active]="remoteOnly()"
+        >
+          <input
+            type="checkbox"
+            [ngModel]="remoteOnly()"
+            (ngModelChange)="remoteOnly.set($event); onFilterChange()"
+          />
+          Remote
+        </label>
+
+        @if (hasActiveFilters) {
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="bi bi-x-circle"></i>
+            Clear
+          </button>
+        }
       </div>
     </div>
   </div>
 
-  <!-- Results Info -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="text-muted">
-      {{ totalJobs() }} job{{ totalJobs() !== 1 ? 's' : '' }} found
-    </span>
-    <div class="d-flex align-items-center gap-2">
+  <!-- Results -->
+  <div class="results-bar">
+      <span class="results-count">
+        <strong>{{ totalJobs() }}</strong> job{{ totalJobs() !== 1 ? 's' : '' }} found
+      </span>
       <button
-        class="btn btn-sm"
-        [class.btn-outline-primary]="sortOrder() === 'desc'"
-        [class.btn-outline-secondary]="sortOrder() !== 'desc'"
+        class="sort-toggle"
         (click)="sortOrder.set(sortOrder() === 'asc' ? 'desc' : 'asc'); loadJobs()"
         title="Toggle sort order"
       >
         <i class="bi" [class.bi-sort-down]="sortOrder() === 'desc'" [class.bi-sort-up]="sortOrder() === 'asc'"></i>
+        {{ sortOrder() === 'desc' ? 'Newest' : 'Oldest' }}
       </button>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  @if (loading()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading jobs...</p>
       </div>
-      <p class="text-muted mt-3">Loading jobs...</p>
-    </div>
-  } @else if (jobs().length === 0) {
-    <!-- Empty State -->
-    <div class="card">
-      <div class="card-body text-center py-5">
-        <i class="bi bi-briefcase empty-icon"></i>
-        <h4 class="mt-3">No jobs found</h4>
-        <p class="text-muted">
+    } @else if (jobs().length === 0) {
+      <!-- Empty State -->
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="bi bi-briefcase"></i>
+        </div>
+        <h4>No jobs found</h4>
+        <p>
           @if (hasActiveFilters) {
-            Try adjusting your filters or search terms.
+            Try adjusting your filters or search terms to find more opportunities.
           } @else {
-            Click "Fetch New Jobs" to pull the latest job listings.
+            Click "Fetch New Jobs" to pull the latest job listings from all sources.
           }
         </p>
-        <div class="d-flex justify-content-center gap-2 mt-3">
+        <div class="d-flex justify-content-center gap-2">
           @if (hasActiveFilters) {
-            <button class="btn btn-outline-primary" (click)="clearFilters()">
+            <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
               Clear Filters
             </button>
           }
-          <button class="btn btn-primary" (click)="fetchNewJobs()" [disabled]="fetching()">
+          <button class="btn-fetch" (click)="fetchNewJobs()" [disabled]="fetching()">
             <i class="bi bi-cloud-download me-2"></i>Fetch Jobs
           </button>
         </div>
       </div>
-    </div>
-  } @else {
-    <!-- Job Cards -->
-    <div class="job-cards">
-      @for (job of jobs(); track job.id) {
-        <div class="card job-card mb-3" [routerLink]="['/jobs', job.id]">
-          <div class="card-body">
-            <div class="row align-items-start">
-              <!-- Company Logo / Icon -->
-              <div class="col-auto">
-                @if (job.companyLogo) {
-                  <img [src]="job.companyLogo" [alt]="job.company" class="company-logo" />
-                } @else {
-                  <div class="company-logo-placeholder">
-                    <i class="bi bi-building"></i>
-                  </div>
-                }
-              </div>
+    } @else {
+      <!-- Job Cards -->
+      <div class="job-cards">
+        @for (job of jobs(); track job.id) {
+          <div class="job-card" [routerLink]="['/jobs', job.id]">
+            <div class="job-card-content">
+              <!-- Company Logo -->
+              @if (job.companyLogo) {
+                <img [src]="job.companyLogo" [alt]="job.company" class="company-logo" />
+              } @else {
+                <div class="company-logo-placeholder">
+                  <i class="bi bi-building"></i>
+                </div>
+              }
 
               <!-- Job Info -->
-              <div class="col">
-                <div class="d-flex justify-content-between align-items-start">
+              <div class="job-info">
+                <div class="job-header">
                   <div>
-                    <h5 class="job-title mb-1">{{ job.title }}</h5>
-                    <p class="company-name mb-1">{{ job.company }}</p>
-                    <div class="job-meta">
-                      <span class="me-3">
-                        <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
-                      </span>
-                      @if (job.remote) {
-                        <span class="badge bg-success-subtle text-success me-2">
-                          <i class="bi bi-wifi me-1"></i>Remote
-                        </span>
-                      }
-                      @if (formatSalary(job)) {
-                        <span class="me-3">
-                          <i class="bi bi-currency-dollar me-1"></i>{{ formatSalary(job) }}
-                        </span>
-                      }
-                    </div>
+                    <h5 class="job-title">{{ job.title }}</h5>
+                    <p class="company-name">{{ job.company }}</p>
                   </div>
 
                   <!-- Match Score -->
                   @if (job.matchScore) {
-                    <div class="match-score" [class.high]="job.matchScore >= 75" [class.medium]="job.matchScore >= 50 && job.matchScore < 75" [class.low]="job.matchScore < 50">
+                    <div class="match-score"
+                      [class.high]="job.matchScore >= 75"
+                      [class.medium]="job.matchScore >= 50 && job.matchScore < 75"
+                      [class.low]="job.matchScore < 50"
+                    >
                       {{ job.matchScore }}%
                     </div>
                   }
                 </div>
 
-                <!-- Tags -->
-                <div class="mt-2 d-flex flex-wrap gap-2">
-                  <span class="badge bg-light text-dark">{{ formatJobType(job.jobType) }}</span>
-                  <span class="badge bg-light text-dark">{{ formatJobType(job.experienceLevel) }}</span>
-                  <span class="badge" [ngClass]="{
-                    'bg-info-subtle text-info': job.status === 'new',
-                    'bg-primary-subtle text-primary': job.status === 'reviewed',
-                    'bg-success-subtle text-success': job.status === 'applied',
-                    'bg-warning-subtle text-warning': job.status === 'interview',
-                    'bg-danger-subtle text-danger': job.status === 'rejected',
-                    'bg-secondary-subtle text-secondary': job.status === 'expired'
-                  }">{{ job.status | titlecase }}</span>
+                <!-- Meta Info -->
+                <div class="job-meta">
+                  <span class="meta-item">
+                    <i class="bi bi-geo-alt"></i>
+                    {{ job.location }}
+                  </span>
+                  @if (job.remote) {
+                    <span class="remote-badge">Remote</span>
+                  }
+                  @if (formatSalary(job)) {
+                    <span class="meta-item salary">
+                      <i class="bi bi-currency-dollar"></i>
+                      {{ formatSalary(job) }}
+                    </span>
+                  }
                 </div>
 
-                <!-- Posted Date -->
-                <div class="text-muted small mt-2">
-                  <i class="bi bi-clock me-1"></i>{{ getTimeAgo(job.postedDate) }}
+                <!-- Tags -->
+                <div class="job-tags">
+                  <span class="tag tag-type">{{ formatJobType(job.jobType) }}</span>
+                  <span class="tag tag-level">{{ formatJobType(job.experienceLevel) }}</span>
+                  <span class="tag tag-status {{ job.status }}">{{ job.status | titlecase }}</span>
+                </div>
+
+                <!-- Footer -->
+                <div class="job-footer">
+                  <span class="posted-time">
+                    <i class="bi bi-clock"></i>
+                    {{ getTimeAgo(job.postedDate) }}
+                  </span>
+                  <span class="source-badge">via {{ job.source }}</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      }
-    </div>
+        }
+      </div>
 
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-      <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-          <li class="page-item" [class.disabled]="currentPage() === 1">
-            <a class="page-link" (click)="goToPage(currentPage() - 1)">
-              <i class="bi bi-chevron-left"></i>
-            </a>
-          </li>
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination-wrapper">
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
 
           @for (page of getPageNumbers(); track page) {
-            <li class="page-item" [class.active]="page === currentPage()">
-              <a class="page-link" (click)="goToPage(page)">{{ page }}</a>
-            </li>
+            <button
+              class="page-btn"
+              [class.active]="page === currentPage()"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
           }
 
-          <li class="page-item" [class.disabled]="currentPage() === totalPages()">
-            <a class="page-link" (click)="goToPage(currentPage() + 1)">
-              <i class="bi bi-chevron-right"></i>
-            </a>
-          </li>
-        </ul>
-      </nav>
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      }
     }
-  }
 </div>

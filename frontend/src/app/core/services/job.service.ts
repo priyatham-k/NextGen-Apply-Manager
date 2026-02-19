@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '@environments/environment';
-import { Job, JobFilters, PaginatedResponse, ApiResponse } from '@models/index';
+import { Job, JobFilters, PaginatedResponse, ApiResponse, InternetSearchResult } from '@models/index';
 
 @Injectable({
   providedIn: 'root'
@@ -95,5 +95,12 @@ export class JobService {
   
   getSimilarJobs(jobId: string): Observable<ApiResponse<Job[]>> {
     return this.http.get<ApiResponse<Job[]>>(`${environment.apiUrl}/jobs/${jobId}/similar`);
+  }
+
+  searchInternet(query: string, location?: string, page?: number): Observable<ApiResponse<InternetSearchResult>> {
+    return this.http.post<ApiResponse<InternetSearchResult>>(
+      `${environment.apiUrl}/jobs/search-internet`,
+      { query, location, page }
+    );
   }
 }

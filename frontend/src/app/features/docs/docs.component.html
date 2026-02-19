@@ -1,0 +1,252 @@
+<div class="docs-container">
+  <div class="docs-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="docs-sidebar">
+      <div class="sidebar-header">
+        <i class="bi bi-book"></i>
+        <span>Documentation</span>
+      </div>
+      <nav class="docs-nav">
+        @for (section of sections; track section.id) {
+          <a
+            class="docs-nav-link"
+            [class.active]="activeSection() === section.id"
+            (click)="setActiveSection(section.id)">
+            <i class="bi {{ section.icon }}"></i>
+            {{ section.title }}
+          </a>
+        }
+        <div class="nav-divider"></div>
+        <a class="docs-nav-link" [class.active]="activeSection() === 'ats-guide'" (click)="setActiveSection('ats-guide')">
+          <i class="bi bi-lightbulb"></i>
+          ATS Scoring Guide
+        </a>
+        <a class="docs-nav-link" [class.active]="activeSection() === 'quick-ref'" (click)="setActiveSection('quick-ref')">
+          <i class="bi bi-signpost-split"></i>
+          Quick Reference
+        </a>
+        <a class="docs-nav-link" [class.active]="activeSection() === 'faq'" (click)="setActiveSection('faq')">
+          <i class="bi bi-question-circle"></i>
+          FAQ
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="docs-content">
+      <!-- Hero Section -->
+      <div class="docs-hero">
+        <h1>How to Use Job Application Automation</h1>
+        <p>Your complete guide to streamlining your job search with AI-powered tools. From building ATS-optimized resumes to tracking every application — we've got you covered.</p>
+      </div>
+
+      <!-- Feature Sections -->
+      @for (section of sections; track section.id) {
+        <section class="docs-section" [id]="section.id">
+          <div class="section-header">
+            <div class="section-icon">
+              <i class="bi {{ section.icon }}"></i>
+            </div>
+            <div>
+              <h2>{{ section.title }}</h2>
+              <p class="section-description">{{ section.description }}</p>
+            </div>
+          </div>
+
+          <div class="steps-list">
+            @for (step of section.steps; track step.title; let i = $index) {
+              <div class="step-card">
+                <div class="step-number">{{ i + 1 }}</div>
+                <div class="step-content">
+                  <h4>{{ step.title }}</h4>
+                  <p>{{ step.detail }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (section.tips && section.tips.length > 0) {
+            <div class="tips-box">
+              <div class="tips-header">
+                <i class="bi bi-lightbulb"></i>
+                <span>Pro Tips</span>
+              </div>
+              <ul class="tips-list">
+                @for (tip of section.tips; track tip) {
+                  <li>{{ tip }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </section>
+      }
+
+      <!-- ATS Scoring Guide Section -->
+      <section class="docs-section" id="ats-guide">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="bi bi-lightbulb"></i>
+          </div>
+          <div>
+            <h2>ATS Scoring Guide</h2>
+            <p class="section-description">Understand how Applicant Tracking Systems evaluate your resume and what your score means.</p>
+          </div>
+        </div>
+
+        <div class="info-callout">
+          <div class="callout-icon">
+            <i class="bi bi-info-circle"></i>
+          </div>
+          <div class="callout-content">
+            <h4>What is an ATS?</h4>
+            <p>An Applicant Tracking System (ATS) is software used by over 97% of Fortune 500 companies to filter and rank resumes before a human ever sees them. If your resume isn't ATS-friendly, it may be automatically rejected — even if you're highly qualified.</p>
+          </div>
+        </div>
+
+        <h3 class="subsection-title">Score Ranges</h3>
+        <div class="score-grid">
+          @for (score of scoring; track score.grade) {
+            <div class="score-card">
+              <div class="score-grade" [style.background]="score.color">{{ score.grade }}</div>
+              <div class="score-details">
+                <div class="score-range">{{ score.range }}</div>
+                <div class="score-label">{{ score.label }}</div>
+                <p class="score-desc">{{ score.description }}</p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <h3 class="subsection-title">What We Analyze</h3>
+        <p class="subsection-desc">Our AI evaluates your resume across 6 critical categories:</p>
+        <div class="categories-grid">
+          @for (cat of atsCategories; track cat.name) {
+            <div class="category-card">
+              <i class="bi {{ cat.icon }} category-icon"></i>
+              <h4>{{ cat.name }}</h4>
+              <p>{{ cat.description }}</p>
+            </div>
+          }
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-header">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>Common ATS Mistakes to Avoid</span>
+          </div>
+          <ul class="tips-list">
+            <li><strong>Images & graphics</strong> — ATS cannot read logos, icons, headshots, or decorative elements.</li>
+            <li><strong>Headers & footers</strong> — Many ATS skip content in headers/footers. Put all key info in the body.</li>
+            <li><strong>Non-standard section titles</strong> — Use "Work Experience" not "My Journey". ATS look for standard headings.</li>
+            <li><strong>Multi-column layouts</strong> — Some ATS read left-to-right across columns, jumbling your content.</li>
+            <li><strong>Fancy fonts & colors</strong> — Stick to standard fonts (Arial, Calibri, Times New Roman) and black text.</li>
+            <li><strong>Missing keywords</strong> — Mirror the job description's exact terminology. "Project Management" ≠ "PM".</li>
+            <li><strong>PDF issues</strong> — Use text-based PDFs, not scanned images. Test by selecting all text (Ctrl+A) in your PDF.</li>
+          </ul>
+        </div>
+
+        <div class="workflow-box">
+          <h3 class="workflow-title"><i class="bi bi-arrow-repeat"></i> Recommended Workflow</h3>
+          <div class="workflow-steps">
+            <div class="workflow-step">
+              <div class="workflow-num">1</div>
+              <p><strong>Build</strong> your resume in the Resume Builder using a clean template.</p>
+            </div>
+            <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="workflow-step">
+              <div class="workflow-num">2</div>
+              <p><strong>Score</strong> it in Resume Score with the target job description.</p>
+            </div>
+            <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="workflow-step">
+              <div class="workflow-num">3</div>
+              <p><strong>Improve</strong> based on the category-by-category recommendations.</p>
+            </div>
+            <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+            <div class="workflow-step">
+              <div class="workflow-num">4</div>
+              <p><strong>Rescan</strong> until you hit 75+ then submit your application.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Reference Section -->
+      <section class="docs-section" id="quick-ref">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="bi bi-signpost-split"></i>
+          </div>
+          <div>
+            <h2>Quick Reference</h2>
+            <p class="section-description">All pages and what they do at a glance.</p>
+          </div>
+        </div>
+
+        <div class="ref-table">
+          <div class="ref-header-row">
+            <div class="ref-col-page">Page</div>
+            <div class="ref-col-desc">Description</div>
+          </div>
+          @for (item of shortcuts; track item.keys) {
+            <div class="ref-row">
+              <div class="ref-col-page">
+                <a [routerLink]="item.path">{{ item.keys }}</a>
+              </div>
+              <div class="ref-col-desc">{{ item.description }}</div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section class="docs-section" id="faq">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="bi bi-question-circle"></i>
+          </div>
+          <div>
+            <h2>Frequently Asked Questions</h2>
+            <p class="section-description">Quick answers to common questions.</p>
+          </div>
+        </div>
+
+        <div class="faq-list">
+          <div class="faq-item">
+            <h4>Is my data secure?</h4>
+            <p>Yes. All data is stored in MongoDB with encrypted connections. Authentication uses JWT tokens, and passwords are hashed with bcrypt. Your resumes and personal information are only accessible to you.</p>
+          </div>
+          <div class="faq-item">
+            <h4>How does the AI resume parsing work?</h4>
+            <p>When you upload a PDF resume, we extract the text using pdf-parse, then send it to Groq's LLaMA 3.3 70B model which intelligently identifies and structures your personal info, experience, education, and skills — filling your profile automatically.</p>
+          </div>
+          <div class="faq-item">
+            <h4>How accurate is the ATS score?</h4>
+            <p>Our AI analyzes your resume against the same criteria that real ATS systems use. While no tool can guarantee a perfect prediction (each ATS has its own algorithm), users who score 75+ consistently report higher interview callback rates. For best results, always include the target job description.</p>
+          </div>
+          <div class="faq-item">
+            <h4>Can I create multiple resumes?</h4>
+            <p>Absolutely. You can create and save as many resume versions as you need. We recommend maintaining 2-3 tailored versions for different job categories (e.g., one for frontend roles, one for full-stack roles).</p>
+          </div>
+          <div class="faq-item">
+            <h4>What file formats are supported for resume upload?</h4>
+            <p>Currently, we support <strong>PDF files only</strong> for both profile parsing and ATS scoring. PDF is the most universally accepted format by ATS systems and preserves your formatting.</p>
+          </div>
+          <div class="faq-item">
+            <h4>How does job matching work?</h4>
+            <p>The Top Matching Jobs feature compares your profile skills, experience, and preferences against job listings. Jobs are ranked by match percentage — the higher the score, the better the fit for your background.</p>
+          </div>
+          <div class="faq-item">
+            <h4>Do notifications work in real-time?</h4>
+            <p>Yes. Notifications are delivered via WebSocket (Socket.IO) connection, so you'll see alerts instantly when your application status changes or new matching jobs are found — no page refresh needed.</p>
+          </div>
+          <div class="faq-item">
+            <h4>What should I do if my ATS score is low?</h4>
+            <p>Focus on the lowest-scoring categories in your analysis report. Common quick wins: add missing keywords from the job description, use standard section headings, include quantifiable achievements, and ensure your formatting is ATS-parseable (no tables, graphics, or multi-column layouts).</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>

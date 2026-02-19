@@ -1,17 +1,33 @@
-@import '../../../../../assets/styles/variables';
+@import 'assets/styles/variables';
 
 .resume-preview {
   position: sticky;
   top: $spacing-8;
   max-height: calc(100vh - #{$spacing-16});
   overflow-y: auto;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
   border-radius: $border-radius-lg;
-  box-shadow: $shadow;
+  box-shadow: $shadow-md;
+  background: #f9fafb;
 
   .card-body {
     overflow: hidden;
     border-radius: $border-radius-lg;
+    background: white;
+    // Scale down for document preview look
+    zoom: 0.6;
+  }
+
+  // Full preview mode (when user clicks Preview button) — show full size with colors
+  &.full-preview {
+    position: static;
+    max-height: none;
+    max-width: 900px;
+    margin: 0 auto;
+
+    .card-body {
+      zoom: 1;
+    }
   }
 
   @media print {
@@ -20,6 +36,11 @@
     overflow-y: visible;
     box-shadow: none;
     border: none;
+    background: white;
+
+    .card-body {
+      zoom: 1;
+    }
   }
 
   @media (max-width: 991.98px) {

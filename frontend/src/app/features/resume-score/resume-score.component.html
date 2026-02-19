@@ -1,0 +1,270 @@
+<div class="resume-score-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Resume ATS Score</h1>
+      <p class="page-subtitle">Upload your resume and get an instant ATS compatibility analysis</p>
+    </div>
+    @if (hasResult()) {
+      <button class="btn-reset" (click)="resetAnalysis()">
+        <i class="bi bi-arrow-clockwise me-2"></i>
+        New Analysis
+      </button>
+    }
+  </div>
+
+  @if (!hasResult() && !analyzing()) {
+    <!-- Upload Section -->
+    <div class="upload-section">
+      <div class="upload-grid">
+        <!-- Upload Area -->
+        <div class="upload-card">
+          <h3 class="card-title"><i class="bi bi-cloud-arrow-up me-2"></i>Upload Resume</h3>
+
+          <div
+            class="drop-zone"
+            [class.drag-over]="dragOver()"
+            [class.has-file]="hasFile()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="!hasFile() && triggerFileInput()"
+          >
+            <input
+              #fileInput
+              type="file"
+              accept=".pdf"
+              (change)="onFileSelect($event)"
+              hidden
+            />
+
+            @if (!hasFile()) {
+              <div class="drop-content">
+                <div class="drop-icon">
+                  <i class="bi bi-file-earmark-arrow-up"></i>
+                </div>
+                <p class="drop-text">Drag & drop your resume here</p>
+                <p class="drop-subtext">or click to browse</p>
+                <div class="drop-formats">
+                  <span class="format-badge">PDF</span>
+                </div>
+                <p class="drop-limit">Max file size: 10MB</p>
+              </div>
+            } @else {
+              <div class="file-preview">
+                <div class="file-icon">
+                  <i class="bi bi-file-earmark-check"></i>
+                </div>
+                <div class="file-details">
+                  <span class="file-name">{{ fileName() }}</span>
+                  <span class="file-size">{{ fileSize() }}</span>
+                </div>
+                <button class="file-remove" (click)="removeFile(); $event.stopPropagation()">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Job Description (Optional) -->
+        <div class="jd-card">
+          <h3 class="card-title">
+            <i class="bi bi-file-text me-2"></i>Job Description
+            <span class="optional-badge">Optional</span>
+          </h3>
+          <p class="card-desc">Paste a job description for targeted keyword analysis</p>
+          <textarea
+            class="jd-textarea"
+            rows="8"
+            placeholder="Paste the job description here for a more accurate keyword analysis..."
+            [ngModel]="jobDescription()"
+            (ngModelChange)="jobDescription.set($event)"
+          ></textarea>
+          <div class="jd-footer">
+            <span class="char-count" [class.has-content]="jobDescription().length > 0">
+              {{ jobDescription().length }} characters
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analyze Button -->
+      <div class="analyze-action">
+        <button
+          class="btn-analyze"
+          [disabled]="!hasFile()"
+          (click)="analyzeResume()"
+        >
+          <i class="bi bi-lightning-charge me-2"></i>
+          Analyze Resume
+        </button>
+        <p class="analyze-hint">Free analysis with detailed ATS scoring and improvement tips</p>
+      </div>
+    </div>
+  }
+
+  @if (analyzing()) {
+    <!-- Analyzing Progress -->
+    <div class="analyzing-section">
+      <div class="analyzing-card">
+        <div class="analyzing-animation">
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring delay-1"></div>
+          <div class="pulse-ring delay-2"></div>
+          <div class="analyzing-icon">
+            <i class="bi bi-cpu"></i>
+          </div>
+        </div>
+        <h3>Analyzing Your Resume</h3>
+        <p class="analyzing-step">{{ progressText() }}</p>
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" [style.width.%]="progress()"></div>
+          </div>
+          <span class="progress-pct">{{ progress() }}%</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (hasResult() && !analyzing()) {
+    <!-- Results Section -->
+    <div class="results-section">
+      <!-- Score Overview -->
+      <div class="score-overview">
+        <div class="score-ring-card">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120" class="score-svg">
+              <circle cx="60" cy="60" r="54" class="score-bg" />
+              <circle
+                cx="60" cy="60" r="54"
+                class="score-progress"
+                [style.stroke]="result()!.gradeColor"
+                [style.stroke-dasharray]="339.292"
+                [style.stroke-dashoffset]="339.292 - (339.292 * animatedScore()) / 100"
+              />
+            </svg>
+            <div class="score-center">
+              <span class="score-number">{{ animatedScore() }}</span>
+              <span class="score-label">out of 100</span>
+            </div>
+          </div>
+          <div class="grade-badge" [style.background]="result()!.gradeColor">
+            {{ result()!.grade }}
+          </div>
+          <p class="score-summary">{{ result()!.summary }}</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          @for (cat of result()!.categories; track cat.name; let i = $index) {
+            <div class="quick-stat">
+              <div class="stat-header">
+                <span class="stat-name">
+                  <i class="bi {{ cat.icon }}"></i>
+                  {{ cat.name }}
+                </span>
+                <span class="stat-score" [style.color]="getScoreColor(cat.score)">
+                  {{ cat.score }}%
+                </span>
+              </div>
+              <div class="stat-bar">
+                <div
+                  class="stat-bar-fill"
+                  [style.width.%]="cat.score"
+                  [style.background]="getScoreColor(cat.score)"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Detailed Breakdown -->
+      <div class="breakdown-section">
+        <h3 class="section-title">
+          <i class="bi bi-bar-chart me-2"></i>
+          Detailed Breakdown
+        </h3>
+
+        <div class="category-cards">
+          @for (cat of result()!.categories; track cat.name; let i = $index) {
+            <div
+              class="category-card"
+              [class.expanded]="expandedCategory() === i"
+              (click)="toggleCategory(i)"
+            >
+              <div class="category-header">
+                <div class="category-left">
+                  <div class="category-icon" [style.background]="getScoreColor(cat.score) + '15'" [style.color]="getScoreColor(cat.score)">
+                    <i class="bi {{ cat.icon }}"></i>
+                  </div>
+                  <div class="category-info">
+                    <span class="category-name">{{ cat.name }}</span>
+                    <span class="category-feedback">{{ cat.feedback }}</span>
+                  </div>
+                </div>
+                <div class="category-right">
+                  <div class="category-score-badge" [style.background]="getScoreColor(cat.score) + '15'" [style.color]="getScoreColor(cat.score)">
+                    {{ cat.score }}%
+                    <span class="score-text">{{ getScoreLabel(cat.score) }}</span>
+                  </div>
+                  <i class="bi bi-chevron-down expand-icon"></i>
+                </div>
+              </div>
+
+              @if (expandedCategory() === i) {
+                <div class="category-details">
+                  <h4>Improvement Tips</h4>
+                  <ul class="tips-list">
+                    @for (tip of cat.tips; track tip) {
+                      <li>
+                        <i class="bi bi-lightbulb"></i>
+                        <span>{{ tip }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Keywords Section -->
+      <div class="keywords-section">
+        <h3 class="section-title">
+          <i class="bi bi-key me-2"></i>
+          Keyword Analysis
+        </h3>
+        <div class="keywords-grid">
+          <div class="keywords-card found">
+            <h4><i class="bi bi-check-circle me-2"></i>Keywords Found</h4>
+            <div class="keyword-tags">
+              @for (kw of result()!.keywords.found; track kw) {
+                <span class="keyword-tag found">{{ kw }}</span>
+              }
+            </div>
+          </div>
+          <div class="keywords-card missing">
+            <h4><i class="bi bi-exclamation-circle me-2"></i>Missing Keywords</h4>
+            <div class="keyword-tags">
+              @for (kw of result()!.keywords.missing; track kw) {
+                <span class="keyword-tag missing">{{ kw }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="results-actions">
+        <button class="btn-secondary" (click)="resetAnalysis()">
+          <i class="bi bi-arrow-clockwise me-2"></i>
+          Analyze Another Resume
+        </button>
+      </div>
+    </div>
+  }
+</div>

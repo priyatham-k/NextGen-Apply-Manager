@@ -7,6 +7,7 @@ import { ResumeTemplate, ResumeTemplateData } from './models';
 import { ResumeFormEditorComponent } from './components/resume-form-editor/resume-form-editor.component';
 import { TemplateSelectorComponent } from './components/template-selector/template-selector.component';
 import { ResumePreviewComponent } from './components/resume-preview/resume-preview.component';
+import { ResumeService } from '../../core/services/resume.service';
 
 @Component({
   selector: 'app-my-resumes',
@@ -24,6 +25,7 @@ import { ResumePreviewComponent } from './components/resume-preview/resume-previ
 export class MyResumesComponent {
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
+  private resumeService = inject(ResumeService);
 
   resumeForm: FormGroup;
   loading = signal(false);
@@ -131,22 +133,12 @@ export class MyResumesComponent {
   }
 
   togglePreview(): void {
-    if (this.resumeForm.invalid) {
-      this.toastr.error('Please fill all required fields', 'Form Invalid');
-      this.resumeForm.markAllAsTouched();
-      return;
-    }
     this.previewMode.set(!this.previewMode());
   }
 
   downloadResume(): void {
-    if (this.resumeForm.invalid) {
-      this.toastr.error('Please fill all required fields', 'Form Invalid');
-      this.resumeForm.markAllAsTouched();
-      return;
-    }
     this.previewMode.set(true);
-    setTimeout(() => { window.print(); }, 100);
+    setTimeout(() => { window.print(); }, 300);
   }
 
   saveResume(): void {
@@ -157,39 +149,43 @@ export class MyResumesComponent {
     }
 
     this.loading.set(true);
+    const resumeData = this.resumeForm.value;
 
-    try {
-      const resumeData = this.resumeForm.value;
-      const title = resumeData.title || 'My Resume';
+    // Find existing resume by current loaded title or matching title
+    const existingResume = this.savedResumes().find(
+      (r: any) => r._id && (r.title === this.currentResumeTitle() || r.title === resumeData.title)
+    );
 
-      const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-      const existingIndex = existingResumes.findIndex((r: any) => r.title === title);
+    const operation = existingResume?._id
+      ? this.resumeService.updateResume(existingResume._id, resumeData)
+      : this.resumeService.createResume(resumeData);
 
-      if (existingIndex >= 0) {
-        existingResumes[existingIndex] = { ...resumeData, updatedAt: new Date().toISOString() };
-        this.toastr.success('Resume updated successfully', 'Success');
-      } else {
-        existingResumes.push({
-          ...resumeData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-        this.toastr.success('Resume saved successfully', 'Success');
+    operation.subscribe({
+      next: (res) => {
+        if (res.success) {
+          const msg = existingResume?._id ? 'Resume updated successfully' : 'Resume saved successfully';
+          this.toastr.success(msg, 'Success');
+          this.currentResumeTitle.set(resumeData.title);
+          this.loadSavedResumesList();
+        }
+        this.loading.set(false);
+      },
+      error: (err) => {
+        const message = err.error?.message || 'Failed to save resume';
+        this.toastr.error(message, 'Error');
+        this.loading.set(false);
       }
-
-      localStorage.setItem('savedResumes', JSON.stringify(existingResumes));
-      this.currentResumeTitle.set(title);
-      this.loadSavedResumesList();
-    } catch (error) {
-      this.toastr.error('Failed to save resume', 'Error');
-    } finally {
-      this.loading.set(false);
-    }
+    });
   }
 
   loadSavedResumesList(): void {
-    const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-    this.savedResumes.set(savedResumes);
+    this.resumeService.loadResumes().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.savedResumes.set(res.data || []);
+        }
+      }
+    });
   }
 
   loadResume(resume: any): void {
@@ -225,15 +221,23 @@ export class MyResumesComponent {
   deleteResume(title: string): void {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
 
-    const existingResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-    const updatedResumes = existingResumes.filter((r: any) => r.title !== title);
-    localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
-    this.loadSavedResumesList();
-    this.toastr.success('Resume deleted successfully', 'Success');
+    const resume = this.savedResumes().find((r: any) => r.title === title);
+    if (!resume?._id) return;
 
-    if (this.currentResumeTitle() === title) {
-      this.currentResumeTitle.set('');
-    }
+    this.resumeService.deleteResume(resume._id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toastr.success('Resume deleted successfully', 'Success');
+          this.loadSavedResumesList();
+          if (this.currentResumeTitle() === title) {
+            this.currentResumeTitle.set('');
+          }
+        }
+      },
+      error: () => {
+        this.toastr.error('Failed to delete resume', 'Error');
+      }
+    });
   }
 
   newResume(): void {

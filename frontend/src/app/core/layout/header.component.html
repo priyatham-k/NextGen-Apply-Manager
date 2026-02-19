@@ -30,12 +30,57 @@
     <!-- Header Actions -->
     <div class="header-actions">
       <!-- Notifications -->
-      <button class="btn btn-link header-action-btn d-none d-sm-inline-flex">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-        <span class="badge badge-danger notification-badge">3</span>
-      </button>
+      <div class="notification-wrapper">
+        <button class="btn btn-link header-action-btn" (click)="toggleNotifications()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          @if (notificationService.unreadCount() > 0) {
+            <span class="badge badge-danger notification-badge">
+              {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
+            </span>
+          }
+        </button>
+
+        @if (notificationService.dropdownOpen()) {
+          <div class="notification-dropdown">
+            <div class="notification-header">
+              <h6>Notifications</h6>
+              @if (notificationService.unreadCount() > 0) {
+                <button class="btn-mark-read" (click)="onMarkAllRead()">Mark all read</button>
+              }
+            </div>
+            <div class="notification-list">
+              @for (n of notificationService.notifications(); track n._id) {
+                <div class="notification-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+                  <div class="notification-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getNotificationIcon(n.type)" />
+                    </svg>
+                  </div>
+                  <div class="notification-content">
+                    <p class="notification-title">{{ n.title }}</p>
+                    <p class="notification-message">{{ n.message }}</p>
+                    <span class="notification-time">{{ n.createdAt | date:'short' }}</span>
+                  </div>
+                  <button class="notification-delete" (click)="onDeleteNotification($event, n._id)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              } @empty {
+                <div class="notification-empty">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  <p>No notifications yet</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
 
       <!-- User Menu -->
       <div class="dropdown">

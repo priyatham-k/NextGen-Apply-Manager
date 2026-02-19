@@ -1,11 +1,14 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/services/auth.service';
 import { ProfileService } from '@core/services/profile.service';
 import { Profile, SkillCategory, SkillLevel, LanguageProficiency } from '@models/index';
 import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../environments/environment';
 
 type ProfileTab = 'personal' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'additional';
 
@@ -21,6 +24,8 @@ export class ProfileComponent implements OnInit {
   private profileService = inject(ProfileService);
   private fb = inject(FormBuilder);
   private toastr = inject(ToastrService);
+  private route = inject(ActivatedRoute);
+  private http = inject(HttpClient);
 
   // State
   profile = signal<Profile | null>(null);
@@ -29,6 +34,11 @@ export class ProfileComponent implements OnInit {
   savingSection = signal<ProfileTab | null>(null);
   uploadingPicture = signal(false);
   picturePreview = signal<string | null>(null);
+
+  // Resume upload state
+  onboardingMode = signal(false);
+  parsingResume = signal(false);
+  dragOver = signal(false);
 
   // Forms
   personalInfoForm!: FormGroup;
@@ -74,7 +84,15 @@ export class ProfileComponent implements OnInit {
     { key: 'additional', label: 'Additional', icon: 'bi-plus-circle' }
   ];
 
+  // Show upload banner when onboarding or profile is mostly empty
+  showUploadBanner = computed(() => this.onboardingMode() || this.profileCompleteness() < 20);
+
   async ngOnInit(): Promise<void> {
+    // Check for onboarding query param
+    const params = this.route.snapshot.queryParams;
+    if (params['onboarding'] === 'true') {
+      this.onboardingMode.set(true);
+    }
     await this.loadProfile();
   }
 
@@ -467,5 +485,75 @@ export class ProfileComponent implements OnInit {
 
   formatProficiency(p: string): string {
     return p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // ─── Resume Upload ──────────────────────────────────────────
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(false);
+  }
+
+  onResumeDropped(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(false);
+
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.uploadAndParseResume(file);
+    }
+  }
+
+  onResumeSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.uploadAndParseResume(file);
+    }
+    input.value = '';
+  }
+
+  async uploadAndParseResume(file: File): Promise<void> {
+    if (file.type !== 'application/pdf') {
+      this.toastr.error('Only PDF files are supported', 'Invalid File');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.toastr.error('File size must be less than 10MB', 'File Too Large');
+      return;
+    }
+
+    this.parsingResume.set(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      const response: any = await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth/profile/parse-resume`, formData)
+      );
+
+      if (response.success && response.data) {
+        this.profile.set(response.data);
+        this.initializeForms();
+        this.onboardingMode.set(false);
+        this.toastr.success('Profile auto-filled from your resume!', 'Success');
+      }
+    } catch (error: any) {
+      this.toastr.error(
+        error.error?.message || 'Failed to parse resume. Please try again.',
+        'Parsing Failed'
+      );
+    } finally {
+      this.parsingResume.set(false);
+    }
   }
 }
