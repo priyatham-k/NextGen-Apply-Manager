@@ -42,6 +42,7 @@ export interface IJob extends Document {
   jobType: JobType;
   experienceLevel: ExperienceLevel;
   applicationUrl: string;
+  url?: string; // Direct job page URL for automation
   companyWebsite?: string;
   companyLogo?: string;
   source: string;
@@ -100,6 +101,7 @@ const jobSchema = new Schema<IJob>(
       type: String,
       required: true
     },
+    url: { type: String }, // Direct job page URL for automation
     companyWebsite: { type: String },
     companyLogo: { type: String },
     source: {

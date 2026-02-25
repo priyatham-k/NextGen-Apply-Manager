@@ -1,11 +1,15 @@
+// Load environment variables FIRST before any imports that need them
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Now import everything else
 import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-import path from 'path';
 import { connectDatabase } from './config/database';
 import { logger } from './config/logger';
 import { initializeSocket } from './config/socket';
@@ -22,9 +26,14 @@ import resumeGeneratorRoutes from './routes/resumeGenerator.routes';
 import notificationRoutes from './routes/notification.routes';
 import settingsRoutes from './routes/settings.routes';
 import resumeRoutes from './routes/resume.routes';
+import matchingRoutes from './routes/matching.routes';
+import coverLetterRoutes from './routes/coverLetter.routes';
+import automationRoutes from './routes/automation.routes';
 
-// Load environment variables from root directory
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Import automation services
+import './workers/automation.worker'; // Start automation worker
+import { automationEngine } from './services/automation/automationEngine.service';
+import { browserManager } from './services/automation/browserManager.service';
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -60,10 +69,16 @@ app.use(`${API_PREFIX}/resume-generator`, resumeGeneratorRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/settings`, settingsRoutes);
 app.use(`${API_PREFIX}/resumes`, resumeRoutes);
+app.use(`${API_PREFIX}/matching`, matchingRoutes);
+app.use(`${API_PREFIX}/cover-letters`, coverLetterRoutes);
+app.use(`${API_PREFIX}/automation`, automationRoutes);
 
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Socket.IO instance export
+export let io: any;
 
 // Database connection and server start
 const startServer = async () => {
@@ -71,7 +86,10 @@ const startServer = async () => {
     await connectDatabase();
 
     // Initialize Socket.IO
-    initializeSocket(httpServer);
+    io = initializeSocket(httpServer);
+
+    // Set Socket.IO instance in automation engine for progress updates
+    automationEngine.setSocketIO(io);
 
     httpServer.listen(PORT, () => {
       logger.info(`🚀 Server is running on port ${PORT}`);
@@ -88,6 +106,7 @@ const startServer = async () => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, closing server gracefully...');
   httpServer.close();
+  await browserManager.closeAll();
   await mongoose.connection.close();
   process.exit(0);
 });
@@ -95,6 +114,7 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, closing server gracefully...');
   httpServer.close();
+  await browserManager.closeAll();
   await mongoose.connection.close();
   process.exit(0);
 });

@@ -43,6 +43,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/my-resumes/my-resumes.routes').then(m => m.MY_RESUMES_ROUTES)
       },
       {
+        path: 'cover-letters',
+        loadChildren: () => import('./features/cover-letters/cover-letters.routes').then(m => m.COVER_LETTERS_ROUTES)
+      },
+      {
         path: 'notifications',
         loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATION_ROUTES)
       },

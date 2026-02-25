@@ -120,6 +120,108 @@ const volunteerExperienceSchema = new Schema({
   description: String
 });
 
+// ─── Application Screening Questions (USA-specific) ─────────────
+
+const screeningQuestionsSchema = new Schema({
+  // Work Authorization
+  workAuthorization: {
+    type: String,
+    enum: ['us_citizen', 'permanent_resident', 'work_visa', 'require_sponsorship', 'not_authorized'],
+    required: false
+  },
+  requiresSponsorship: {
+    type: Boolean,
+    default: false
+  },
+
+  // Relocation & Availability
+  willingToRelocate: {
+    type: Boolean,
+    default: false
+  },
+  preferredLocations: [String], // Cities/states willing to work in
+  remoteWorkPreference: {
+    type: String,
+    enum: ['remote_only', 'hybrid', 'onsite', 'flexible'],
+    default: 'flexible'
+  },
+  earliestStartDate: Date,
+  noticePeriod: {
+    type: String,
+    enum: ['immediate', '2_weeks', '1_month', '2_months', '3_months'],
+    default: '2_weeks'
+  },
+
+  // Compensation
+  desiredSalary: {
+    min: Number,
+    max: Number,
+    currency: { type: String, default: 'USD' }
+  },
+  currentSalary: {
+    amount: Number,
+    currency: { type: String, default: 'USD' }
+  },
+
+  // Security & Background
+  securityClearance: {
+    type: String,
+    enum: ['none', 'confidential', 'secret', 'top_secret'],
+    default: 'none'
+  },
+  willingToUndergoBackgroundCheck: {
+    type: Boolean,
+    default: true
+  },
+  willingToTakeDrugTest: {
+    type: Boolean,
+    default: true
+  },
+
+  // Legal & Compliance
+  hasNonCompeteAgreement: {
+    type: Boolean,
+    default: false
+  },
+  hasConvictions: {
+    type: Boolean,
+    default: false
+  },
+
+  // EEO (Optional - for voluntary disclosure)
+  eeoData: {
+    veteranStatus: {
+      type: String,
+      enum: ['not_veteran', 'protected_veteran', 'not_protected_veteran', 'prefer_not_to_say'],
+      default: 'prefer_not_to_say'
+    },
+    disabilityStatus: {
+      type: String,
+      enum: ['no_disability', 'has_disability', 'prefer_not_to_say'],
+      default: 'prefer_not_to_say'
+    },
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'non_binary', 'prefer_not_to_say'],
+      default: 'prefer_not_to_say'
+    },
+    ethnicity: {
+      type: String,
+      enum: [
+        'hispanic_latino',
+        'white',
+        'black_african_american',
+        'native_american',
+        'asian',
+        'pacific_islander',
+        'two_or_more',
+        'prefer_not_to_say'
+      ],
+      default: 'prefer_not_to_say'
+    }
+  }
+}, { _id: false });
+
 // ─── Main Profile Schema ────────────────────────────────────────
 
 export interface IProfile extends Document {
@@ -153,12 +255,42 @@ export interface IProfile extends Document {
   education: any[];
   skills: any[];
   certifications: any[];
+  screeningQuestions?: {
+    workAuthorization?: string;
+    requiresSponsorship?: boolean;
+    willingToRelocate?: boolean;
+    preferredLocations?: string[];
+    remoteWorkPreference?: string;
+    earliestStartDate?: Date;
+    noticePeriod?: string;
+    desiredSalary?: {
+      min?: number;
+      max?: number;
+      currency?: string;
+    };
+    currentSalary?: {
+      amount?: number;
+      currency?: string;
+    };
+    securityClearance?: string;
+    willingToUndergoBackgroundCheck?: boolean;
+    willingToTakeDrugTest?: boolean;
+    hasNonCompeteAgreement?: boolean;
+    hasConvictions?: boolean;
+    eeoData?: {
+      veteranStatus?: string;
+      disabilityStatus?: string;
+      gender?: string;
+      ethnicity?: string;
+    };
+  };
   additionalInfo: {
     awards: any[];
     publications: any[];
     languages: any[];
     volunteerExperience: any[];
   };
+  profileCompletionScore?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -182,16 +314,74 @@ const profileSchema = new Schema<IProfile>(
     education: [educationSchema],
     skills: [skillSchema],
     certifications: [certificationSchema],
+    screeningQuestions: screeningQuestionsSchema,
     additionalInfo: {
       awards: [awardSchema],
       publications: [publicationSchema],
       languages: [languageSchema],
       volunteerExperience: [volunteerExperienceSchema]
+    },
+    profileCompletionScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
     }
   },
   {
     timestamps: true
   }
 );
+
+// ─── Profile Completion Calculator ─────────────────────────────
+
+profileSchema.methods.calculateCompletionScore = function(): number {
+  let score = 0;
+  let totalFields = 0;
+
+  // Required fields (40 points)
+  totalFields += 8;
+  if (this.personalInfo?.firstName) score += 5;
+  if (this.personalInfo?.lastName) score += 5;
+  if (this.personalInfo?.email) score += 5;
+  if (this.personalInfo?.phone) score += 5;
+  if (this.personalInfo?.address?.city) score += 5;
+  if (this.personalInfo?.address?.state) score += 5;
+  if (this.personalInfo?.address?.country) score += 5;
+  if (this.personalInfo?.address?.zipCode) score += 5;
+
+  // Professional Summary (10 points)
+  totalFields += 2;
+  if (this.professionalSummary?.summary) score += 5;
+  if (this.professionalSummary?.yearsOfExperience !== undefined) score += 5;
+
+  // Work Experience (15 points)
+  totalFields += 1;
+  if (this.workExperience && this.workExperience.length > 0) score += 15;
+
+  // Education (10 points)
+  totalFields += 1;
+  if (this.education && this.education.length > 0) score += 10;
+
+  // Skills (10 points)
+  totalFields += 1;
+  if (this.skills && this.skills.length >= 5) score += 10;
+
+  // Screening Questions (15 points) - CRITICAL for automation
+  totalFields += 5;
+  if (this.screeningQuestions?.workAuthorization) score += 5;
+  if (this.screeningQuestions?.requiresSponsorship !== undefined) score += 2;
+  if (this.screeningQuestions?.willingToRelocate !== undefined) score += 2;
+  if (this.screeningQuestions?.desiredSalary?.min) score += 3;
+  if (this.screeningQuestions?.earliestStartDate) score += 3;
+
+  return Math.min(100, score);
+};
+
+// Auto-calculate completion score before saving
+profileSchema.pre('save', function(next) {
+  this.profileCompletionScore = this.calculateCompletionScore();
+  next()
+});
 
 export const Profile = mongoose.model<IProfile>('Profile', profileSchema);

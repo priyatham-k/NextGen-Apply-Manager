@@ -35,8 +35,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = error.error?.message || 'An unexpected error occurred';
         }
       }
-      
-      toastr.error(errorMessage, 'Error');
+
+      // Skip toastr for errors handled inline by components (e.g. profile completion)
+      if (error.error?.action !== 'complete_profile') {
+        toastr.error(errorMessage, 'Error');
+      }
       return throwError(() => error);
     })
   );

@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { ApplicationService } from '@core/services/application.service';
 import { Application, ApplicationStatus } from '@models/index';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-application-detail',
@@ -108,5 +109,32 @@ export class ApplicationDetailComponent implements OnInit {
       [ApplicationStatus.DECLINED]: 'status-declined',
     };
     return map[status] || 'status-pending';
+  }
+
+  getScreenshots(): Array<{ url: string; label: string }> {
+    const app = this.application();
+    if (!app || !app.screenshots || app.screenshots.length === 0) {
+      return [];
+    }
+
+    return app.screenshots.map((screenshotPath: string, index: number) => {
+      // Extract filename from path (e.g., "uploads/screenshots/userId/appId/screenshot-initial-123.png")
+      const filename = screenshotPath.split('/').pop() || screenshotPath.split('\\').pop() || '';
+
+      // Determine label based on filename
+      let label = 'Screenshot';
+      if (filename.includes('initial')) {
+        label = 'Before Submission';
+      } else if (filename.includes('success')) {
+        label = 'After Submission';
+      } else if (filename.includes('error')) {
+        label = 'Error Screenshot';
+      }
+
+      // Construct API URL
+      const url = `${environment.apiUrl}/applications/${app.id}/screenshots/${filename}`;
+
+      return { url, label };
+    });
   }
 }

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { User } from '../models/User.model';
 import { Profile } from '../models/Profile.model';
 import { logger } from '../config/logger';
+import { profileCompletionService } from '../services/profileCompletion.service';
 import fs from 'fs';
 import path from 'path';
 
@@ -360,6 +361,63 @@ export const deleteProfilePicture = async (req: Request, res: Response): Promise
     });
   } catch (error: any) {
     logger.error('Delete profile picture error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Check profile completion status
+ * GET /api/v1/auth/profile/completion
+ */
+export const checkProfileCompletion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    const profile = await Profile.findOne({ userId });
+
+    if (!profile) {
+      res.status(200).json({
+        success: true,
+        data: {
+          isComplete: false,
+          completionScore: 0,
+          message: '⚠️ Please create your profile to use Auto Apply',
+          missingFields: ['All fields - profile not created yet'],
+          criticalMissing: ['All fields - profile not created yet'],
+          action: 'create_profile'
+        }
+      });
+      return;
+    }
+
+    const completionCheck = profileCompletionService.checkAutomationReadiness(profile);
+    const message = profileCompletionService.getCompletionMessage(completionCheck);
+    const notification = profileCompletionService.getIncompleteProfileNotification(completionCheck);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isComplete: completionCheck.isComplete,
+        completionScore: completionCheck.completionScore,
+        message,
+        missingFields: completionCheck.missingFields,
+        criticalMissing: completionCheck.criticalMissing,
+        notification,
+        action: completionCheck.isComplete ? 'ready_to_apply' : 'complete_profile'
+      }
+    });
+
+  } catch (error: any) {
+    logger.error('Check profile completion error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error',

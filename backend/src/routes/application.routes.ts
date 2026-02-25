@@ -6,7 +6,8 @@ import {
   createApplication,
   updateApplicationStatus,
   deleteApplication,
-  getApplicationStats
+  getApplicationStats,
+  getScreenshot
 } from '../controllers/application.controller';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.get('/stats', getApplicationStats);
 router.get('/', getApplications);
 router.post('/', createApplication);
 router.get('/:id', getApplicationById);
+router.get('/:id/screenshots/:filename', getScreenshot);
 router.patch('/:id/status', updateApplicationStatus);
 router.delete('/:id', deleteApplication);
 

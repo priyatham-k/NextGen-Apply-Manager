@@ -1,0 +1,60 @@
+import Queue from 'bull';
+import redisClient from './redis';
+import { logger } from './logger';
+
+export interface AutomationJobData {
+  applicationId: string;
+  userId: string;
+  jobId: string;
+  jobUrl: string;
+  resumeId?: string;
+  coverLetterId?: string;
+}
+
+export const automationQueue = new Queue<AutomationJobData>('job-automation', {
+  createClient: (type) => {
+    switch (type) {
+      case 'client':
+        return redisClient;
+      case 'subscriber':
+        return redisClient.duplicate();
+      case 'bclient':
+        return redisClient.duplicate();
+      default:
+        return redisClient;
+    }
+  },
+  defaultJobOptions: {
+    attempts: 2,
+    backoff: {
+      type: 'exponential',
+      delay: 5000
+    },
+    removeOnComplete: 100,
+    removeOnFail: 200,
+    timeout: 300000 // 5 minutes max per job
+  }
+});
+
+// Queue event handlers
+automationQueue.on('error', (error) => {
+  logger.error(`Queue error: ${error.message}`);
+});
+
+automationQueue.on('waiting', (jobId) => {
+  logger.info(`Job ${jobId} is waiting`);
+});
+
+automationQueue.on('active', (job) => {
+  logger.info(`Job ${job.id} started processing`);
+});
+
+automationQueue.on('completed', (job, result) => {
+  logger.info(`Job ${job.id} completed successfully`);
+});
+
+automationQueue.on('failed', (job, err) => {
+  logger.error(`Job ${job?.id} failed: ${err.message}`);
+});
+
+logger.info('✅ Bull queue initialized');

@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import fs from 'fs';
+import path from 'path';
 import { Profile } from '../models/Profile.model';
 import { User } from '../models/User.model';
+import { UploadedResume } from '../models/UploadedResume.model';
 import { extractTextFromPDF, parseResumeWithAI } from '../services/resumeParser.service';
 import { logger } from '../config/logger';
 
@@ -136,13 +138,45 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
 
     logger.info(`Resume parsed and profile updated for user: ${userId}, sections: ${Object.keys($set).join(', ')}`);
 
+    // 7. Save the uploaded resume file permanently
+    let uploadedResumeDoc = null;
+    if (req.file) {
+      const stats = fs.statSync(req.file.path);
+
+      // Set any previous primary resumes to false
+      await UploadedResume.updateMany(
+        { userId, isPrimary: true },
+        { $set: { isPrimary: false } }
+      );
+
+      uploadedResumeDoc = await UploadedResume.create({
+        userId,
+        filename: req.file.originalname,
+        storedFilename: req.file.filename,
+        filePath: req.file.path,
+        fileSize: stats.size,
+        mimeType: req.file.mimetype,
+        isPrimary: true // This becomes the primary resume
+      });
+
+      logger.info(`Saved resume file for user ${userId}: ${uploadedResumeDoc._id}`);
+    }
+
     res.status(200).json({
       success: true,
-      data: updatedProfile,
+      data: {
+        profile: updatedProfile,
+        uploadedResume: uploadedResumeDoc
+      },
       message: 'Resume parsed and profile updated successfully'
     });
   } catch (error: any) {
     logger.error('Resume parsing error:', error);
+
+    // On error, clean up the uploaded file
+    if (filePath) {
+      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
+    }
 
     if (error.message?.includes('GROQ_API_KEY')) {
       res.status(500).json({ success: false, message: error.message });
@@ -150,11 +184,6 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
       res.status(500).json({ success: false, message: 'Failed to parse AI response. Please try again.' });
     } else {
       res.status(500).json({ success: false, message: 'Server error during resume parsing', error: error.message });
-    }
-  } finally {
-    // Clean up temp file
-    if (filePath) {
-      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
     }
   }
 };

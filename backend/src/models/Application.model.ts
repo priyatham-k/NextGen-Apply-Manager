@@ -4,6 +4,7 @@ export enum ApplicationStatus {
   PENDING = 'pending',
   SUBMITTED = 'submitted',
   FAILED = 'failed',
+  CANCELLED = 'cancelled',
   IN_REVIEW = 'in_review',
   REJECTED = 'rejected',
   INTERVIEW_SCHEDULED = 'interview_scheduled',
@@ -19,6 +20,7 @@ export enum SubmissionType {
 }
 
 export enum ATSType {
+  LINKEDIN_EASY_APPLY = 'linkedin_easy_apply',
   WORKDAY = 'workday',
   GREENHOUSE = 'greenhouse',
   LEVER = 'lever',
@@ -32,10 +34,11 @@ export enum ATSType {
 export interface IApplication extends Document {
   userId: mongoose.Types.ObjectId;
   jobId: mongoose.Types.ObjectId;
-  resumeId: string;
+  resumeId?: string;
   coverLetterId?: string;
   status: ApplicationStatus;
   appliedDate: Date;
+  submittedAt?: Date; // When automation completed successfully
   submissionType: SubmissionType;
   atsType?: ATSType;
   notes?: string;
@@ -61,7 +64,7 @@ const applicationSchema = new Schema<IApplication>(
     },
     resumeId: {
       type: String,
-      required: true
+      required: false
     },
     coverLetterId: { type: String },
     status: {
@@ -73,6 +76,7 @@ const applicationSchema = new Schema<IApplication>(
       type: Date,
       default: Date.now
     },
+    submittedAt: { type: Date }, // When automation completed successfully
     submissionType: {
       type: String,
       enum: Object.values(SubmissionType),

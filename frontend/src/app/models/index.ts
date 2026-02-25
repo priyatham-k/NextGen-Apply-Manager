@@ -484,3 +484,63 @@ export interface AppNotification {
   };
   createdAt: Date;
 }
+
+// Job Matching Models
+export interface JobMatch {
+  job: Job;
+  matchScore: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  experienceFit: 'excellent' | 'good' | 'stretch' | 'overqualified';
+  locationFit: 'perfect' | 'good' | 'poor';
+  salaryFit: 'above' | 'meets' | 'below' | 'unknown';
+  overallReason: string;
+  pros: string[];
+  cons: string[];
+}
+
+export interface JobMatchesResponse {
+  matches: JobMatch[];
+  total: number;
+  refreshed?: boolean;
+}
+
+// Cover Letter Models
+export interface CoverLetter {
+  _id: string;
+  userId: string;
+  title: string;
+  company: string;
+  position: string;
+  jobDescription: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface GenerateCoverLetterRequest {
+  company: string;
+  position: string;
+  jobDescription: string;
+  title?: string;
+}
+
+export interface CoverLettersResponse {
+  coverLetters: CoverLetter[];
+  total: number;
+}
+
+// Automation Models
+export interface AutomationProgress {
+  applicationId: string;
+  step: number;
+  totalSteps: number;
+  percentage: number;
+  message: string;
+}
+
+export interface AutomationStatus {
+  applicationId: string;
+  status: 'pending' | 'in-progress' | 'success' | 'failed';
+  error?: string;
+}

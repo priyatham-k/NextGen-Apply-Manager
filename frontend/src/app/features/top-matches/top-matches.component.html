@@ -1,0 +1,274 @@
+<div class="top-matches-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <i class="bi bi-stars title-icon"></i>
+        Top Matches
+      </h1>
+      <p class="page-subtitle">AI-powered job recommendations tailored to your profile</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-refresh" (click)="refreshMatches()" [disabled]="loading()">
+        <i class="bi bi-arrow-clockwise" [class.spin]="loading()"></i>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State: Profile Required -->
+  @if (error() && error()?.includes('profile')) {
+    <div class="profile-required-card">
+      <div class="profile-required-icon">
+        <i class="bi bi-person-exclamation"></i>
+      </div>
+      <h2>Complete Your Profile</h2>
+      <p>To see personalized job matches, please complete your profile with your skills, experience, and preferences.</p>
+      <button class="btn-primary" (click)="navigateToProfile()">
+        <i class="bi bi-person-fill-gear me-2"></i>
+        Complete Profile
+      </button>
+    </div>
+  }
+
+  <!-- Error State: General -->
+  @else if (error() && !error()?.includes('profile')) {
+    <div class="error-card">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="loadMatches()">
+        <i class="bi bi-arrow-clockwise me-2"></i>
+        Try Again
+      </button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @else if (loading() && matches().length === 0) {
+    <div class="filter-tabs">
+      <button class="filter-tab active">All Matches</button>
+    </div>
+
+    <div class="matches-grid">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="match-card skeleton">
+          <div class="match-card-header">
+            <div class="skeleton-badge"></div>
+          </div>
+          <div class="skeleton-title"></div>
+          <div class="skeleton-text"></div>
+          <div class="skeleton-text short"></div>
+          <div class="skeleton-skills">
+            <div class="skeleton-chip"></div>
+            <div class="skeleton-chip"></div>
+            <div class="skeleton-chip"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Main Content: Matches -->
+  @else if (matches().length > 0) {
+    <!-- Profile Completion Alert -->
+    @if (profileError()) {
+      <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
+        <i class="bi bi-person-exclamation fs-4 mt-1"></i>
+        <div class="flex-grow-1">
+          <h6 class="alert-heading mb-1">Profile Incomplete</h6>
+          <p class="mb-2">Please complete your profile before using Auto Apply.</p>
+          <div class="mb-2">
+            <strong>Missing fields:</strong>
+            <span>{{ profileError()!.missingFields.join(', ') }}</span>
+          </div>
+          <button class="btn btn-warning btn-sm" (click)="navigateToProfile()">
+            <i class="bi bi-person-fill-gear me-1"></i>
+            Complete Profile
+          </button>
+        </div>
+        <button type="button" class="btn-close" (click)="dismissProfileError()"></button>
+      </div>
+    }
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="selectedFilter() === 'all'"
+        (click)="setFilter('all')">
+        All Matches
+        <span class="count">{{ matches().length }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="selectedFilter() === 'excellent'"
+        (click)="setFilter('excellent')">
+        <i class="bi bi-star-fill"></i>
+        Excellent
+        <span class="count">{{ excellentCount() }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="selectedFilter() === 'good'"
+        (click)="setFilter('good')">
+        <i class="bi bi-star-half"></i>
+        Good Match
+        <span class="count">{{ goodCount() }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="selectedFilter() === 'potential'"
+        (click)="setFilter('potential')">
+        <i class="bi bi-star"></i>
+        Potential
+        <span class="count">{{ potentialCount() }}</span>
+      </button>
+    </div>
+
+    <!-- Matches Grid -->
+    <div class="matches-grid">
+      @for (match of filteredMatches(); track match.job.id) {
+        <div class="match-card" [class]="getMatchScoreClass(match.matchScore)">
+          <!-- Match Score Badge -->
+          <div class="match-score-badge" [style.background]="getMatchScoreBadgeColor(match.matchScore)">
+            <span class="score">{{ match.matchScore }}</span>
+            <span class="label">Match</span>
+          </div>
+
+          <!-- Job Info -->
+          <h3 class="job-title">{{ match.job.title }}</h3>
+          <div class="job-meta">
+            <span class="company">
+              <i class="bi bi-building"></i>
+              {{ match.job.company }}
+            </span>
+            <span class="location">
+              <i class="bi bi-geo-alt"></i>
+              {{ match.job.location }}
+              @if (match.job.remote) {
+                <span class="remote-badge">Remote</span>
+              }
+            </span>
+          </div>
+
+          <!-- Match Reason -->
+          <p class="match-reason">{{ match.overallReason }}</p>
+
+          <!-- Matched Skills -->
+          @if (match.matchedSkills.length > 0) {
+            <div class="skills-section">
+              <div class="skills-label">
+                <i class="bi bi-check-circle-fill"></i>
+                Matched Skills
+              </div>
+              <div class="skills-chips">
+                @for (skill of match.matchedSkills.slice(0, 5); track skill) {
+                  <span class="skill-chip matched">{{ skill }}</span>
+                }
+                @if (match.matchedSkills.length > 5) {
+                  <span class="skill-chip more">+{{ match.matchedSkills.length - 5 }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Missing Skills -->
+          @if (match.missingSkills.length > 0 && match.missingSkills.length <= 3) {
+            <div class="skills-section">
+              <div class="skills-label missing">
+                <i class="bi bi-exclamation-circle"></i>
+                Skill Gaps
+              </div>
+              <div class="skills-chips">
+                @for (skill of match.missingSkills.slice(0, 3); track skill) {
+                  <span class="skill-chip missing">{{ skill }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Pros & Cons -->
+          <div class="pros-cons">
+            @if (match.pros.length > 0) {
+              <div class="pros">
+                <strong class="pros-title">
+                  <i class="bi bi-hand-thumbs-up"></i>
+                  Why this matches:
+                </strong>
+                <ul>
+                  @for (pro of match.pros.slice(0, 2); track pro) {
+                    <li>{{ pro }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (match.cons.length > 0) {
+              <div class="cons">
+                <strong class="cons-title">
+                  <i class="bi bi-exclamation-triangle"></i>
+                  Consider:
+                </strong>
+                <ul>
+                  @for (con of match.cons.slice(0, 1); track con) {
+                    <li>{{ con }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="card-actions">
+            <button class="btn-secondary" (click)="navigateToJob(match.job.id)">
+              <i class="bi bi-eye"></i>
+              View Details
+            </button>
+            <button
+              class="btn-success"
+              (click)="autoApplyToJob(match.job.id)"
+              [disabled]="isJobAutomating(match.job.id) || !match.job.applicationUrl"
+            >
+              @if (isJobAutomating(match.job.id)) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+                Automating...
+              } @else {
+                <i class="bi bi-robot me-1"></i>
+                Auto Apply
+              }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty Filter State -->
+    @if (filteredMatches().length === 0) {
+      <div class="empty-filter-state">
+        <i class="bi bi-funnel"></i>
+        <p>No matches found in this category</p>
+        <button class="btn-link" (click)="setFilter('all')">View All Matches</button>
+      </div>
+    }
+  }
+
+  <!-- Empty State: No Jobs -->
+  @else if (!loading() && matches().length === 0 && !error()) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-inbox"></i>
+      </div>
+      <h2>No Matches Found</h2>
+      <p>We couldn't find any matching jobs at the moment. Try broadening your preferences or check back later for new opportunities.</p>
+      <div class="empty-actions">
+        <button class="btn-secondary" (click)="navigateToProfile()">
+          <i class="bi bi-sliders me-2"></i>
+          Update Preferences
+        </button>
+        <button class="btn-primary" (click)="loadMatches()">
+          <i class="bi bi-arrow-clockwise me-2"></i>
+          Refresh Matches
+        </button>
+      </div>
+    </div>
+  }
+</div>

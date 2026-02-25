@@ -3,6 +3,8 @@ import { Application, ApplicationStatus } from '../models/Application.model';
 import { NotificationType } from '../models/Notification.model';
 import { createNotification } from '../services/notification.service';
 import { logger } from '../config/logger';
+import path from 'path';
+import fs from 'fs/promises';
 
 // GET /api/v1/applications
 export const getApplications = async (req: Request, res: Response): Promise<void> => {
@@ -274,6 +276,56 @@ export const deleteApplication = async (req: Request, res: Response): Promise<vo
     res.status(500).json({
       success: false,
       message: 'Server error deleting application',
+      error: error.message
+    });
+  }
+};
+
+// GET /api/v1/applications/:id/screenshots/:filename
+export const getScreenshot = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id: applicationId, filename } = req.params;
+    const userId = req.user?.userId;
+
+    // Verify the application belongs to the user
+    const application = await Application.findOne({ _id: applicationId, userId });
+    if (!application) {
+      res.status(404).json({
+        success: false,
+        message: 'Application not found or access denied'
+      });
+      return;
+    }
+
+    // Construct the screenshot path
+    const screenshotPath = path.join(
+      process.cwd(),
+      'uploads',
+      'screenshots',
+      userId.toString(),
+      applicationId,
+      filename
+    );
+
+    // Check if file exists
+    try {
+      await fs.access(screenshotPath);
+    } catch {
+      res.status(404).json({
+        success: false,
+        message: 'Screenshot not found'
+      });
+      return;
+    }
+
+    // Serve the screenshot
+    res.sendFile(screenshotPath);
+
+  } catch (error: any) {
+    logger.error('Get screenshot error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving screenshot',
       error: error.message
     });
   }
