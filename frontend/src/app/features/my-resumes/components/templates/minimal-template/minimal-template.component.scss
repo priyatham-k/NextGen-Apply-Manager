@@ -3,7 +3,7 @@
 :host { display: block; }
 
 .minimal-resume {
-  padding: $spacing-8;
+  padding: $spacing-4;
   background: white;
   color: #4b5563;
   max-width: 800px;
@@ -13,32 +13,32 @@
 // Header
 .minimal-header {
   text-align: center;
-  padding-bottom: $spacing-6;
+  padding-bottom: $spacing-3;
   border-bottom: 1px solid #d1d5db;
-  margin-bottom: $spacing-6;
+  margin-bottom: $spacing-3;
 }
 
 .minimal-name {
-  font-size: $font-size-5xl;
+  font-size: $font-size-3xl;
   font-weight: $font-weight-normal;
   color: #374151;
   letter-spacing: 2px;
   text-transform: uppercase;
-  margin-bottom: $spacing-3;
+  margin-bottom: $spacing-1;
 }
 
 .minimal-contact {
   display: flex;
   justify-content: center;
   gap: 0;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: #6b7280;
-  margin-bottom: $spacing-2;
+  margin-bottom: $spacing-1;
 
   span {
     &:not(:last-child)::after {
       content: '|';
-      margin: 0 $spacing-3;
+      margin: 0 $spacing-2;
       color: #d1d5db;
     }
   }
@@ -48,7 +48,7 @@
   display: flex;
   justify-content: center;
   gap: 0;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
 
   a {
     color: $muted;
@@ -57,7 +57,7 @@
 
     &:not(:last-child)::after {
       content: '|';
-      margin: 0 $spacing-3;
+      margin: 0 $spacing-2;
       color: #d1d5db;
     }
   }
@@ -65,30 +65,45 @@
 
 // Sections
 .minimal-section {
-  margin-bottom: $spacing-6;
+  margin-bottom: $spacing-3;
 }
 
 .minimal-section-title {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: #6b7280;
   border-bottom: 1px solid #d1d5db;
-  padding-bottom: $spacing-2;
-  margin-bottom: $spacing-4;
+  padding-bottom: $spacing-1;
+  margin-bottom: $spacing-2;
 }
 
 .minimal-text {
   color: #4b5563;
-  line-height: $line-height-relaxed;
-  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  font-size: $font-size-sm;
   margin-bottom: 0;
+}
+
+.minimal-bullets {
+  margin: $spacing-1 0 0 0;
+  padding-left: $spacing-4;
+  color: #4b5563;
+  font-size: $font-size-sm;
+  line-height: $line-height-tight;
+  list-style-type: disc;
+  list-style-position: outside;
+
+  li {
+    margin-bottom: 1px;
+    display: list-item;
+  }
 }
 
 // Items
 .minimal-item {
-  margin-bottom: $spacing-5;
+  margin-bottom: $spacing-3;
   &:last-child { margin-bottom: 0; }
 }
 
@@ -96,32 +111,33 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: $spacing-2;
+  margin-bottom: $spacing-1;
   gap: $spacing-4;
 }
 
 .minimal-item-title {
-  font-size: $font-size-lg;
+  font-size: $font-size-md;
   font-weight: $font-weight-medium;
   color: #374151;
   margin-bottom: 0;
 }
 
 .minimal-item-subtitle {
-  font-size: $font-size-md;
+  font-size: $font-size-sm;
   color: #6b7280;
 }
 
 .minimal-item-date {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: #6b7280;
   white-space: nowrap;
 }
 
 // Print
 @media print {
-  .minimal-resume { padding: 0; max-width: 100%; }
-  .minimal-name { font-size: $font-size-4xl; }
+  :host { display: block; margin: 0; padding: 0; }
+  .minimal-resume { padding: 0; margin: 0; max-width: 100%; }
+  .minimal-name { font-size: $font-size-3xl; }
   .minimal-contact { flex-direction: row !important; gap: 0 !important;
     span::after { display: inline !important; }
   }
@@ -133,8 +149,8 @@
 
 // Responsive
 @media (max-width: 767.98px) {
-  .minimal-resume { padding: $spacing-4; }
-  .minimal-name { font-size: $font-size-3xl; }
+  .minimal-resume { padding: $spacing-3; }
+  .minimal-name { font-size: $font-size-2xl; }
   .minimal-contact { flex-direction: column; gap: $spacing-1;
     span::after { display: none; }
   }

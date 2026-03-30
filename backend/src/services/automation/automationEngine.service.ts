@@ -8,6 +8,7 @@ import { GenericStrategy } from './strategies/GenericStrategy';
 import { Application, ApplicationStatus, SubmissionType } from '../../models/Application.model';
 import { Profile } from '../../models/Profile.model';
 import { UploadedResume } from '../../models/UploadedResume.model';
+import { CoverLetter } from '../../models/CoverLetter.model';
 import { logger } from '../../config/logger';
 import path from 'path';
 import fs from 'fs/promises';
@@ -113,9 +114,23 @@ export class AutomationEngine {
         }
       }
 
-      // TODO: Cover letter support (similar to resume)
+      // Cover letter support: fetch from DB and generate temp PDF
       if (coverLetterId) {
-        coverLetterPath = this.getFilePath(coverLetterId, 'cover-letters');
+        try {
+          const coverLetter = await CoverLetter.findById(coverLetterId);
+          if (coverLetter?.content) {
+            coverLetterPath = await this.generateCoverLetterPDF(
+              coverLetter.content,
+              userId,
+              applicationId
+            );
+            logger.info(`✓ Cover letter PDF generated: ${coverLetterPath}`);
+          } else {
+            logger.warn(`⚠️ Cover letter ${coverLetterId} not found or empty`);
+          }
+        } catch (err: any) {
+          logger.warn(`⚠️ Failed to prepare cover letter: ${err.message}`);
+        }
       }
 
       // Execute the strategy
@@ -254,6 +269,58 @@ export class AutomationEngine {
 
     await page.screenshot({ path: filepath, fullPage: true });
     return filepath;
+  }
+
+  /**
+   * Generate a PDF from cover letter text content
+   */
+  private async generateCoverLetterPDF(
+    content: string,
+    userId: string,
+    applicationId: string
+  ): Promise<string> {
+    const dir = path.join(process.cwd(), 'uploads', 'cover-letters', 'temp');
+    await fs.mkdir(dir, { recursive: true });
+
+    const filepath = path.join(dir, `${userId}-${applicationId}.pdf`);
+
+    // Use a headless browser page to render HTML to PDF
+    const browser = await browserManager.getBrowser();
+    const pdfPage = await browser.newPage();
+
+    try {
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body {
+              font-family: 'Georgia', 'Times New Roman', serif;
+              font-size: 12pt;
+              line-height: 1.6;
+              color: #333;
+              margin: 0;
+              padding: 60px 72px;
+            }
+            p { margin: 0 0 12px 0; }
+          </style>
+        </head>
+        <body>${content.replace(/\n/g, '<br/>')}</body>
+        </html>
+      `;
+
+      await pdfPage.setContent(html, { waitUntil: 'networkidle0' });
+      await pdfPage.pdf({
+        path: filepath,
+        format: 'Letter',
+        printBackground: true,
+        margin: { top: '0.5in', bottom: '0.5in', left: '0.75in', right: '0.75in' }
+      });
+
+      return filepath;
+    } finally {
+      await pdfPage.close();
+    }
   }
 
   /**

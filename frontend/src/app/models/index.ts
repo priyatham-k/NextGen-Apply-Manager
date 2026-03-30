@@ -117,6 +117,23 @@ export enum ATSType {
 }
 
 // Profile Model
+export interface ScreeningQuestions {
+  workAuthorization?: string;
+  requiresSponsorship?: boolean;
+  willingToRelocate?: boolean;
+  preferredLocations?: string[];
+  remoteWorkPreference?: string;
+  earliestStartDate?: Date;
+  noticePeriod?: string;
+  desiredSalary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  };
+  willingToUndergoBackgroundCheck?: boolean;
+  willingToTakeDrugTest?: boolean;
+}
+
 export interface Profile {
   id: string;
   userId: string;
@@ -127,10 +144,12 @@ export interface Profile {
   education: Education[];
   skills: Skill[];
   certifications: Certification[];
+  screeningQuestions?: ScreeningQuestions;
   additionalInfo?: AdditionalInfo;
   preferences: JobPreferences;
   resumes: Resume[];
   coverLetters: CoverLetter[];
+  profileCompletionScore?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -312,6 +331,17 @@ export interface CoverLetter {
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UploadedResume {
+  _id: string;
+  filename: string;
+  storedFilename: string;
+  fileSize: number;
+  mimeType: string;
+  isPrimary: boolean;
+  uploadedAt: Date;
+  createdAt: Date;
 }
 
 // Analytics Models

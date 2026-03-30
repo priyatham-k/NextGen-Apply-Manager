@@ -90,7 +90,7 @@
                 {{ profileCompleteness() }}%
               </div>
             </div>
-            <small class="text-muted">Complete all sections for better resume generation</small>
+            <small class="text-muted">Complete all sections including Screening Questions to enable Auto Apply</small>
           </div>
         </div>
 
@@ -155,13 +155,21 @@
                       <label class="form-label"><i class="bi bi-phone me-1"></i>Phone</label>
                       <input type="tel" class="form-control" formControlName="phone" placeholder="+1 (555) 123-4567" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                       <label class="form-label">City</label>
                       <input type="text" class="form-control" formControlName="city" placeholder="San Francisco" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                      <label class="form-label">State</label>
+                      <input type="text" class="form-control" formControlName="state" placeholder="California" />
+                    </div>
+                    <div class="col-md-3">
                       <label class="form-label">Country</label>
                       <input type="text" class="form-control" formControlName="country" placeholder="United States" />
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Zip Code</label>
+                      <input type="text" class="form-control" formControlName="zipCode" placeholder="94102" />
                     </div>
                     <div class="col-md-6">
                       <label class="form-label"><i class="bi bi-linkedin text-primary me-1"></i>LinkedIn</label>
@@ -405,6 +413,101 @@
                   <div class="mt-4">
                     <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'certifications' || certificationsForm.invalid">
                       @if (savingSection() === 'certifications') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Certifications }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- SCREENING QUESTIONS -->
+              @if (activeTab() === 'screening') {
+                <h5 class="mb-2">Screening Questions</h5>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">These fields are required for Auto Apply automation. Most job applications ask these during the screening process.</p>
+                <form [formGroup]="screeningForm" (ngSubmit)="saveSection('screening')">
+                  <div class="row g-3">
+                    <!-- Work Authorization -->
+                    <div class="col-12">
+                      <h6 class="section-heading mb-3"><i class="bi bi-passport me-1"></i>Work Authorization</h6>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Work Authorization Status *</label>
+                      <select class="form-select" formControlName="workAuthorization">
+                        <option value="">-- Select --</option>
+                        @for (opt of workAuthorizationOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" formControlName="requiresSponsorship" id="requiresSponsorship" />
+                        <label class="form-check-label" for="requiresSponsorship">Requires Visa Sponsorship</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" formControlName="willingToRelocate" id="willingToRelocate" />
+                        <label class="form-check-label" for="willingToRelocate">Willing to Relocate</label>
+                      </div>
+                    </div>
+
+                    <!-- Work Preferences -->
+                    <div class="col-12 mt-4">
+                      <h6 class="section-heading mb-3"><i class="bi bi-geo-alt me-1"></i>Work Preferences</h6>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Remote Work Preference</label>
+                      <select class="form-select" formControlName="remoteWorkPreference">
+                        @for (opt of remoteWorkOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Notice Period</label>
+                      <select class="form-select" formControlName="noticePeriod">
+                        @for (opt of noticePeriodOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Earliest Start Date</label>
+                      <input type="month" class="form-control" formControlName="earliestStartDate" />
+                    </div>
+
+                    <!-- Salary -->
+                    <div class="col-12 mt-4">
+                      <h6 class="section-heading mb-3"><i class="bi bi-currency-dollar me-1"></i>Desired Salary (USD)</h6>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Minimum</label>
+                      <input type="number" class="form-control" formControlName="desiredSalaryMin" min="0" placeholder="e.g., 80000" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Maximum</label>
+                      <input type="number" class="form-control" formControlName="desiredSalaryMax" min="0" placeholder="e.g., 120000" />
+                    </div>
+
+                    <!-- Background -->
+                    <div class="col-12 mt-4">
+                      <h6 class="section-heading mb-3"><i class="bi bi-shield-check me-1"></i>Background Checks</h6>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" formControlName="willingToUndergoBackgroundCheck" id="bgCheck" />
+                        <label class="form-check-label" for="bgCheck">Willing to undergo background check</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" formControlName="willingToTakeDrugTest" id="drugTest" />
+                        <label class="form-check-label" for="drugTest">Willing to take drug test</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'screening' || screeningForm.invalid">
+                      @if (savingSection() === 'screening') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Screening Answers }
                     </button>
                   </div>
                 </form>

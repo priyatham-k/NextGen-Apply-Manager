@@ -293,6 +293,7 @@ export interface IProfile extends Document {
   profileCompletionScore?: number;
   createdAt: Date;
   updatedAt: Date;
+  calculateCompletionScore(): number;
 }
 
 const profileSchema = new Schema<IProfile>(

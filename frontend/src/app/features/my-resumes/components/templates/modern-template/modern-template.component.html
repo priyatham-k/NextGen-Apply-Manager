@@ -60,7 +60,11 @@
     @if (data().summary) {
       <div class="main-section">
         <h3 class="main-section-title">Professional Summary</h3>
-        <p class="main-summary">{{ data().summary }}</p>
+        <ul class="main-item-bullets">
+          @for (point of toBullets(data().summary); track $index) {
+            <li>{{ point }}</li>
+          }
+        </ul>
       </div>
     }
 
@@ -77,7 +81,13 @@
               </span>
             </div>
             <p class="main-item-company">{{ exp.company || 'Company' }}</p>
-            <p class="main-item-description">{{ exp.description }}</p>
+            @if (exp.description) {
+              <ul class="main-item-bullets">
+                @for (bullet of toBullets(exp.description); track $index) {
+                  <li>{{ bullet }}</li>
+                }
+              </ul>
+            }
           </div>
         }
       </div>

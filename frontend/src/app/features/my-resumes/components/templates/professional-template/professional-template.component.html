@@ -3,9 +3,6 @@
   <div class="prof-header">
     <div class="prof-header-left">
       <h1 class="prof-name">{{ data().fullName || 'Your Name' }}</h1>
-      @if (data().summary) {
-        <p class="prof-tagline">{{ data().summary }}</p>
-      }
     </div>
     <div class="prof-header-right">
       @if (data().email) {
@@ -35,6 +32,18 @@
     </div>
   </div>
 
+  <!-- Summary -->
+  @if (data().summary) {
+    <div class="prof-section">
+      <h3 class="prof-section-title">Professional Summary</h3>
+      <ul class="prof-item-bullets">
+        @for (point of toBullets(data().summary); track $index) {
+          <li>{{ point }}</li>
+        }
+      </ul>
+    </div>
+  }
+
   <!-- Experience -->
   @if (data().experiences.length > 0) {
     <div class="prof-section">
@@ -50,7 +59,13 @@
               {{ exp.startDate || 'Start' }} - {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
             </span>
           </div>
-          <p class="prof-item-description">{{ exp.description }}</p>
+          @if (exp.description) {
+            <ul class="prof-item-bullets">
+              @for (bullet of toBullets(exp.description); track $index) {
+                <li>{{ bullet }}</li>
+              }
+            </ul>
+          }
         </div>
       }
     </div>

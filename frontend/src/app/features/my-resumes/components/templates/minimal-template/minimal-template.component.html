@@ -30,7 +30,11 @@
   @if (data().summary) {
     <div class="minimal-section">
       <h3 class="minimal-section-title">Summary</h3>
-      <p class="minimal-text">{{ data().summary }}</p>
+      <ul class="minimal-bullets">
+        @for (point of toBullets(data().summary); track $index) {
+          <li>{{ point }}</li>
+        }
+      </ul>
     </div>
   }
 
@@ -49,7 +53,13 @@
               {{ exp.startDate || 'Start' }} - {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
             </span>
           </div>
-          <p class="minimal-text">{{ exp.description }}</p>
+          @if (exp.description) {
+            <ul class="minimal-bullets">
+              @for (bullet of toBullets(exp.description); track $index) {
+                <li>{{ bullet }}</li>
+              }
+            </ul>
+          }
         </div>
       }
     </div>

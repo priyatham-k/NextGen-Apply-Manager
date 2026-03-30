@@ -1,4 +1,5 @@
 import natural from 'natural';
+import axios from 'axios';
 import { logger } from '../logger';
 import {
   SKILL_CATEGORIES, LEVEL_PATTERNS, ACTION_VERBS, ACHIEVEMENT_TEMPLATES,
@@ -120,12 +121,26 @@ function formatDateStr(date: string | Date | undefined): string {
 }
 
 function formatExpDescription(exp: { description?: string; achievements?: string[] }): string {
-  const parts: string[] = [];
-  if (exp.description) parts.push(exp.description);
-  if (exp.achievements && exp.achievements.length > 0) {
-    parts.push(exp.achievements.map(a => `• ${a}`).join('\n'));
+  const bullets: string[] = [];
+
+  if (exp.description) {
+    const desc = exp.description.trim();
+    const lines = desc.split('\n').map(l => l.trim()).filter(Boolean);
+    const alreadyBullets = lines.some(l => l.startsWith('•') || l.startsWith('-'));
+    if (alreadyBullets) {
+      bullets.push(...lines.map(l => (l.startsWith('•') || l.startsWith('-')) ? l : `• ${l}`));
+    } else {
+      // Convert paragraph into sentence-level bullet points
+      const sentences = desc.match(/[^.!?]+[.!?]+/g) || [desc];
+      bullets.push(...sentences.map(s => `• ${s.trim()}`).filter(b => b.length > 4));
+    }
   }
-  return parts.join('\n') || '';
+
+  if (exp.achievements && exp.achievements.length > 0) {
+    bullets.push(...exp.achievements.map(a => a.startsWith('•') ? a : `• ${a}`));
+  }
+
+  return bullets.join('\n');
 }
 
 // ─── Step 1: Analyze Job Description ─────────────────────────────
@@ -318,7 +333,7 @@ function assembleResumeContent(analysis: JobAnalysis, userProfile?: UserProfile)
       const duration = randomInt(1, 3);
       const startYear = isCurrent ? currentYear - duration : endYear - duration;
       const bullets: string[] = [];
-      for (let b = 0; b < randomInt(3, 4); b++) {
+      for (let b = 0; b < randomInt(5, 6); b++) {
         const template = randomPick(ACHIEVEMENT_TEMPLATES);
         const verb = randomPick(ACTION_VERBS[verbCategories[b % verbCategories.length]]);
         const tech = skills.length > 0 ? randomPick(skills) : 'modern technologies';
@@ -378,13 +393,180 @@ function validateAndPolish(data: ResumeTemplateData): ResumeTemplateData {
   return data;
 }
 
+// ─── Groq AI Resume Generation ───────────────────────────────────
+
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
+function buildProfileContext(userProfile: UserProfile): string {
+  const lines: string[] = [];
+
+  lines.push(`Name: ${userProfile.firstName}${userProfile.middleName ? ' ' + userProfile.middleName : ''} ${userProfile.lastName}`);
+  lines.push(`Email: ${userProfile.email}`);
+  if (userProfile.phone) lines.push(`Phone: ${userProfile.phone}`);
+  if (userProfile.location) lines.push(`Location: ${userProfile.location}`);
+  if (userProfile.linkedin) lines.push(`LinkedIn: ${userProfile.linkedin}`);
+  if (userProfile.github) lines.push(`GitHub: ${userProfile.github}`);
+  if (userProfile.website || userProfile.portfolio) lines.push(`Website: ${userProfile.website || userProfile.portfolio}`);
+  if (userProfile.yearsOfExperience) lines.push(`Years of Experience: ${userProfile.yearsOfExperience}`);
+  if (userProfile.summary) lines.push(`\nCurrent Summary:\n${userProfile.summary}`);
+
+  if (userProfile.skills && userProfile.skills.length > 0) {
+    lines.push(`\nSkills:\n${userProfile.skills.map(s => `- ${s.name} (${s.level})`).join('\n')}`);
+  }
+
+  if (userProfile.experiences && userProfile.experiences.length > 0) {
+    lines.push('\nWork Experience:');
+    userProfile.experiences.forEach(exp => {
+      lines.push(`\n  ${exp.position} at ${exp.company}${exp.location ? `, ${exp.location}` : ''}`);
+      lines.push(`  ${exp.startDate || ''} - ${exp.current ? 'Present' : (exp.endDate || '')}`);
+      if (exp.description) lines.push(`  Description: ${exp.description}`);
+      if (exp.achievements && exp.achievements.length > 0) {
+        lines.push(`  Achievements: ${exp.achievements.join('; ')}`);
+      }
+      if (exp.technologies && exp.technologies.length > 0) {
+        lines.push(`  Technologies: ${exp.technologies.join(', ')}`);
+      }
+    });
+  }
+
+  if (userProfile.education && userProfile.education.length > 0) {
+    lines.push('\nEducation:');
+    userProfile.education.forEach(edu => {
+      lines.push(`  ${edu.degree}${edu.field ? ' in ' + edu.field : ''} — ${edu.institution}`);
+      lines.push(`  ${edu.startDate || ''} - ${edu.endDate || ''}`);
+      if (edu.gpa) lines.push(`  GPA: ${edu.gpa}`);
+    });
+  }
+
+  if (userProfile.certifications && userProfile.certifications.length > 0) {
+    lines.push('\nCertifications:');
+    userProfile.certifications.forEach(cert => {
+      lines.push(`  ${cert.name} — ${cert.issuer}${cert.issueDate ? ' (' + cert.issueDate + ')' : ''}`);
+    });
+  }
+
+  return lines.join('\n');
+}
+
+async function generateResumeWithGroq(jobDescription: string, userProfile: UserProfile): Promise<ResumeTemplateData> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY not configured');
+
+  const profileContext = buildProfileContext(userProfile);
+
+  const systemPrompt = `You are an expert resume writer specializing in ATS-optimized, results-driven resumes.
+Your task is to create a tailored, professional resume that closely matches the given job description.
+Respond ONLY with valid JSON — no markdown, no explanation, no code blocks.`;
+
+  const userPrompt = `Job Description:
+${jobDescription}
+
+---
+Candidate Profile:
+${profileContext}
+
+---
+Generate a tailored resume as a JSON object with this exact structure:
+{
+  "fullName": "candidate full name",
+  "email": "email",
+  "phone": "phone",
+  "location": "city, country",
+  "linkedin": "linkedin url or empty string",
+  "github": "github url or empty string",
+  "website": "website url or empty string",
+  "summary": "3-4 concise bullet points separated by newlines (\\n), each starting with a strong keyword, tightly tailored to the job description",
+  "experiences": [
+    {
+      "company": "Company Name",
+      "position": "Job Title",
+      "startDate": "Mon YYYY",
+      "endDate": "Mon YYYY or empty string if current",
+      "current": false,
+      "description": "Action verb + achievement with metric\nAction verb + achievement with metric\nAction verb + achievement with metric\nAction verb + achievement with metric\nAction verb + achievement with metric"
+    }
+  ],
+  "education": [
+    {
+      "school": "Institution Name",
+      "degree": "Degree Type",
+      "field": "Field of Study",
+      "startDate": "YYYY",
+      "endDate": "YYYY",
+      "description": "GPA or honors if available, else empty string"
+    }
+  ],
+  "skills": ["Skill1", "Skill2", "Skill3"]
+}
+
+Rules:
+- Use ALL real data from the candidate profile — do not invent companies, schools, or credentials
+- Write 5-6 bullet points per experience role in the description field, separated by newlines (\\n)
+- Each bullet must start with a strong action verb (Led, Built, Reduced, Increased, Designed, etc.)
+- Include quantifiable results wherever possible (percentages, dollar amounts, user counts, time saved)
+- Tailor the skills list to prioritize what the job description requires
+- The summary must be 3-4 bullet points separated by \\n, each addressing the role, seniority, or key requirements (e.g. "5+ years of full-stack experience with React and Node.js")
+- Dates must be in "Mon YYYY" format for experience (e.g., "Jan 2022"), YYYY only for education
+- Return only the JSON object, nothing else`;
+
+  const response = await axios.post(
+    GROQ_API_URL,
+    {
+      model: GROQ_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.4,
+      max_tokens: 4000
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 60000
+    }
+  );
+
+  const content = response.data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('No content returned from Groq');
+
+  // Strip markdown code blocks if Groq wraps the JSON
+  const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  const parsed = JSON.parse(cleaned);
+
+  // Validate required fields exist
+  if (!parsed.fullName || !parsed.experiences || !parsed.skills) {
+    throw new Error('Groq returned incomplete resume data');
+  }
+
+  return parsed as ResumeTemplateData;
+}
+
 // ─── Main Entry ──────────────────────────────────────────────────
 
 export async function generateResumeFromJobDescription(jobDescription: string, userProfile?: UserProfile): Promise<ResumeTemplateData> {
-  logger.info('=== Resume Generation Agent Started ===');
+  logger.info('=== Resume Generation Started ===');
+
+  // Try Groq AI first if profile is available
+  if (userProfile && process.env.GROQ_API_KEY) {
+    try {
+      logger.info('Using Groq AI for resume generation...');
+      const result = await generateResumeWithGroq(jobDescription, userProfile);
+      logger.info('=== Groq AI Resume Generation Complete ===');
+      return validateAndPolish(result);
+    } catch (err: any) {
+      logger.warn(`Groq AI failed, falling back to NLP: ${err.message}`);
+    }
+  }
+
+  // Fallback: local NLP
+  logger.info('Using local NLP for resume generation...');
   const analysis = analyzeJobDescription(jobDescription);
   const resume = assembleResumeContent(analysis, userProfile);
   const polished = validateAndPolish(resume);
-  logger.info('=== Resume Generation Agent Complete ===');
+  logger.info('=== NLP Resume Generation Complete ===');
   return polished;
 }

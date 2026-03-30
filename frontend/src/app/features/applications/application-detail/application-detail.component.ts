@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { ApplicationService } from '@core/services/application.service';
+import { AutomationService } from '@core/services/automation.service';
 import { Application, ApplicationStatus } from '@models/index';
 import { environment } from '../../../../environments/environment';
 
@@ -19,11 +20,14 @@ export class ApplicationDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private applicationService = inject(ApplicationService);
+  private automationService = inject(AutomationService);
   private toastr = inject(ToastrService);
 
   application = signal<Application | null>(null);
   loading = signal(true);
   updatingStatus = signal(false);
+  retrying = signal(false);
+  cancelling = signal(false);
 
   statuses = Object.values(ApplicationStatus);
 
@@ -76,6 +80,38 @@ export class ApplicationDetailComponent implements OnInit {
       this.router.navigate(['/applications']);
     } catch {
       this.toastr.error('Failed to delete application');
+    }
+  }
+
+  async retryAutomation(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+
+    this.retrying.set(true);
+    try {
+      await firstValueFrom(this.automationService.retryAutomation(app.id));
+      this.toastr.info('Automation retry queued');
+      this.application.update(a => a ? { ...a, status: ApplicationStatus.PENDING } : a);
+    } catch {
+      this.toastr.error('Failed to retry automation');
+    } finally {
+      this.retrying.set(false);
+    }
+  }
+
+  async cancelAutomation(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+
+    this.cancelling.set(true);
+    try {
+      await firstValueFrom(this.automationService.cancelAutomation(app.id));
+      this.toastr.success('Automation cancelled');
+      this.application.update(a => a ? { ...a, status: ApplicationStatus.FAILED } : a);
+    } catch {
+      this.toastr.error('Failed to cancel automation');
+    } finally {
+      this.cancelling.set(false);
     }
   }
 

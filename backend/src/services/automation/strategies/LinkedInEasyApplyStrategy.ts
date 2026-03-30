@@ -20,7 +20,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   /**
    * Click the "Easy Apply" button to open the modal
    */
-  async navigateToApplication(): Promise<void> {
+  protected async navigateToApplication(): Promise<void> {
     this.onProgress(6, 15, 'Looking for Easy Apply button...');
     logger.info('Looking for LinkedIn Easy Apply button');
 
@@ -56,7 +56,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
     }
 
     // Wait a bit for modal animations
-    await this.page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   /**
@@ -87,7 +87,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
       logger.info('✓ Clicked Next button');
 
       // Wait for next step to load
-      await this.page.waitForTimeout(1500);
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       currentStep++;
     }
@@ -125,41 +125,101 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   }
 
   /**
-   * Auto-fill text inputs on the current step
+   * Get the visible label text for a form field
+   */
+  private async getFieldLabel(element: any): Promise<string> {
+    return element.evaluate((el: HTMLElement) => {
+      const name = (el as HTMLInputElement).name || (el as HTMLInputElement).id || '';
+      const placeholder = (el as HTMLInputElement).placeholder || '';
+      const id = el.id;
+      const labelEl = id ? document.querySelector(`label[for="${id}"]`) : null;
+      const labelText = labelEl?.textContent || '';
+      const parentLabel = el.closest('label')?.textContent || '';
+      const legend = el.closest('fieldset')?.querySelector('legend')?.textContent || '';
+      return `${name} ${placeholder} ${labelText} ${parentLabel} ${legend}`.toLowerCase();
+    });
+  }
+
+  /**
+   * Auto-fill text inputs on the current step using profile data
    */
   async autoFillTextInputs(): Promise<void> {
-    const inputs = await this.page.$$('.jobs-easy-apply-modal input[type="text"], .jobs-easy-apply-modal input[type="email"], .jobs-easy-apply-modal input[type="tel"]');
+    const inputs = await this.page.$$('.jobs-easy-apply-modal input[type="text"], .jobs-easy-apply-modal input[type="email"], .jobs-easy-apply-modal input[type="tel"], .jobs-easy-apply-modal input[type="number"], .jobs-easy-apply-modal textarea');
+    const screening = this.profileData.screeningQuestions || {};
+    const personalInfo = this.profileData.personalInfo || {};
+    const professionalSummary = this.profileData.professionalSummary || {};
 
     for (const input of inputs) {
       try {
-        const name = await input.evaluate(el => (el as HTMLInputElement).name || (el as HTMLInputElement).id);
-        const placeholder = await input.evaluate(el => (el as HTMLInputElement).placeholder);
-        const label = (name + ' ' + placeholder).toLowerCase();
+        const value = await input.evaluate((el: HTMLInputElement | HTMLTextAreaElement) => el.value);
+        if (value && (value as string).trim().length > 0) continue;
 
-        // Check if already filled
-        const value = await input.evaluate(el => (el as HTMLInputElement).value);
-        if (value && value.trim().length > 0) {
-          continue; // Skip if already has value
+        const label = await this.getFieldLabel(input);
+        let fillValue = '';
+
+        // Personal info
+        if (label.match(/phone|mobile|tel/i)) {
+          fillValue = personalInfo.phone || '';
+        } else if (label.match(/email/i)) {
+          fillValue = personalInfo.email || '';
+        } else if (label.match(/first.*name/i)) {
+          fillValue = personalInfo.firstName || '';
+        } else if (label.match(/last.*name/i)) {
+          fillValue = personalInfo.lastName || '';
+        } else if (label.match(/full.*name|name.*full/i)) {
+          fillValue = `${personalInfo.firstName || ''} ${personalInfo.lastName || ''}`.trim();
+        } else if (label.match(/linkedin/i)) {
+          fillValue = personalInfo.linkedin || '';
+        } else if (label.match(/github/i)) {
+          fillValue = personalInfo.github || '';
+        } else if (label.match(/website|portfolio/i)) {
+          fillValue = personalInfo.portfolio || personalInfo.website || '';
+        } else if (label.match(/city/i)) {
+          fillValue = personalInfo.address?.city || '';
+        } else if (label.match(/state|province/i)) {
+          fillValue = personalInfo.address?.state || '';
+        } else if (label.match(/zip|postal/i)) {
+          fillValue = personalInfo.address?.zipCode || '';
+
+        // Screening: years of experience
+        } else if (label.match(/years?\s*(of)?\s*experience/i)) {
+          fillValue = String(professionalSummary.yearsOfExperience || 0);
+
+        // Screening: salary
+        } else if (label.match(/salary|compensation|pay.*expect/i)) {
+          if (screening.desiredSalary?.min) {
+            fillValue = String(screening.desiredSalary.min);
+          }
+
+        // Screening: notice period / start date
+        } else if (label.match(/notice.*period|start.*date|earliest.*start|when.*start|availability/i)) {
+          const noticePeriodMap: Record<string, string> = {
+            'immediate': 'Immediately',
+            '2_weeks': '2 weeks',
+            '1_month': '1 month',
+            '2_months': '2 months',
+            '3_months': '3 months'
+          };
+          fillValue = noticePeriodMap[screening.noticePeriod] || '2 weeks';
+
+        // Screening: cover letter / summary
+        } else if (label.match(/cover.*letter|additional.*info/i)) {
+          fillValue = professionalSummary.summary || '';
+
+        // Screening: GPA
+        } else if (label.match(/gpa|grade.*point/i)) {
+          const education = this.profileData.education;
+          if (education?.length > 0 && education[0].gpa) {
+            fillValue = String(education[0].gpa);
+          }
         }
 
-        // Fill based on label matching
-        if (label.match(/phone|mobile|tel/i)) {
-          await input.type(this.profileData.personalInfo?.phone || '');
-        } else if (label.match(/email/i)) {
-          await input.type(this.profileData.personalInfo?.email || '');
-        } else if (label.match(/first.*name/i)) {
-          await input.type(this.profileData.personalInfo?.firstName || '');
-        } else if (label.match(/last.*name/i)) {
-          await input.type(this.profileData.personalInfo?.lastName || '');
-        } else if (label.match(/linkedin/i)) {
-          await input.type(this.profileData.personalInfo?.linkedin || '');
-        } else if (label.match(/github/i)) {
-          await input.type(this.profileData.personalInfo?.github || '');
-        } else if (label.match(/website|portfolio/i)) {
-          await input.type(this.profileData.personalInfo?.portfolio || '');
+        if (fillValue) {
+          await input.click({ clickCount: 3 });
+          await input.type(fillValue);
+          logger.info(`✓ Filled: "${label.substring(0, 40).trim()}" → ${fillValue.substring(0, 30)}`);
         }
       } catch (err) {
-        // Skip on error
         continue;
       }
     }
@@ -175,7 +235,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
       if (fileInput) {
         await fileInput.uploadFile(resumePath);
         logger.info('✓ Resume uploaded');
-        await this.page.waitForTimeout(2000); // Wait for upload
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for upload
       }
     } catch (err: any) {
       logger.warn(`Resume upload failed: ${err.message}`);
@@ -192,7 +252,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
       if (fileInput) {
         await fileInput.uploadFile(coverLetterPath);
         logger.info('✓ Cover letter uploaded');
-        await this.page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } catch (err: any) {
       logger.warn(`Cover letter upload failed: ${err.message}`);
@@ -200,29 +260,76 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   }
 
   /**
-   * Handle dropdown/select fields
+   * Handle dropdown/select fields with intelligent profile matching
    */
   async handleDropdowns(): Promise<void> {
     const selects = await this.page.$$('.jobs-easy-apply-modal select');
+    const screening = this.profileData.screeningQuestions || {};
+    const professionalSummary = this.profileData.professionalSummary || {};
 
     for (const select of selects) {
       try {
-        const name = await select.evaluate(el => (el as HTMLSelectElement).name || (el as HTMLSelectElement).id);
-        const label = name.toLowerCase();
+        const value = await select.evaluate((el: HTMLSelectElement) => el.value);
+        if (value && value !== '') continue;
 
-        // Check if already selected
-        const value = await select.evaluate(el => (el as HTMLSelectElement).value);
-        if (value && value !== '') {
-          continue;
+        const label = await this.getFieldLabel(select);
+        const options = await select.evaluate((el: HTMLSelectElement) =>
+          Array.from(el.options).map(o => ({ value: o.value, text: o.textContent?.toLowerCase() || '' }))
+        );
+
+        let bestValue = '';
+
+        // Years of experience dropdown
+        if (label.match(/years?\s*(of)?\s*experience/i)) {
+          const years = professionalSummary.yearsOfExperience || 0;
+          bestValue = this.findClosestOption(options, years);
+
+        // Education level
+        } else if (label.match(/education|degree|highest.*level/i)) {
+          const education = this.profileData.education;
+          if (education?.length > 0) {
+            const degree = education[0].degree?.toLowerCase() || '';
+            bestValue = this.findOptionByKeywords(options, [degree, 'bachelor', 'master', 'phd', 'associate']);
+          }
+
+        // Work authorization status
+        } else if (label.match(/authorized|authorization|work.*permit|eligible/i)) {
+          const authMap: Record<string, string[]> = {
+            'us_citizen': ['citizen', 'authorized', 'yes'],
+            'permanent_resident': ['permanent', 'green card', 'authorized', 'yes'],
+            'work_visa': ['visa', 'authorized', 'yes'],
+            'require_sponsorship': ['sponsorship', 'no'],
+            'not_authorized': ['not authorized', 'no']
+          };
+          const keywords = authMap[screening.workAuthorization] || ['yes'];
+          bestValue = this.findOptionByKeywords(options, keywords);
+
+        // Remote/onsite preference
+        } else if (label.match(/remote|work.*location|work.*arrangement|onsite|hybrid/i)) {
+          const prefMap: Record<string, string[]> = {
+            'remote_only': ['remote', 'work from home'],
+            'hybrid': ['hybrid'],
+            'onsite': ['onsite', 'on-site', 'office'],
+            'flexible': ['flexible', 'any', 'hybrid']
+          };
+          const keywords = prefMap[screening.remoteWorkPreference] || ['flexible'];
+          bestValue = this.findOptionByKeywords(options, keywords);
+
+        // Language proficiency
+        } else if (label.match(/language.*proficiency|english.*level/i)) {
+          bestValue = this.findOptionByKeywords(options, ['fluent', 'native', 'professional', 'advanced']);
         }
 
-        // Select first non-empty option for now
-        // TODO: Add intelligent matching based on profile data
-        await select.select(await select.evaluate(el => {
-          const options = Array.from((el as HTMLSelectElement).options);
-          const nonEmpty = options.find(opt => opt.value && opt.value !== '');
-          return nonEmpty?.value || '';
-        }));
+        // Fallback: select first non-empty option
+        if (!bestValue) {
+          const nonEmpty = options.find(o => o.value && o.value !== '');
+          bestValue = nonEmpty?.value || '';
+        }
+
+        if (bestValue) {
+          await select.select(bestValue);
+          logger.info(`✓ Selected dropdown: "${label.substring(0, 40).trim()}" → ${bestValue}`);
+        }
       } catch (err) {
         continue;
       }
@@ -230,32 +337,124 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   }
 
   /**
-   * Handle radio buttons
+   * Find dropdown option closest to a numeric value
+   */
+  private findClosestOption(options: { value: string; text: string }[], target: number): string {
+    let bestMatch = '';
+    let bestDiff = Infinity;
+    for (const opt of options) {
+      if (!opt.value) continue;
+      const num = parseInt(opt.text.replace(/\D/g, ''), 10);
+      if (!isNaN(num)) {
+        const diff = Math.abs(num - target);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestMatch = opt.value;
+        }
+      }
+    }
+    return bestMatch;
+  }
+
+  /**
+   * Find dropdown option matching keywords
+   */
+  private findOptionByKeywords(options: { value: string; text: string }[], keywords: string[]): string {
+    for (const keyword of keywords) {
+      const match = options.find(o => o.value && o.text.includes(keyword.toLowerCase()));
+      if (match) return match.value;
+    }
+    return '';
+  }
+
+  /**
+   * Handle radio buttons with profile-aware answers
    */
   async handleRadioButtons(): Promise<void> {
     const radioGroups = await this.page.$$('.jobs-easy-apply-modal fieldset');
+    const screening = this.profileData.screeningQuestions || {};
 
     for (const group of radioGroups) {
       try {
-        // For yes/no questions, default to "Yes" for eligibility questions
         const legend = await group.evaluate(el => el.querySelector('legend')?.textContent || '');
+        const legendLower = legend.toLowerCase();
 
-        if (legend.match(/authorized.*work|eligible.*work|legally.*work/i)) {
-          // Work authorization - select "Yes"
-          const yesRadio = await group.$('input[type="radio"][value*="yes" i]');
-          if (yesRadio) await yesRadio.click();
-        } else if (legend.match(/require.*sponsorship|need.*visa/i)) {
-          // Sponsorship - select "No"
-          const noRadio = await group.$('input[type="radio"][value*="no" i]');
-          if (noRadio) await noRadio.click();
+        // Work authorization
+        if (legendLower.match(/authorized.*work|eligible.*work|legally.*work/i)) {
+          const isAuthorized = ['us_citizen', 'permanent_resident', 'work_visa'].includes(screening.workAuthorization);
+          const target = isAuthorized ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Sponsorship
+        } else if (legendLower.match(/require.*sponsorship|need.*visa|sponsor/i)) {
+          const needsSponsorship = screening.requiresSponsorship === true;
+          const target = needsSponsorship ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Relocation
+        } else if (legendLower.match(/willing.*relocate|relocation|relocate/i)) {
+          const willingToRelocate = screening.willingToRelocate === true;
+          const target = willingToRelocate ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Background check
+        } else if (legendLower.match(/background.*check|criminal|conviction/i)) {
+          const willing = screening.willingToUndergoBackgroundCheck !== false;
+          const target = willing ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Drug test
+        } else if (legendLower.match(/drug.*test|drug.*screen/i)) {
+          const willing = screening.willingToTakeDrugTest !== false;
+          const target = willing ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Non-compete
+        } else if (legendLower.match(/non.?compete|restrictive.*covenant/i)) {
+          const has = screening.hasNonCompeteAgreement === true;
+          const target = has ? 'yes' : 'no';
+          await this.clickRadioByValue(group, target);
+
+        // Default: select first option
         } else {
-          // For other questions, select first option
           const firstRadio = await group.$('input[type="radio"]');
           if (firstRadio) await firstRadio.click();
         }
+
+        logger.info(`✓ Radio group: "${legend.substring(0, 50).trim()}"`);
       } catch (err) {
         continue;
       }
+    }
+  }
+
+  /**
+   * Click a radio button by matching its value or label text
+   */
+  private async clickRadioByValue(group: any, target: string): Promise<void> {
+    // Try matching by value attribute
+    const byValue = await group.$(`input[type="radio"][value*="${target}" i]`);
+    if (byValue) {
+      await byValue.click();
+      return;
+    }
+
+    // Try matching by label text
+    const radios = await group.$$('input[type="radio"]');
+    for (const radio of radios) {
+      const labelText = await radio.evaluate((el: HTMLInputElement) => {
+        const label = el.labels?.[0]?.textContent || '';
+        return label.toLowerCase();
+      });
+      if (labelText.includes(target)) {
+        await radio.click();
+        return;
+      }
+    }
+
+    // Fallback: click first radio
+    if (radios.length > 0) {
+      await radios[0].click();
     }
   }
 
@@ -318,7 +517,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   /**
    * Submit the application on the final review step
    */
-  async submitApplication(): Promise<void> {
+  protected async submitApplication(): Promise<void> {
     this.onProgress(12, 15, 'Submitting application...');
     logger.info('Submitting LinkedIn Easy Apply application');
 
@@ -339,7 +538,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
           submitted = true;
 
           // Wait for submission to process
-          await this.page.waitForTimeout(3000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
           break;
         }
       } catch (err) {
@@ -355,7 +554,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
   /**
    * Verify the application was submitted successfully
    */
-  async verifySubmission(): Promise<boolean> {
+  protected async verifySubmission(): Promise<void> {
     this.onProgress(13, 15, 'Verifying submission...');
     logger.info('Verifying LinkedIn Easy Apply submission');
 
@@ -372,7 +571,7 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
         try {
           await this.page.waitForSelector(selector, { timeout: 5000 });
           logger.info('✓ Application submission confirmed');
-          return true;
+          return;
         } catch {
           continue;
         }
@@ -382,39 +581,33 @@ export class LinkedInEasyApplyStrategy extends BaseATSStrategy {
       const modalGone = await this.page.$('.jobs-easy-apply-modal') === null;
       if (modalGone) {
         logger.info('✓ Modal closed - assuming success');
-        return true;
+        return;
       }
 
       logger.warn('⚠️ Could not verify submission');
-      return false;
     } catch (err: any) {
       logger.error(`Verification error: ${err.message}`);
-      return false;
     }
   }
 
-  // Inherited methods from BaseATSStrategy (not used for LinkedIn)
-  async navigateToApplication(): Promise<void> {
-    // Already implemented above
+  // Required implementations of abstract base class methods
+  protected async fillBasicInfo(): Promise<void> {
+    // Handled in fillCurrentStep via handleMultiStepForm
   }
 
-  async fillBasicInfo(): Promise<void> {
-    // Handled in fillCurrentStep
+  protected async fillWorkExperience(): Promise<void> {
+    // Handled in fillCurrentStep via handleMultiStepForm
   }
 
-  async fillWorkExperience(): Promise<void> {
-    // Handled in fillCurrentStep
+  protected async fillEducation(): Promise<void> {
+    // Handled in fillCurrentStep via handleMultiStepForm
   }
 
-  async fillEducation(): Promise<void> {
-    // Handled in fillCurrentStep
+  protected async uploadResume(_filePath: string): Promise<void> {
+    // Handled in uploadResumeIfPresent via fillCurrentStep
   }
 
-  async uploadResume(filePath: string): Promise<void> {
-    // Handled in fillCurrentStep
-  }
-
-  async uploadCoverLetter(filePath?: string): Promise<void> {
-    // Handled in fillCurrentStep
+  protected async uploadCoverLetter(_filePath: string): Promise<void> {
+    // Handled in uploadCoverLetterIfPresent via fillCurrentStep
   }
 }

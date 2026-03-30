@@ -136,6 +136,47 @@
   &.status-declined { background-color: rgba($muted, 0.1); color: $muted; }
 }
 
+// Automation Actions
+.automation-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.btn-retry {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid rgba(#3b82f6, 0.3);
+  border-radius: $border-radius;
+  background: rgba(#3b82f6, 0.05);
+  color: #2563eb;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid rgba(#f59e0b, 0.3);
+  border-radius: $border-radius;
+  background: rgba(#f59e0b, 0.05);
+  color: #d97706;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
 // Info Grid
 .info-grid {
   display: grid;

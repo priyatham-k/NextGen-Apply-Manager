@@ -114,6 +114,15 @@ export class AutomationService {
   }
 
   /**
+   * Get uploaded resumes for the current user
+   */
+  getUploadedResumes(): Observable<{ success: boolean; data: any[]; count: number }> {
+    return this.http.get<{ success: boolean; data: any[]; count: number }>(
+      `${environment.apiUrl}/resumes/uploads`
+    );
+  }
+
+  /**
    * Get automation status for an application
    */
   getStatus(applicationId: string): Observable<AutomationStatus> {

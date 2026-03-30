@@ -252,6 +252,15 @@
   &:hover { border-left-color: darken($primary, 10%); }
 }
 
+// Section headings (screening tab)
+.section-heading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $dark-base;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
 // Section blocks
 .section-block {
   padding-bottom: 1rem;

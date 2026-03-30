@@ -148,7 +148,143 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+// Apply Modal
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: $border-radius-xl;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $dark-base;
+    margin: 0;
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: $muted;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+  transition: color 0.15s ease;
+  &:hover { color: $text; }
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.selection-section {
+  .section-label {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: $dark-base;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+
+    i { color: $primary; }
+  }
+}
+
+.selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selection-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { border-color: #cbd5e1; background: #f8fafc; }
+  &.selected { border-color: $primary; background: rgba($primary, 0.04); }
+
+  input[type="radio"] {
+    accent-color: $primary;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.selection-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.selection-name {
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $dark-base;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selection-meta {
+  font-size: $font-size-xs;
+  color: $muted;
+}
+
+.empty-selection {
+  padding: 1rem;
+  border: 1.5px dashed #e2e8f0;
+  border-radius: $border-radius;
+  text-align: center;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
   .job-detail-container { padding: 1rem; }
   .job-title { font-size: 1.25rem; }
+  .modal-content { max-width: 100%; }
 }

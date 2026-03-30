@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 // GET /api/v1/applications
 export const getApplications = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user!.userId;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
@@ -69,7 +69,7 @@ export const getApplications = async (req: Request, res: Response): Promise<void
 // GET /api/v1/applications/stats
 export const getApplicationStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user!.userId;
 
     const statusCounts = await Application.aggregate([
       { $match: { userId } },
@@ -149,7 +149,7 @@ export const createApplication = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const userId = req.user?.userId;
+    const userId = req.user!.userId;
 
     const application = await Application.create({
       userId,
@@ -208,7 +208,7 @@ export const updateApplicationStatus = async (req: Request, res: Response): Prom
     const update: Record<string, any> = { status };
     if (notes !== undefined) update.notes = notes;
 
-    const userId = req.user?.userId;
+    const userId = req.user!.userId;
 
     const application = await Application.findOneAndUpdate(
       { _id: req.params.id, userId },
@@ -285,7 +285,7 @@ export const deleteApplication = async (req: Request, res: Response): Promise<vo
 export const getScreenshot = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id: applicationId, filename } = req.params;
-    const userId = req.user?.userId;
+    const userId = req.user!.userId;
 
     // Verify the application belongs to the user
     const application = await Application.findOne({ _id: applicationId, userId });

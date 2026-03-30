@@ -30,7 +30,11 @@
   @if (data().summary) {
     <div class="resume-section">
       <h3 class="resume-section-title">Professional Summary</h3>
-      <p class="resume-summary">{{ data().summary }}</p>
+      <ul class="resume-item-bullets">
+        @for (point of toBullets(data().summary); track $index) {
+          <li>{{ point }}</li>
+        }
+      </ul>
     </div>
   }
 
@@ -50,7 +54,13 @@
               {{ exp.current ? 'Present' : (exp.endDate || 'End') }}
             </div>
           </div>
-          <p class="resume-item-description">{{ exp.description }}</p>
+          @if (exp.description) {
+            <ul class="resume-item-bullets">
+              @for (bullet of toBullets(exp.description); track $index) {
+                <li>{{ bullet }}</li>
+              }
+            </ul>
+          }
         </div>
       }
     </div>

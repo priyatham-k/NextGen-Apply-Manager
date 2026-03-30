@@ -23,7 +23,7 @@ export class GenericStrategy extends BaseATSStrategy {
         const element = await this.page.$(selector);
         if (element) {
           await element.click();
-          await this.page.waitForTimeout(3000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
           logger.info('✓ Clicked apply button');
           break;
         }
@@ -95,7 +95,7 @@ export class GenericStrategy extends BaseATSStrategy {
           const name = await input.evaluate((el: any) => (el.name || el.id || '').toLowerCase());
           if (name.includes('resume') || name.includes('cv')) {
             await input.uploadFile(filePath);
-            await this.page.waitForTimeout(2000);
+            await new Promise(resolve => setTimeout(resolve, 2000));
             logger.info('✓ Resume uploaded');
             return;
           }
@@ -103,7 +103,7 @@ export class GenericStrategy extends BaseATSStrategy {
 
         // Fall back to first file input
         await fileInputs[0].uploadFile(filePath);
-        await this.page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
         logger.info('✓ Resume uploaded (generic file input)');
       } else {
         logger.warn('No file input found for resume');
@@ -115,9 +115,52 @@ export class GenericStrategy extends BaseATSStrategy {
   }
 
   protected async uploadCoverLetter(filePath: string): Promise<void> {
-    this.emitProgress(11, 'Skipping cover letter...');
-    logger.info('Generic strategy: cover letter not supported');
-    // Generic strategy doesn't handle cover letters
+    this.emitProgress(11, 'Uploading cover letter...');
+    logger.info('Attempting to upload cover letter');
+
+    try {
+      const fileInputs = await this.page.$$('input[type="file"]');
+
+      // Look for a cover-letter-specific file input
+      for (const input of fileInputs) {
+        const name = await input.evaluate((el: any) => (el.name || el.id || '').toLowerCase());
+        if (name.includes('cover') || name.includes('letter')) {
+          await input.uploadFile(filePath);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          logger.info('✓ Cover letter uploaded');
+          return;
+        }
+      }
+
+      // If there's a second file input (first likely used by resume), use it
+      if (fileInputs.length > 1) {
+        await fileInputs[1].uploadFile(filePath);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        logger.info('✓ Cover letter uploaded (second file input)');
+        return;
+      }
+
+      // Try pasting into a cover letter textarea
+      const textareas = await this.page.$$('textarea');
+      for (const textarea of textareas) {
+        const name = await textarea.evaluate((el: any) =>
+          (el.name || el.id || el.placeholder || '').toLowerCase()
+        );
+        if (name.includes('cover') || name.includes('letter')) {
+          const fs = await import('fs/promises');
+          const content = await fs.readFile(filePath, 'utf-8').catch(() => '');
+          if (content) {
+            await textarea.type(content, { delay: 10 });
+            logger.info('✓ Cover letter pasted into textarea');
+            return;
+          }
+        }
+      }
+
+      logger.warn('No cover letter input found');
+    } catch (error: any) {
+      logger.warn(`Cover letter upload failed: ${error.message}`);
+    }
   }
 
   protected async submitApplication(): Promise<void> {
@@ -140,7 +183,7 @@ export class GenericStrategy extends BaseATSStrategy {
           const element = await this.page.$(selector);
           if (element) {
             await element.click();
-            await this.page.waitForTimeout(5000);
+            await new Promise(resolve => setTimeout(resolve, 5000));
             logger.info('✓ Clicked submit button');
             return;
           }
@@ -161,7 +204,7 @@ export class GenericStrategy extends BaseATSStrategy {
     logger.info('Checking for submission confirmation');
 
     try {
-      await this.page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       const text = await this.page.evaluate(() => document.body.innerText);
       const lowerText = text.toLowerCase();
 

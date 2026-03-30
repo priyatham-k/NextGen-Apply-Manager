@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { automationQueue } from '../config/bullQueue';
+import { getAutomationQueue } from '../config/bullQueue';
 import { Application, ApplicationStatus, SubmissionType } from '../models/Application.model';
 import { Job } from '../models/Job.model';
 import { Profile } from '../models/Profile.model';
@@ -12,7 +12,7 @@ import { profileCompletionService } from '../services/profileCompletion.service'
  */
 export const applyToJob = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const { jobId, resumeId, coverLetterId } = req.body;
 
     // Check profile completion FIRST - critical for automation
@@ -64,9 +64,15 @@ export const applyToJob = async (req: Request, res: Response) => {
     });
 
     // Add to automation queue
-    logger.info(`🔄 Adding job to queue for application ${application._id}`);
+    const queue = getAutomationQueue();
+    if (!queue) {
+      await Application.findByIdAndDelete(application._id);
+      return res.status(503).json({ message: 'Automation queue is not available. Please ensure Redis is running.' });
+    }
 
-    const queueJob = await automationQueue.add({
+    logger.info(`Adding job to queue for application ${application._id}`);
+
+    const queueJob = await queue.add({
       applicationId: application._id.toString(),
       userId: userId.toString(),
       jobId: jobId.toString(),
@@ -75,12 +81,7 @@ export const applyToJob = async (req: Request, res: Response) => {
       coverLetterId
     });
 
-    logger.info(`📋 Queued automation for application ${application._id}, Job ID: ${queueJob.id}`);
-
-    // Debug: Check queue status
-    const waitingCount = await automationQueue.getWaitingCount();
-    const activeCount = await automationQueue.getActiveCount();
-    logger.info(`📊 Queue status - Waiting: ${waitingCount}, Active: ${activeCount}`);
+    logger.info(`Queued automation for application ${application._id}, Job ID: ${queueJob.id}`);
 
     // Return 202 Accepted with application ID
     return res.status(202).json({
@@ -103,7 +104,7 @@ export const applyToJob = async (req: Request, res: Response) => {
  */
 export const applyToBulk = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const { jobIds, resumeId, coverLetterId } = req.body;
 
     if (!Array.isArray(jobIds) || jobIds.length === 0) {
@@ -163,7 +164,12 @@ export const applyToBulk = async (req: Request, res: Response) => {
         });
 
         // Add to queue
-        await automationQueue.add({
+        const queue = getAutomationQueue();
+        if (!queue) {
+          errors.push({ jobId, error: 'Automation queue not available' });
+          continue;
+        }
+        await queue.add({
           applicationId: application._id.toString(),
           userId: userId.toString(),
           jobId: jobId.toString(),
@@ -210,7 +216,7 @@ export const getAutomationStatus = async (req: Request, res: Response) => {
     }
 
     // Check if user owns this application
-    if (application.userId.toString() !== req.user.userId.toString()) {
+    if (application.userId.toString() !== req.user!.userId.toString()) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -247,7 +253,7 @@ export const retryAutomation = async (req: Request, res: Response) => {
     }
 
     // Check if user owns this application
-    if (application.userId.toString() !== req.user.userId.toString()) {
+    if (application.userId.toString() !== req.user!.userId.toString()) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -267,7 +273,12 @@ export const retryAutomation = async (req: Request, res: Response) => {
       screenshots: []
     });
 
-    await automationQueue.add({
+    const retryQueue = getAutomationQueue();
+    if (!retryQueue) {
+      return res.status(503).json({ message: 'Automation queue not available' });
+    }
+
+    await retryQueue.add({
       applicationId: application._id.toString(),
       userId: application.userId.toString(),
       jobId: job._id.toString(),
@@ -303,12 +314,17 @@ export const cancelAutomation = async (req: Request, res: Response) => {
     }
 
     // Check if user owns this application
-    if (application.userId.toString() !== req.user.userId.toString()) {
+    if (application.userId.toString() !== req.user!.userId.toString()) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
     // Find job in queue
-    const jobs = await automationQueue.getJobs(['waiting', 'active', 'delayed']);
+    const cancelQueue = getAutomationQueue();
+    if (!cancelQueue) {
+      return res.status(503).json({ message: 'Automation queue not available' });
+    }
+
+    const jobs = await cancelQueue.getJobs(['waiting', 'active', 'delayed']);
     const queueJob = jobs.find(j => j.data.applicationId === applicationId);
 
     if (queueJob) {
@@ -339,11 +355,19 @@ export const cancelAutomation = async (req: Request, res: Response) => {
  */
 export const getQueueStats = async (req: Request, res: Response) => {
   try {
-    const waiting = await automationQueue.getWaitingCount();
-    const active = await automationQueue.getActiveCount();
-    const completed = await automationQueue.getCompletedCount();
-    const failed = await automationQueue.getFailedCount();
-    const delayed = await automationQueue.getDelayedCount();
+    const statsQueue = getAutomationQueue();
+    if (!statsQueue) {
+      return res.json({
+        waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, total: 0,
+        available: false
+      });
+    }
+
+    const waiting = await statsQueue.getWaitingCount();
+    const active = await statsQueue.getActiveCount();
+    const completed = await statsQueue.getCompletedCount();
+    const failed = await statsQueue.getFailedCount();
+    const delayed = await statsQueue.getDelayedCount();
 
     return res.json({
       waiting,
@@ -351,7 +375,8 @@ export const getQueueStats = async (req: Request, res: Response) => {
       completed,
       failed,
       delayed,
-      total: waiting + active + completed + failed + delayed
+      total: waiting + active + completed + failed + delayed,
+      available: true
     });
 
   } catch (error: any) {

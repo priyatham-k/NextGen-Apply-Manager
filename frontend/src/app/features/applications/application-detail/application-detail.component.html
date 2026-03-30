@@ -43,6 +43,38 @@
       </div>
     </div>
 
+    <!-- Automation Actions -->
+    @if (application()!.submissionType === 'automated') {
+      <div class="automation-actions">
+        @if (application()!.status === 'failed') {
+          <button
+            class="btn-retry"
+            (click)="retryAutomation()"
+            [disabled]="retrying()"
+          >
+            @if (retrying()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>Retrying...
+            } @else {
+              <i class="bi bi-arrow-clockwise me-2"></i>Retry Automation
+            }
+          </button>
+        }
+        @if (application()!.status === 'pending') {
+          <button
+            class="btn-cancel"
+            (click)="cancelAutomation()"
+            [disabled]="cancelling()"
+          >
+            @if (cancelling()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>Cancelling...
+            } @else {
+              <i class="bi bi-x-circle me-2"></i>Cancel Automation
+            }
+          </button>
+        }
+      </div>
+    }
+
     <!-- Info Grid -->
     <div class="info-grid">
       <div class="info-card">

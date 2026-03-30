@@ -1,0 +1,68 @@
+@if (isVisible()) {
+  <div class="automation-toast" [class.minimized]="minimized()" [class]="statusClass()">
+    <!-- Header -->
+    <div class="toast-header" (click)="toggleMinimize()">
+      <div class="toast-title">
+        @if (!completionStatus()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+        } @else if (completionStatus()?.status === 'success') {
+          <i class="bi bi-check-circle-fill me-2"></i>
+        } @else {
+          <i class="bi bi-x-circle-fill me-2"></i>
+        }
+        <span>Auto Apply - {{ statusLabel() }}</span>
+      </div>
+      <div class="toast-actions">
+        <button class="toast-btn" (click)="toggleMinimize(); $event.stopPropagation()">
+          <i class="bi" [class.bi-chevron-down]="!minimized()" [class.bi-chevron-up]="minimized()"></i>
+        </button>
+        <button class="toast-btn" (click)="dismiss(); $event.stopPropagation()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body (shown when not minimized) -->
+    @if (!minimized()) {
+      <div class="toast-body">
+        @if (progress(); as p) {
+          <div class="progress-info">
+            <span class="progress-message">{{ p.message }}</span>
+            <span class="progress-percent">{{ p.percentage }}%</span>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              [style.width.%]="p.percentage"
+            ></div>
+          </div>
+          <div class="progress-steps">
+            Step {{ p.step }} of {{ p.totalSteps }}
+          </div>
+        }
+
+        @if (completionStatus(); as s) {
+          @if (s.status === 'success') {
+            <div class="completion-message success">
+              <i class="bi bi-check-circle me-2"></i>
+              Application submitted successfully!
+            </div>
+          } @else {
+            <div class="completion-message error">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              {{ s.error || 'Automation failed' }}
+            </div>
+          }
+          <div class="toast-footer">
+            <button class="btn btn-sm btn-outline-light" (click)="viewApplication()">
+              View Application
+            </button>
+            <button class="btn btn-sm btn-outline-light" (click)="dismiss()">
+              Dismiss
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

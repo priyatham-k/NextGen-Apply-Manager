@@ -7,7 +7,8 @@ import { ToastrService } from 'ngx-toastr';
 import { JobService } from '@core/services/job.service';
 import { AutomationService } from '@core/services/automation.service';
 import { AuthService } from '@core/services/auth.service';
-import { Job, JobStatus } from '@models/index';
+import { CoverLetterService } from '@core/services/coverLetter.service';
+import { Job, JobStatus, UploadedResume } from '@models/index';
 
 @Component({
   selector: 'app-job-detail',
@@ -21,6 +22,7 @@ export class JobDetailComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private jobService = inject(JobService);
   private automationService = inject(AutomationService);
+  private coverLetterService = inject(CoverLetterService);
   private authService = inject(AuthService);
   private toastr = inject(ToastrService);
 
@@ -32,6 +34,14 @@ export class JobDetailComponent implements OnInit, OnDestroy {
   isAutomating = signal(false);
   automationProgress = signal(0);
   automationMessage = signal('');
+
+  // Apply modal state
+  showApplyModal = signal(false);
+  uploadedResumes = signal<UploadedResume[]>([]);
+  coverLetters = this.coverLetterService.coverLetters;
+  selectedResumeId = signal<string | null>(null);
+  selectedCoverLetterId = signal<string | null>(null);
+  loadingModalData = signal(false);
 
   // Profile completion error state
   profileError = signal<{ message: string; missingFields: string[] } | null>(null);
@@ -141,14 +151,52 @@ export class JobDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // TODO: Add modal to select resume/cover letter
+    // Open modal to select resume/cover letter
+    this.showApplyModal.set(true);
+    this.loadingModalData.set(true);
+    this.selectedResumeId.set(null);
+    this.selectedCoverLetterId.set(null);
+
+    try {
+      const [resumeRes] = await Promise.all([
+        firstValueFrom(this.automationService.getUploadedResumes()),
+        firstValueFrom(this.coverLetterService.loadCoverLetters())
+      ]);
+
+      if (resumeRes.success) {
+        const resumes = resumeRes.data as UploadedResume[];
+        this.uploadedResumes.set(resumes);
+        // Auto-select primary resume
+        const primary = resumes.find(r => r.isPrimary);
+        if (primary) this.selectedResumeId.set(primary._id);
+      }
+    } catch {
+      this.toastr.error('Failed to load resumes and cover letters');
+    } finally {
+      this.loadingModalData.set(false);
+    }
+  }
+
+  closeApplyModal(): void {
+    this.showApplyModal.set(false);
+  }
+
+  async confirmAutoApply(): Promise<void> {
+    const job = this.job();
+    if (!job) return;
+
+    this.showApplyModal.set(false);
     this.isAutomating.set(true);
     this.automationProgress.set(0);
     this.automationMessage.set('Starting automation...');
 
     try {
-      const response = await firstValueFrom(
-        this.automationService.applyToJob(job.id)
+      await firstValueFrom(
+        this.automationService.applyToJob(
+          job.id,
+          this.selectedResumeId() || undefined,
+          this.selectedCoverLetterId() || undefined
+        )
       );
       this.toastr.info('Application queued for automation');
     } catch (error: any) {
@@ -163,6 +211,12 @@ export class JobDetailComponent implements OnInit, OnDestroy {
         this.toastr.error(errorMessage);
       }
     }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
   dismissProfileError(): void {

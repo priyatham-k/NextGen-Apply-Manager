@@ -5,12 +5,12 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/services/auth.service';
 import { ProfileService } from '@core/services/profile.service';
-import { Profile, SkillCategory, SkillLevel, LanguageProficiency } from '@models/index';
+import { Profile, SkillCategory, SkillLevel, LanguageProficiency, ScreeningQuestions } from '@models/index';
 import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
 
-type ProfileTab = 'personal' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'additional';
+type ProfileTab = 'personal' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'screening' | 'additional';
 
 @Component({
   selector: 'app-profile',
@@ -48,6 +48,7 @@ export class ProfileComponent implements OnInit {
   projectsForm!: FormGroup;
   educationForm!: FormGroup;
   certificationsForm!: FormGroup;
+  screeningForm!: FormGroup;
   additionalForm!: FormGroup;
 
   // Enum values for template dropdowns
@@ -55,20 +56,50 @@ export class ProfileComponent implements OnInit {
   skillLevels = Object.values(SkillLevel);
   languageProficiencies = Object.values(LanguageProficiency);
 
+  workAuthorizationOptions = [
+    { value: 'us_citizen', label: 'US Citizen' },
+    { value: 'permanent_resident', label: 'Permanent Resident (Green Card)' },
+    { value: 'work_visa', label: 'Work Visa (H-1B, L-1, etc.)' },
+    { value: 'require_sponsorship', label: 'Require Sponsorship' },
+    { value: 'not_authorized', label: 'Not Authorized to Work in US' }
+  ];
+
+  remoteWorkOptions = [
+    { value: 'remote_only', label: 'Remote Only' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'onsite', label: 'On-site' },
+    { value: 'flexible', label: 'Flexible' }
+  ];
+
+  noticePeriodOptions = [
+    { value: 'immediate', label: 'Immediate' },
+    { value: '2_weeks', label: '2 Weeks' },
+    { value: '1_month', label: '1 Month' },
+    { value: '2_months', label: '2 Months' },
+    { value: '3_months', label: '3 Months' }
+  ];
+
   hasProfilePicture = computed(() => !!this.authService.currentUser()?.profilePicture);
 
   profileCompleteness = computed(() => {
     const p = this.profile();
     if (!p) return 0;
+    // Use backend's profileCompletionScore if available (synced with automation readiness)
+    if (p.profileCompletionScore !== undefined && p.profileCompletionScore > 0) {
+      return p.profileCompletionScore;
+    }
+    // Fallback: calculate locally with 10 categories
     let score = 0;
-    const total = 8;
+    const total = 10;
     if (p.personalInfo?.phone || p.personalInfo?.linkedin) score++;
+    if (p.personalInfo?.address?.city && p.personalInfo?.address?.state && p.personalInfo?.address?.country) score++;
     if (p.professionalSummary?.summary) score++;
     if (p.skills?.length > 0) score++;
     if (p.workExperience?.length > 0) score++;
     if (p.projects?.length > 0) score++;
     if (p.education?.length > 0) score++;
     if (p.certifications?.length > 0) score++;
+    if (p.screeningQuestions?.workAuthorization && p.screeningQuestions?.requiresSponsorship !== undefined && p.screeningQuestions?.willingToRelocate !== undefined) score++;
     if ((p.additionalInfo?.languages?.length ?? 0) > 0 || (p.additionalInfo?.awards?.length ?? 0) > 0) score++;
     return Math.round((score / total) * 100);
   });
@@ -81,6 +112,7 @@ export class ProfileComponent implements OnInit {
     { key: 'projects', label: 'Projects', icon: 'bi-folder' },
     { key: 'education', label: 'Education', icon: 'bi-mortarboard' },
     { key: 'certifications', label: 'Certifications', icon: 'bi-award' },
+    { key: 'screening', label: 'Screening', icon: 'bi-shield-check' },
     { key: 'additional', label: 'Additional', icon: 'bi-plus-circle' }
   ];
 
@@ -121,7 +153,9 @@ export class ProfileComponent implements OnInit {
       email: [p?.personalInfo?.email || '', [Validators.required, Validators.email]],
       phone: [p?.personalInfo?.phone || ''],
       city: [p?.personalInfo?.address?.city || ''],
+      state: [p?.personalInfo?.address?.state || ''],
       country: [p?.personalInfo?.address?.country || ''],
+      zipCode: [p?.personalInfo?.address?.zipCode || ''],
       linkedin: [p?.personalInfo?.linkedin || ''],
       github: [p?.personalInfo?.github || ''],
       portfolio: [p?.personalInfo?.portfolio || ''],
@@ -149,6 +183,20 @@ export class ProfileComponent implements OnInit {
 
     this.certificationsForm = this.fb.group({ certifications: this.fb.array([]) });
     p?.certifications?.forEach(c => this.certificationsArray.push(this.createCertificationGroup(c)));
+
+    const sq = p?.screeningQuestions;
+    this.screeningForm = this.fb.group({
+      workAuthorization: [sq?.workAuthorization || ''],
+      requiresSponsorship: [sq?.requiresSponsorship ?? false],
+      willingToRelocate: [sq?.willingToRelocate ?? false],
+      remoteWorkPreference: [sq?.remoteWorkPreference || 'flexible'],
+      noticePeriod: [sq?.noticePeriod || '2_weeks'],
+      earliestStartDate: [sq?.earliestStartDate ? this.toMonthInput(sq.earliestStartDate) : ''],
+      desiredSalaryMin: [sq?.desiredSalary?.min || null],
+      desiredSalaryMax: [sq?.desiredSalary?.max || null],
+      willingToUndergoBackgroundCheck: [sq?.willingToUndergoBackgroundCheck ?? true],
+      willingToTakeDrugTest: [sq?.willingToTakeDrugTest ?? true]
+    });
 
     this.additionalForm = this.fb.group({
       awards: this.fb.array([]),
@@ -344,7 +392,7 @@ export class ProfileComponent implements OnInit {
           personalInfo: {
             firstName: v.firstName, middleName: v.middleName, lastName: v.lastName,
             email: v.email, phone: v.phone,
-            address: { city: v.city, country: v.country },
+            address: { city: v.city, state: v.state, country: v.country, zipCode: v.zipCode },
             linkedin: v.linkedin, github: v.github, portfolio: v.portfolio, website: v.website
           }
         } as any;
@@ -396,6 +444,27 @@ export class ProfileComponent implements OnInit {
       case 'certifications': {
         if (this.certificationsForm.invalid) { this.certificationsForm.markAllAsTouched(); return null; }
         return { certifications: this.certificationsForm.value.certifications } as any;
+      }
+      case 'screening': {
+        if (this.screeningForm.invalid) { this.screeningForm.markAllAsTouched(); return null; }
+        const sv = this.screeningForm.value;
+        return {
+          screeningQuestions: {
+            workAuthorization: sv.workAuthorization || undefined,
+            requiresSponsorship: sv.requiresSponsorship,
+            willingToRelocate: sv.willingToRelocate,
+            remoteWorkPreference: sv.remoteWorkPreference,
+            noticePeriod: sv.noticePeriod,
+            earliestStartDate: sv.earliestStartDate || undefined,
+            desiredSalary: {
+              min: sv.desiredSalaryMin || undefined,
+              max: sv.desiredSalaryMax || undefined,
+              currency: 'USD'
+            },
+            willingToUndergoBackgroundCheck: sv.willingToUndergoBackgroundCheck,
+            willingToTakeDrugTest: sv.willingToTakeDrugTest
+          }
+        } as any;
       }
       case 'additional': {
         if (this.additionalForm.invalid) { this.additionalForm.markAllAsTouched(); return null; }

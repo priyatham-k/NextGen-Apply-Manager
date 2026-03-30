@@ -271,4 +271,132 @@
       </div>
     </div>
   }
+
+  <!-- Resume/Cover Letter Selection Modal -->
+  @if (showApplyModal()) {
+    <div class="modal-overlay" (click)="closeApplyModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>
+            <i class="bi bi-robot me-2"></i>
+            @if (pendingBulkJobIds().length > 0) {
+              Auto Apply to {{ pendingBulkJobIds().length }} Jobs
+            } @else {
+              Auto Apply
+            }
+          </h3>
+          <button class="modal-close" (click)="closeApplyModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (loadingModalData()) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="text-muted mt-2 mb-0">Loading resumes and cover letters...</p>
+            </div>
+          } @else {
+            <!-- Resume Selection -->
+            <div class="selection-section mb-4">
+              <h6 class="section-label">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Select Resume
+              </h6>
+              @if (uploadedResumes().length === 0) {
+                <div class="empty-selection">
+                  <p class="text-muted mb-0">No uploaded resumes found. You can still proceed without one.</p>
+                </div>
+              } @else {
+                <div class="selection-list">
+                  @for (resume of uploadedResumes(); track resume._id) {
+                    <label
+                      class="selection-item"
+                      [class.selected]="selectedResumeId() === resume._id"
+                    >
+                      <input
+                        type="radio"
+                        name="resume"
+                        [value]="resume._id"
+                        [checked]="selectedResumeId() === resume._id"
+                        (change)="selectedResumeId.set(resume._id)"
+                      />
+                      <div class="selection-info">
+                        <span class="selection-name">
+                          {{ resume.filename }}
+                          @if (resume.isPrimary) {
+                            <span class="badge bg-primary-subtle text-primary ms-1">Primary</span>
+                          }
+                        </span>
+                        <span class="selection-meta">{{ formatFileSize(resume.fileSize) }}</span>
+                      </div>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Cover Letter Selection -->
+            <div class="selection-section">
+              <h6 class="section-label">
+                <i class="bi bi-envelope-paper me-2"></i>Select Cover Letter
+                <span class="text-muted fw-normal ms-1">(optional)</span>
+              </h6>
+              @if (coverLetters().length === 0) {
+                <div class="empty-selection">
+                  <p class="text-muted mb-0">No cover letters found. You can proceed without one.</p>
+                </div>
+              } @else {
+                <div class="selection-list">
+                  <label
+                    class="selection-item"
+                    [class.selected]="selectedCoverLetterId() === null"
+                  >
+                    <input
+                      type="radio"
+                      name="coverLetter"
+                      [value]="null"
+                      [checked]="selectedCoverLetterId() === null"
+                      (change)="selectedCoverLetterId.set(null)"
+                    />
+                    <div class="selection-info">
+                      <span class="selection-name text-muted">None (skip cover letter)</span>
+                    </div>
+                  </label>
+                  @for (cl of coverLetters(); track cl._id) {
+                    <label
+                      class="selection-item"
+                      [class.selected]="selectedCoverLetterId() === cl._id"
+                    >
+                      <input
+                        type="radio"
+                        name="coverLetter"
+                        [value]="cl._id"
+                        [checked]="selectedCoverLetterId() === cl._id"
+                        (change)="selectedCoverLetterId.set(cl._id)"
+                      />
+                      <div class="selection-info">
+                        <span class="selection-name">{{ cl.title }}</span>
+                        <span class="selection-meta">{{ cl.company }} - {{ cl.position }}</span>
+                      </div>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="closeApplyModal()">Cancel</button>
+          <button
+            class="btn btn-success"
+            (click)="confirmAutoApply()"
+            [disabled]="loadingModalData()"
+          >
+            <i class="bi bi-robot me-2"></i>Start Auto Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

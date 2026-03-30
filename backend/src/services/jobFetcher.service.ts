@@ -174,6 +174,133 @@ async function upsertJob(jobData: Partial<IJob>): Promise<'new' | 'updated'> {
   }
 }
 
+// ─── Remotive (Free — no API key) ────────────────────────────────
+
+interface RemotiveJob {
+  id: number;
+  url: string;
+  title: string;
+  company_name: string;
+  company_logo: string | null;
+  job_type: string;
+  publication_date: string;
+  candidate_required_location: string;
+  salary: string;
+  description: string;
+  tags: string[];
+}
+
+function mapRemotiveJobType(type: string): JobType {
+  const t = (type || '').toLowerCase().replace(/[-\s]/g, '_');
+  if (t.includes('part')) return JobType.PART_TIME;
+  if (t.includes('contract') || t.includes('freelance')) return JobType.CONTRACT;
+  if (t.includes('intern')) return JobType.INTERNSHIP;
+  return JobType.FULL_TIME;
+}
+
+function normalizeRemotiveJob(raw: RemotiveJob): Partial<IJob> {
+  const location = raw.candidate_required_location || 'Remote';
+  const isRemote = !location || location.toLowerCase().includes('worldwide') ||
+    location.toLowerCase() === 'remote' || location === '';
+
+  return {
+    title: raw.title,
+    company: raw.company_name,
+    location: isRemote ? 'Remote' : location,
+    remote: isRemote,
+    description: raw.description,
+    requirements: raw.tags || [],
+    jobType: mapRemotiveJobType(raw.job_type),
+    experienceLevel: ExperienceLevel.MID,
+    applicationUrl: raw.url,
+    companyLogo: raw.company_logo || undefined,
+    source: 'remotive',
+    sourceId: String(raw.id),
+    postedDate: raw.publication_date ? new Date(raw.publication_date) : new Date()
+  };
+}
+
+async function fetchFromRemotive(search?: string): Promise<RemotiveJob[]> {
+  try {
+    const params: Record<string, string> = { limit: '100' };
+    if (search) params.search = search;
+
+    const response = await axios.get('https://remotive.com/api/remote-jobs', {
+      params,
+      timeout: 15000
+    });
+    return response.data?.jobs || [];
+  } catch (error: any) {
+    logger.error('Remotive API error:', error.message);
+    return [];
+  }
+}
+
+// ─── Arbeitnow (Free — no API key) ───────────────────────────────
+
+interface ArbeitnowJob {
+  slug: string;
+  company_name: string;
+  title: string;
+  description: string;
+  remote: boolean;
+  url: string;
+  tags: string[];
+  job_types: string[];
+  location: string;
+  created_at: number;
+}
+
+function mapArbeitnowJobType(types: string[]): JobType {
+  const t = (types || []).join(' ').toLowerCase();
+  if (t.includes('part')) return JobType.PART_TIME;
+  if (t.includes('contract') || t.includes('freelance')) return JobType.CONTRACT;
+  if (t.includes('intern')) return JobType.INTERNSHIP;
+  return JobType.FULL_TIME;
+}
+
+function normalizeArbeitnowJob(raw: ArbeitnowJob): Partial<IJob> {
+  return {
+    title: raw.title,
+    company: raw.company_name,
+    location: raw.remote ? 'Remote' : (raw.location || 'Remote'),
+    remote: raw.remote,
+    description: raw.description,
+    requirements: raw.tags || [],
+    jobType: mapArbeitnowJobType(raw.job_types),
+    experienceLevel: ExperienceLevel.MID,
+    applicationUrl: raw.url,
+    source: 'arbeitnow',
+    sourceId: raw.slug,
+    postedDate: raw.created_at ? new Date(raw.created_at * 1000) : new Date()
+  };
+}
+
+async function fetchFromArbeitnow(page: number = 1): Promise<ArbeitnowJob[]> {
+  try {
+    const response = await axios.get('https://www.arbeitnow.com/api/job-board-api', {
+      params: { page },
+      timeout: 15000
+    });
+    return response.data?.data || [];
+  } catch (error: any) {
+    logger.error('Arbeitnow API error:', error.message);
+    return [];
+  }
+}
+
+// ─── Keyword filter for free sources ─────────────────────────────
+
+function jobMatchesKeywords(job: Partial<IJob>, keywords: string[]): boolean {
+  if (keywords.length === 0) return true;
+  const haystack = [job.title, job.description, ...(job.requirements || [])]
+    .join(' ')
+    .toLowerCase();
+  return keywords.some(kw => haystack.includes(kw.toLowerCase()));
+}
+
+// ─── Internet search types ────────────────────────────────────────
+
 // Internet search types
 export interface CompanyJobEntry {
   id: string;
@@ -202,46 +329,21 @@ export interface SearchFetchResult {
   companies: CompanyGroup[];
 }
 
-export async function searchAndFetchJobs(
-  query: string,
-  location?: string,
-  page: number = 1
-): Promise<SearchFetchResult> {
-  const fullQuery = location
-    ? (location.toLowerCase() === 'remote' ? `${query} remote` : `${query} in ${location}`)
-    : query;
-
-  logger.info(`Internet search: "${fullQuery}" (page ${page})`);
-
-  const rawJobs = await fetchFromJSearch(fullQuery, page);
-
-  const result: SearchFetchResult = {
-    totalJobs: rawJobs.length,
-    newJobs: 0,
-    updatedJobs: 0,
-    companies: []
-  };
-
-  const companyMap = new Map<string, {
-    website: string | null;
-    logo: string | null;
-    jobs: CompanyJobEntry[];
-  }>();
-
-  for (const rawJob of rawJobs) {
+async function processNormalizedJobs(
+  normalizedList: Partial<IJob>[],
+  companyMap: Map<string, { website: string | null; logo: string | null; jobs: CompanyJobEntry[] }>,
+  result: SearchFetchResult
+): Promise<void> {
+  for (const normalized of normalizedList) {
     try {
-      const normalized = normalizeJSearchJob(rawJob);
       const action = await upsertJob(normalized);
       if (action === 'new') result.newJobs++;
       else result.updatedJobs++;
+      result.totalJobs++;
 
-      // Find persisted document to get MongoDB _id
-      const persisted = await Job.findOne({
-        source: normalized.source,
-        sourceId: normalized.sourceId
-      });
-
+      const persisted = await Job.findOne({ source: normalized.source, sourceId: normalized.sourceId });
       const company = normalized.company || 'Unknown';
+
       if (!companyMap.has(company)) {
         companyMap.set(company, {
           website: normalized.companyWebsite || null,
@@ -262,11 +364,41 @@ export async function searchAndFetchJobs(
         postedDate: normalized.postedDate || new Date()
       });
     } catch (error: any) {
-      logger.error(`Error processing job ${rawJob.job_id}:`, error.message);
+      logger.error(`Error processing job:`, error.message);
     }
   }
+}
 
-  // Convert map to array, sorted by job count descending
+export async function searchAndFetchJobs(
+  query: string,
+  location?: string,
+  page: number = 1
+): Promise<SearchFetchResult> {
+  const fullQuery = location
+    ? (location.toLowerCase() === 'remote' ? `${query} remote` : `${query} in ${location}`)
+    : query;
+
+  logger.info(`Internet search: "${fullQuery}" (page ${page})`);
+
+  const result: SearchFetchResult = { totalJobs: 0, newJobs: 0, updatedJobs: 0, companies: [] };
+  const companyMap = new Map<string, { website: string | null; logo: string | null; jobs: CompanyJobEntry[] }>();
+
+  // JSearch (requires API key)
+  const jsearchJobs = await fetchFromJSearch(fullQuery, page);
+  await processNormalizedJobs(jsearchJobs.map(normalizeJSearchJob), companyMap, result);
+  logger.info(`JSearch: ${jsearchJobs.length} jobs`);
+
+  // Remotive (free, only on page 1 to avoid duplicate calls)
+  if (page === 1) {
+    const remotiveJobs = await fetchFromRemotive(query);
+    const queryKeywords = query.split(/[\s,]+/).filter(k => k.length > 2);
+    const filteredRemotive = remotiveJobs
+      .map(normalizeRemotiveJob)
+      .filter(j => jobMatchesKeywords(j, queryKeywords));
+    await processNormalizedJobs(filteredRemotive, companyMap, result);
+    logger.info(`Remotive: ${remotiveJobs.length} raw, ${filteredRemotive.length} matched`);
+  }
+
   result.companies = Array.from(companyMap.entries())
     .map(([company, data]) => ({
       company,
@@ -291,8 +423,8 @@ export async function fetchJobs(): Promise<FetchResult> {
   const keywords = keywordsStr.split(',').map(k => k.trim()).filter(Boolean);
   const locations = locationsStr.split(',').map(l => l.trim()).filter(Boolean);
 
-  logger.info(`Starting job fetch: ${keywords.length} keywords x ${locations.length} locations`);
-
+  // ── JSearch (requires API key) ──
+  logger.info(`JSearch fetch: ${keywords.length} keywords x ${locations.length} locations`);
   for (const keyword of keywords) {
     for (const location of locations) {
       for (let page = 1; page <= maxPages; page++) {
@@ -300,32 +432,64 @@ export async function fetchJobs(): Promise<FetchResult> {
           ? `${keyword} remote`
           : `${keyword} in ${location}`;
 
-        logger.info(`Fetching: "${query}" (page ${page})`);
-
         const rawJobs = await fetchFromJSearch(query, page);
-
-        if (rawJobs.length === 0) {
-          if (page === 1) {
-            logger.info(`No results for "${query}"`);
-          }
-          break; // No more pages
-        }
+        if (rawJobs.length === 0) break;
 
         for (const rawJob of rawJobs) {
           try {
-            const normalized = normalizeJSearchJob(rawJob);
-            const action = await upsertJob(normalized);
+            const action = await upsertJob(normalizeJSearchJob(rawJob));
             if (action === 'new') result.newJobs++;
             else result.updatedJobs++;
           } catch (error: any) {
             result.errors++;
-            logger.error(`Error upserting job ${rawJob.job_id}:`, error.message);
+            logger.error(`JSearch upsert error ${rawJob.job_id}:`, error.message);
           }
         }
-
-        logger.info(`Processed ${rawJobs.length} jobs from "${query}" page ${page}`);
+        logger.info(`JSearch: "${query}" page ${page} → ${rawJobs.length} jobs`);
       }
     }
+  }
+
+  // ── Remotive (free, no key) ──
+  logger.info('Fetching from Remotive (free)...');
+  for (const keyword of keywords.slice(0, 3)) {
+    const remotiveJobs = await fetchFromRemotive(keyword);
+    const filtered = remotiveJobs
+      .map(normalizeRemotiveJob)
+      .filter(j => jobMatchesKeywords(j, keywords));
+    for (const normalized of filtered) {
+      try {
+        const action = await upsertJob(normalized);
+        if (action === 'new') result.newJobs++;
+        else result.updatedJobs++;
+      } catch (error: any) {
+        result.errors++;
+        logger.error(`Remotive upsert error:`, error.message);
+      }
+    }
+    logger.info(`Remotive: "${keyword}" → ${remotiveJobs.length} raw, ${filtered.length} matched`);
+  }
+
+  // ── Arbeitnow (free, no key) — filter by keywords since it has no search param ──
+  logger.info('Fetching from Arbeitnow (free)...');
+  for (let page = 1; page <= 2; page++) {
+    const arbeitnowJobs = await fetchFromArbeitnow(page);
+    if (arbeitnowJobs.length === 0) break;
+
+    const filtered = arbeitnowJobs
+      .map(normalizeArbeitnowJob)
+      .filter(j => jobMatchesKeywords(j, keywords));
+    for (const normalized of filtered) {
+      try {
+        const action = await upsertJob(normalized);
+        if (action === 'new') result.newJobs++;
+        else result.updatedJobs++;
+      } catch (error: any) {
+        result.errors++;
+        logger.error(`Arbeitnow upsert error:`, error.message);
+      }
+    }
+    logger.info(`Arbeitnow: page ${page} → ${arbeitnowJobs.length} raw, ${filtered.length} matched`);
   }
 
   logger.info(`Job fetch complete: ${result.newJobs} new, ${result.updatedJobs} updated, ${result.errors} errors`);

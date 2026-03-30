@@ -1,7 +1,9 @@
 // Load environment variables FIRST before any imports that need them
 import dotenv from 'dotenv';
 import path from 'path';
+// Load backend/.env, then root .env (override to pick up real API keys from root)
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
 
 // Now import everything else
 import express, { Express, Request, Response } from 'express';
@@ -31,7 +33,9 @@ import coverLetterRoutes from './routes/coverLetter.routes';
 import automationRoutes from './routes/automation.routes';
 
 // Import automation services
-import './workers/automation.worker'; // Start automation worker
+import { connectRedis } from './config/redis';
+import { initializeQueue } from './config/bullQueue';
+import { startWorker } from './workers/automation.worker';
 import { automationEngine } from './services/automation/automationEngine.service';
 import { browserManager } from './services/automation/browserManager.service';
 
@@ -85,6 +89,16 @@ const startServer = async () => {
   try {
     await connectDatabase();
 
+    // Initialize Redis (non-blocking — server starts even if Redis is down)
+    const redisConnected = await connectRedis();
+    if (redisConnected) {
+      initializeQueue();
+      startWorker();
+      logger.info('Automation queue and worker initialized');
+    } else {
+      logger.warn('Server starting without automation queue (Redis unavailable)');
+    }
+
     // Initialize Socket.IO
     io = initializeSocket(httpServer);
 
@@ -92,9 +106,9 @@ const startServer = async () => {
     automationEngine.setSocketIO(io);
 
     httpServer.listen(PORT, () => {
-      logger.info(`🚀 Server is running on port ${PORT}`);
-      logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`🔗 API URL: http://localhost:${PORT}${API_PREFIX}`);
+      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`API URL: http://localhost:${PORT}${API_PREFIX}`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

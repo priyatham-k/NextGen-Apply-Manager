@@ -5,7 +5,7 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 :host { display: block; }
 
 .prof-resume {
-  padding: $spacing-6;
+  padding: $spacing-4;
   background: white;
   border-top: 4px solid #9ca3af;
 }
@@ -15,10 +15,10 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-bottom: $spacing-6;
+  padding-bottom: $spacing-3;
   border-bottom: 1px solid #d1d5db;
-  margin-bottom: $spacing-6;
-  gap: $spacing-6;
+  margin-bottom: $spacing-3;
+  gap: $spacing-4;
 }
 
 .prof-header-left {
@@ -27,17 +27,17 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 
 .prof-name {
   font-family: $font-family-serif;
-  font-size: $font-size-4xl;
+  font-size: $font-size-3xl;
   font-weight: $font-weight-bold;
   color: #374151;
-  margin-bottom: $spacing-2;
+  margin-bottom: $spacing-1;
   line-height: $line-height-tight;
 }
 
 .prof-tagline {
   color: #6b7280;
-  font-size: $font-size-sm;
-  line-height: $line-height-relaxed;
+  font-size: $font-size-xs;
+  line-height: $line-height-normal;
   margin-bottom: 0;
   max-width: 400px;
 }
@@ -49,14 +49,14 @@ $font-family-serif: Georgia, 'Times New Roman', Times, serif;
 
 .prof-contact-item {
   display: block;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: #6b7280;
-  margin-bottom: $spacing-1;
+  margin-bottom: 2px;
   text-decoration: none;
 
   i {
     color: #6b7280;
-    width: 16px;
+    width: 14px;
     display: inline-block;
     text-align: center;
   }
@@ -71,22 +71,22 @@ a.prof-contact-item {
 
 // Sections
 .prof-section {
-  margin-bottom: $spacing-6;
+  margin-bottom: $spacing-3;
 }
 
 .prof-section-title {
   font-family: $font-family-serif;
-  font-size: $font-size-xl;
+  font-size: $font-size-lg;
   font-weight: $font-weight-bold;
   color: #374151;
   border-bottom: 2px solid #9ca3af;
-  padding-bottom: $spacing-2;
-  margin-bottom: $spacing-4;
+  padding-bottom: $spacing-1;
+  margin-bottom: $spacing-2;
 }
 
 // Items
 .prof-item {
-  margin-bottom: $spacing-5;
+  margin-bottom: $spacing-3;
   &:last-child { margin-bottom: 0; }
 }
 
@@ -94,46 +94,54 @@ a.prof-contact-item {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: $spacing-2;
+  margin-bottom: $spacing-1;
   gap: $spacing-4;
 }
 
 .prof-item-company {
   font-family: $font-family-serif;
-  font-size: $font-size-lg;
+  font-size: $font-size-md;
   font-weight: $font-weight-bold;
   color: #374151;
   margin-bottom: 0;
 }
 
 .prof-item-position {
-  font-size: $font-size-md;
+  font-size: $font-size-sm;
   color: #6b7280;
   font-style: italic;
 }
 
 .prof-item-date {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: #6b7280;
   white-space: nowrap;
 }
 
-.prof-item-description {
+.prof-item-bullets {
+  margin: $spacing-1 0 0 0;
+  padding-left: $spacing-4;
   color: #4b5563;
-  line-height: $line-height-relaxed;
-  font-size: $font-size-md;
-  margin-bottom: 0;
+  font-size: $font-size-sm;
+  line-height: $line-height-tight;
+  list-style-type: disc;
+  list-style-position: outside;
+
+  li {
+    margin-bottom: 1px;
+    display: list-item;
+  }
 }
 
 // Skills Grid
 .prof-skills-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: $spacing-2 $spacing-4;
+  gap: $spacing-1 $spacing-4;
 }
 
 .prof-skill-item {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: #4b5563;
   padding-left: $spacing-3;
   position: relative;
@@ -149,9 +157,10 @@ a.prof-contact-item {
 
 // Print
 @media print {
-  .prof-resume { padding: 0; border-top-width: 3px; }
-  .prof-name { font-size: $font-size-3xl; }
-  .prof-header { flex-direction: row !important; gap: $spacing-6 !important; }
+  :host { display: block; margin: 0; padding: 0; }
+  .prof-resume { padding: 0; margin: 0; border-top-width: 3px; }
+  .prof-name { font-size: $font-size-2xl; }
+  .prof-header { flex-direction: row !important; gap: $spacing-4 !important; }
   .prof-header-right { text-align: right !important; }
   .prof-item-header { flex-direction: row !important; gap: $spacing-4 !important; }
   .prof-skills-grid { grid-template-columns: repeat(3, 1fr) !important; }
@@ -159,9 +168,9 @@ a.prof-contact-item {
 
 // Responsive
 @media (max-width: 767.98px) {
-  .prof-header { flex-direction: column; gap: $spacing-4; }
+  .prof-header { flex-direction: column; gap: $spacing-3; }
   .prof-header-right { text-align: left; }
-  .prof-name { font-size: $font-size-3xl; }
+  .prof-name { font-size: $font-size-2xl; }
   .prof-skills-grid { grid-template-columns: repeat(2, 1fr); }
   .prof-item-header { flex-direction: column; gap: $spacing-1; }
 }

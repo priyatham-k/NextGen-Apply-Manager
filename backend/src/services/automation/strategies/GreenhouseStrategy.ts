@@ -85,7 +85,7 @@ export class GreenhouseStrategy extends BaseATSStrategy {
       if (fileInput) {
         await fileInput.uploadFile(filePath);
         // Wait for upload to complete
-        await this.page.waitForTimeout(3000);
+        await new Promise(resolve => setTimeout(resolve, 3000));
         logger.info('✓ Resume uploaded');
       } else {
         logger.warn('Resume upload field not found');
@@ -105,7 +105,7 @@ export class GreenhouseStrategy extends BaseATSStrategy {
 
       if (clInput) {
         await clInput.uploadFile(filePath);
-        await this.page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
         logger.info('✓ Cover letter uploaded');
       } else {
         logger.info('Cover letter field not found (optional)');
@@ -151,7 +151,7 @@ export class GreenhouseStrategy extends BaseATSStrategy {
 
     try {
       // Wait a moment for confirmation
-      await this.page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Check for success message
       const bodyText = await this.page.evaluate(() => document.body.innerText);
