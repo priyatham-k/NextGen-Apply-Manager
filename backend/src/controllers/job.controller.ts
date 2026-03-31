@@ -14,6 +14,12 @@ export const getJobs = async (req: Request, res: Response): Promise<void> => {
 
     const filter: Record<string, any> = {};
 
+    // Date range filter — default to last 30 days unless caller specifies otherwise
+    const daysOld = parseInt(req.query.daysOld as string) || 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysOld);
+    filter.postedDate = { $gte: cutoff };
+
     // Text search
     const search = req.query.search as string;
     if (search) {

@@ -416,6 +416,14 @@ export async function searchAndFetchJobs(
 export async function fetchJobs(): Promise<FetchResult> {
   const result: FetchResult = { newJobs: 0, updatedJobs: 0, errors: 0 };
 
+  // Purge jobs older than 60 days to keep the board fresh
+  const purgeDate = new Date();
+  purgeDate.setDate(purgeDate.getDate() - 60);
+  const purged = await Job.deleteMany({ postedDate: { $lt: purgeDate } });
+  if (purged.deletedCount > 0) {
+    logger.info(`Purged ${purged.deletedCount} jobs older than 60 days`);
+  }
+
   const keywordsStr = process.env.JOB_KEYWORDS || 'Full Stack Developer,Node.js,React';
   const locationsStr = process.env.JOB_LOCATIONS || 'Remote';
   const maxPages = parseInt(process.env.FETCH_MAX_PAGES || '2', 10);
