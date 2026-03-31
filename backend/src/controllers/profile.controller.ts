@@ -116,11 +116,23 @@ export const updateFullProfile = async (req: Request, res: Response): Promise<vo
     if (updateData.certifications) $set.certifications = updateData.certifications;
     if (updateData.additionalInfo) $set.additionalInfo = updateData.additionalInfo;
 
-    const updatedProfile = await Profile.findOneAndUpdate(
+    let updatedProfile = await Profile.findOneAndUpdate(
       { userId },
       { $set },
       { new: true, runValidators: true }
     );
+
+    // Recalculate completion score (findOneAndUpdate bypasses pre-save hook)
+    if (updatedProfile) {
+      const newScore = updatedProfile.calculateCompletionScore();
+      if (newScore !== updatedProfile.profileCompletionScore) {
+        updatedProfile = await Profile.findOneAndUpdate(
+          { userId },
+          { $set: { profileCompletionScore: newScore } },
+          { new: true }
+        );
+      }
+    }
 
     // Sync name back to User model when personalInfo changes (email is auth identity — not updated here)
     if (updateData.personalInfo) {
@@ -135,7 +147,7 @@ export const updateFullProfile = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    logger.info(`Profile updated for user: ${userId}, sections: ${Object.keys($set).join(', ')}`);
+    logger.info(`Profile updated for user: ${userId}, sections: ${Object.keys($set).join(', ')}, score: ${updatedProfile?.profileCompletionScore}`);
 
     res.status(200).json({
       success: true,
