@@ -4,7 +4,6 @@ import { Profile } from '../models/Profile.model';
 import { logger } from '../config/logger';
 import { profileCompletionService } from '../services/profileCompletion.service';
 import fs from 'fs';
-import path from 'path';
 
 /**
  * Get full profile (auto-creates if missing)
@@ -123,17 +122,16 @@ export const updateFullProfile = async (req: Request, res: Response): Promise<vo
       { new: true, runValidators: true }
     );
 
-    // Sync name/email back to User model when personalInfo changes
+    // Sync name back to User model when personalInfo changes (email is auth identity — not updated here)
     if (updateData.personalInfo) {
       const pi = updateData.personalInfo;
       const userUpdate: Record<string, any> = {};
       if (pi.firstName) userUpdate.firstName = pi.firstName;
       if (pi.lastName) userUpdate.lastName = pi.lastName;
       if (pi.middleName !== undefined) userUpdate.middleName = pi.middleName || '';
-      if (pi.email) userUpdate.email = pi.email.toLowerCase();
 
       if (Object.keys(userUpdate).length > 0) {
-        await User.findByIdAndUpdate(userId, userUpdate);
+        await User.findByIdAndUpdate(userId, { $set: userUpdate });
       }
     }
 
