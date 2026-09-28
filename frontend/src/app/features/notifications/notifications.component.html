@@ -1,0 +1,111 @@
+<div class="notifications-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Notifications</h1>
+      <p class="page-subtitle">Stay updated on your applications and job matches</p>
+    </div>
+    @if (unreadCount() > 0) {
+      <button class="btn btn-outline-primary btn-sm" (click)="markAllAsRead()">
+        <i class="bi bi-check-all me-1"></i>
+        Mark all as read
+      </button>
+    }
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs mb-4">
+    @for (filter of filters; track filter.value) {
+      <button
+        class="filter-tab"
+        [class.active]="activeFilter() === filter.value"
+        (click)="setFilter(filter.value)"
+      >
+        <i class="bi {{ filter.icon }} me-1"></i>
+        {{ filter.label }}
+        @if (filter.value === 'unread' && unreadCount() > 0) {
+          <span class="filter-badge">{{ unreadCount() }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (loading() && filteredNotifications().length === 0) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 2.5rem; height: 2.5rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-3">Loading notifications...</p>
+    </div>
+  }
+
+  <!-- Notification List -->
+  @if (filteredNotifications().length > 0) {
+    <div class="notification-list">
+      @for (notification of filteredNotifications(); track notification._id) {
+        <div
+          class="notification-card"
+          [class.unread]="!notification.read"
+          (click)="onNotificationClick(notification)"
+        >
+          <div class="notification-icon" [style.color]="getIconColor(notification.type)" [style.background]="getIconColor(notification.type) + '15'">
+            <i class="bi {{ getIcon(notification.type) }}"></i>
+          </div>
+
+          <div class="notification-content">
+            <div class="notification-title">
+              {{ notification.title }}
+              @if (!notification.read) {
+                <span class="unread-dot"></span>
+              }
+            </div>
+            <p class="notification-message">{{ notification.message }}</p>
+            <span class="notification-time">
+              <i class="bi bi-clock me-1"></i>{{ getTimeAgo(notification.createdAt) }}
+            </span>
+          </div>
+
+          <button
+            class="notification-delete"
+            (click)="deleteNotification($event, notification._id)"
+            title="Delete notification"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Load More -->
+    @if (notifications().length >= currentPage() * 50) {
+      <div class="text-center mt-4">
+        <button class="btn btn-outline-secondary btn-sm" (click)="loadMore()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          Load more
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && filteredNotifications().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="bi bi-bell-slash"></i>
+      </div>
+      @if (activeFilter() === 'all') {
+        <h5>No notifications yet</h5>
+        <p>You'll see notifications here when there are updates about your applications and job matches.</p>
+      } @else if (activeFilter() === 'unread') {
+        <h5>All caught up!</h5>
+        <p>You have no unread notifications.</p>
+      } @else {
+        <h5>No notifications in this category</h5>
+        <p>Try selecting a different filter.</p>
+      }
+    </div>
+  }
+</div>

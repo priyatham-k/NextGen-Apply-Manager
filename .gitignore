@@ -1,0 +1,144 @@
+# ============================================
+# NODE & NPM
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ============================================
+# ENVIRONMENT & CONFIG
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+
+# ============================================
+# BUILD OUTPUT
+# ============================================
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+.cache/
+
+# ============================================
+# ANGULAR SPECIFIC
+# ============================================
+/frontend/dist
+/frontend/.angular
+/frontend/.angular/cache
+
+# ============================================
+# LOGS
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================
+# TESTING
+# ============================================
+coverage/
+.nyc_output
+*.lcov
+.jest-cache/
+
+# ============================================
+# IDEs & EDITORS
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ============================================
+# OS FILES
+# ============================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# PUPPETEER & AUTOMATION
+# ============================================
+screenshots/
+*.png
+*.jpg
+downloads/
+.chromium/
+
+# ============================================
+# DATABASE
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+data/
+mongodb-data/
+
+# ============================================
+# AWS & DEPLOYMENT
+# ============================================
+.aws/
+.terraform/
+*.tfstate
+*.tfstate.backup
+.serverless/
+
+# ============================================
+# DOCKER
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# TEMP & MISC
+# ============================================
+tmp/
+temp/
+*.tmp
+.cache
+
+# ============================================
+# SENSITIVE DATA
+# ============================================
+resumes/
+cover-letters/
+personal-data/
+secrets/
+credentials/
+
+# ============================================
+# PACKAGE MANAGER
+# ============================================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Keep these for consistent installs across team
+!frontend/package-lock.json
+!backend/package-lock.json
+!automation/package-lock.json
+!job-fetcher/package-lock.json
+!matching-engine/package-lock.json

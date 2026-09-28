@@ -1,0 +1,262 @@
+<div class="analytics-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Analytics</h1>
+      <p class="page-subtitle">Track your job search performance and get AI-powered insights</p>
+    </div>
+    <button class="btn-refresh" (click)="refresh()">
+      <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading analytics...</p>
+    </div>
+  } @else if (!stats()) {
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-bar-chart-line"></i></div>
+      <h3>No Data Yet</h3>
+      <p>Start applying to jobs to see your analytics here.</p>
+      <a routerLink="/jobs" class="btn-primary-action">
+        <i class="bi bi-search me-2"></i>Browse Jobs
+      </a>
+    </div>
+  } @else {
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="bi bi-send-check"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats()!.totalApplications }}</span>
+          <span class="stat-label">Total Applications</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="bi bi-calendar-event"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ interviewCount() }}</span>
+          <span class="stat-label">Interviews</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="bi bi-trophy"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats()!.successfulApplications }}</span>
+          <span class="stat-label">Offers</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><i class="bi bi-percent"></i></div>
+        <div class="stat-info">
+          <span class="stat-value">{{ successRate() }}%</span>
+          <span class="stat-label">Success Rate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-title-icon ai"><i class="bi bi-stars"></i></div>
+          <span>AI-Powered Insights</span>
+        </div>
+        <button class="btn-icon" (click)="refreshInsights()" [disabled]="insightsLoading()" title="Refresh insights">
+          <i class="bi bi-arrow-clockwise" [class.spinning]="insightsLoading()"></i>
+        </button>
+      </div>
+      <div class="card-body">
+        @if (insightsLoading() && insights().length === 0) {
+          <div class="insights-loading">
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row short"></div>
+          </div>
+        } @else if (insights().length > 0) {
+          <div class="insights-list">
+            @for (insight of insights(); track insight.title) {
+              <div class="insight-item" [class]="'type-' + insight.type">
+                <div class="insight-badge">
+                  @if (insight.type === 'positive') {
+                    <i class="bi bi-check-circle-fill"></i>
+                  } @else if (insight.type === 'warning') {
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  } @else {
+                    <i class="bi bi-lightbulb-fill"></i>
+                  }
+                </div>
+                <div class="insight-text">
+                  <strong>{{ insight.title }}</strong>
+                  <span>{{ insight.message }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-card-state">
+            <i class="bi bi-stars"></i>
+            <p>AI insights will appear once you have application data.</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Activity Period -->
+    <div class="period-strip">
+      <div class="period-item">
+        <span class="period-num">{{ stats()!.applicationsToday }}</span>
+        <span class="period-label">Today</span>
+      </div>
+      <div class="period-divider"></div>
+      <div class="period-item">
+        <span class="period-num">{{ stats()!.applicationsThisWeek }}</span>
+        <span class="period-label">This Week</span>
+      </div>
+      <div class="period-divider"></div>
+      <div class="period-item">
+        <span class="period-num">{{ stats()!.applicationsThisMonth }}</span>
+        <span class="period-label">This Month</span>
+      </div>
+      <div class="period-divider"></div>
+      <div class="period-item">
+        <span class="period-num highlight">{{ stats()!.averageMatchScore }}%</span>
+        <span class="period-label">Avg Match</span>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Timeline -->
+      <div class="card chart-main">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon blue"><i class="bi bi-activity"></i></div>
+            <span>Application Timeline</span>
+          </div>
+          <span class="card-subtitle">Last 30 days</span>
+        </div>
+        <div class="card-body">
+          @if (maxTimelineValue() > 0) {
+            <div class="timeline-chart">
+              <div class="timeline-y-axis">
+                <span>{{ maxTimelineValue() }}</span>
+                <span>{{ Math.ceil(maxTimelineValue() / 2) }}</span>
+                <span>0</span>
+              </div>
+              <div class="timeline-bars-area">
+                <div class="timeline-grid-lines">
+                  <div class="grid-line"></div>
+                  <div class="grid-line"></div>
+                  <div class="grid-line"></div>
+                </div>
+                <div class="timeline-bars">
+                  @for (day of stats()!.applicationTimeline; track day.date) {
+                    <div class="bar-col" [title]="day.date + ': ' + day.applications + ' application(s)'">
+                      <div class="bar-fill"
+                           [style.height.%]="timelineBarHeight(day.applications)"
+                           [class.active]="day.applications > 0">
+                        @if (day.applications > 0) {
+                          <span class="bar-tooltip">{{ day.applications }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                <div class="timeline-x-axis">
+                  @for (day of stats()!.applicationTimeline; track day.date) {
+                    @if (showDateLabel(day.date)) {
+                      <span class="x-label" [style.left.%]="timelineXPosition($index)">{{ formatShortDate(day.date) }}</span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="empty-card-state">
+              <i class="bi bi-bar-chart-line"></i>
+              <p>No applications in the last 30 days</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Status Breakdown -->
+      <div class="card chart-side">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon purple"><i class="bi bi-pie-chart"></i></div>
+            <span>Status Breakdown</span>
+          </div>
+        </div>
+        <div class="card-body">
+          @if (stats()!.totalApplications > 0) {
+            <div class="donut-section">
+              <div class="donut-wrapper">
+                <div class="donut" [style.background]="donutGradient()"></div>
+                <div class="donut-center">
+                  <span class="donut-num">{{ stats()!.totalApplications }}</span>
+                  <span class="donut-text">Total</span>
+                </div>
+              </div>
+              <div class="legend">
+                @for (item of statusItems(); track item.status) {
+                  <div class="legend-row">
+                    <span class="legend-color" [style.background]="item.color"></span>
+                    <span class="legend-name">{{ item.label }}</span>
+                    <span class="legend-val">{{ item.count }}</span>
+                    <span class="legend-pct">{{ statusPercent(item.count) }}%</span>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="empty-card-state">
+              <i class="bi bi-pie-chart"></i>
+              <p>No applications to display</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Companies -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-title-icon green"><i class="bi bi-building"></i></div>
+          <span>Top Companies</span>
+        </div>
+        <span class="card-subtitle">By application count</span>
+      </div>
+      <div class="card-body no-pad">
+        @if (stats()!.topCompanies.length > 0) {
+          <div class="companies-table">
+            @for (company of stats()!.topCompanies; track company.company; let i = $index) {
+              <div class="company-row">
+                <span class="company-rank">{{ i + 1 }}</span>
+                <div class="company-details">
+                  <span class="company-name">{{ company.company }}</span>
+                  <div class="company-bar-wrapper">
+                    <div class="company-bar" [style.width.%]="companyBarWidth(company.count)"></div>
+                  </div>
+                </div>
+                <div class="company-stats">
+                  <span class="company-count">{{ company.count }}</span>
+                  <span class="company-success" [class.good]="company.successRate > 0">{{ company.successRate }}%</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-card-state padded">
+            <i class="bi bi-building"></i>
+            <p>No company data yet</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

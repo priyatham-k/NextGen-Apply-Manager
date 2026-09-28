@@ -1,0 +1,94 @@
+<div class="resume-builder-container">
+  <!-- Page Header -->
+  <div class="page-header mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">AI Resume Generator</h1>
+        <p class="page-subtitle">Paste a job description and let AI craft a tailored resume</p>
+      </div>
+      @if (generatedResume()) {
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="reset()">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Start Over
+          </button>
+          <button type="button" class="btn btn-success" (click)="downloadPdf()">
+            <i class="bi bi-download me-2"></i>Download PDF
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Job Description Input -->
+  @if (!generatedResume() && !loading()) {
+    <div class="card mb-4 no-print">
+      <div class="card-body p-4">
+        <label for="jobDescription" class="form-label fw-semibold mb-3">
+          <i class="bi bi-briefcase me-2"></i>Paste the Job Description
+        </label>
+        <textarea
+          id="jobDescription"
+          class="form-control"
+          rows="12"
+          placeholder="Paste the full job description here... Include the job title, responsibilities, requirements, qualifications, and any other details."
+          [ngModel]="jobDescription()"
+          (ngModelChange)="jobDescription.set($event)"
+        ></textarea>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <small class="text-muted">
+            {{ jobDescription().length }} characters
+            @if (jobDescription().length > 0 && jobDescription().length < 50) {
+              <span class="text-danger"> (minimum 50)</span>
+            }
+          </small>
+          <button
+            type="button"
+            class="btn btn-primary btn-lg"
+            (click)="generateResume()"
+            [disabled]="loading() || jobDescription().length < 50"
+          >
+            <i class="bi bi-magic me-2"></i>Generate Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center mb-4 no-print" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>{{ error() }}</div>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-state text-center py-5 no-print">
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Generating...</span>
+      </div>
+      <p class="text-muted fs-5">AI is crafting your tailored resume...</p>
+      <p class="text-muted small">This may take 10-20 seconds</p>
+    </div>
+  }
+
+  <!-- Results Section -->
+  @if (generatedResume(); as resume) {
+    <!-- Template Selector -->
+    <div class="no-print mb-4">
+      <app-template-selector
+        [selectedTemplate]="selectedTemplate()"
+        (templateChange)="onTemplateChange($event)"
+      />
+    </div>
+
+    <!-- Resume Preview -->
+    <div class="preview-section">
+      <app-resume-preview
+        [data]="resume"
+        [template]="selectedTemplate()"
+      />
+    </div>
+  }
+</div>

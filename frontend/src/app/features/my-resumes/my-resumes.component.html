@@ -1,0 +1,83 @@
+<div class="resumes-container">
+  <!-- Page Header -->
+  <div class="page-header mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">My Resumes</h1>
+        <p class="page-subtitle">Create and manage your professional resumes</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-secondary" (click)="newResume()">
+          <i class="bi bi-file-earmark-plus me-2"></i>
+          New Resume
+        </button>
+
+        <!-- Saved Resumes Dropdown -->
+        @if (savedResumes().length > 0) {
+          <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-folder-open me-2"></i>
+              Saved Resumes ({{ savedResumes().length }})
+            </button>
+            <ul class="dropdown-menu">
+              @for (resume of savedResumes(); track resume.title) {
+                <li>
+                  <div class="dropdown-item d-flex justify-content-between align-items-center">
+                    <span (click)="loadResume(resume)" style="cursor: pointer; flex: 1;">
+                      {{ resume.title }}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteResume(resume.title)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <button type="button" class="btn btn-primary" (click)="togglePreview()">
+          <i class="bi bi-eye me-2"></i>
+          {{ previewMode() ? 'Edit' : 'Preview' }}
+        </button>
+        <button type="button" class="btn btn-success" (click)="downloadResume()">
+          <i class="bi bi-download me-2"></i>
+          Download PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template Selector -->
+  <app-template-selector
+    [selectedTemplate]="selectedTemplate()"
+    (templateChange)="onTemplateChange($event)"
+    class="no-print"
+  />
+
+  <div class="row g-4">
+    <!-- Left: Form Editor -->
+    @if (!previewMode()) {
+      <div class="col-lg-6">
+        <app-resume-form-editor
+          [resumeForm]="resumeForm"
+          [loading]="loading()"
+          (save)="saveResume()"
+          (addExperience)="addExperience()"
+          (removeExperience)="removeExperience($event)"
+          (addEducation)="addEducation()"
+          (removeEducation)="removeEducation($event)"
+        />
+      </div>
+    }
+
+    <!-- Right: Preview -->
+    <div [class]="previewMode() ? 'col-12' : 'col-lg-6'">
+      <app-resume-preview
+        [data]="templateData()"
+        [template]="selectedTemplate()"
+        [fullPreview]="previewMode()"
+      />
+    </div>
+  </div>
+</div>

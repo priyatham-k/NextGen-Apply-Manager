@@ -1,0 +1,430 @@
+<div class="job-detail-container">
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-muted mt-3">Loading job details...</p>
+    </div>
+  } @else {
+    @if (job(); as job) {
+    <!-- Back Button & Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <button class="btn btn-outline-secondary" (click)="goBack()">
+        <i class="bi bi-arrow-left me-2"></i>Back to Jobs
+      </button>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Status Dropdown -->
+        <div class="input-group" style="width: auto;">
+          <label class="input-group-text">Status</label>
+          <select
+            class="form-select"
+            [ngModel]="job.status"
+            (ngModelChange)="onStatusChange($event)"
+            [disabled]="updatingStatus()"
+          >
+            @for (status of statuses; track status) {
+              <option [value]="status">{{ status | titlecase }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Auto Apply Button -->
+        <button
+          class="btn btn-success"
+          (click)="autoApply()"
+          [disabled]="isAutomating() || !job.applicationUrl"
+        >
+          @if (isAutomating()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Automating...
+          } @else {
+            <i class="bi bi-robot me-2"></i>Auto Apply
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Completion Alert -->
+    @if (profileError()) {
+      <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
+        <i class="bi bi-person-exclamation fs-4 mt-1"></i>
+        <div class="flex-grow-1">
+          <h6 class="alert-heading mb-1">Profile Incomplete</h6>
+          <p class="mb-2">Please complete your profile before using Auto Apply.</p>
+          <div class="mb-2">
+            <strong>Missing fields:</strong>
+            <span>{{ profileError()!.missingFields.join(', ') }}</span>
+          </div>
+          <button class="btn btn-warning btn-sm" (click)="navigateToProfile()">
+            <i class="bi bi-person-fill-gear me-1"></i>
+            Complete Profile
+          </button>
+        </div>
+        <button type="button" class="btn-close" (click)="dismissProfileError()"></button>
+      </div>
+    }
+
+    <div class="row g-4">
+      <!-- Main Content -->
+      <div class="col-lg-8">
+        <!-- Job Header Card -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex align-items-start gap-3">
+              @if (job.companyLogo) {
+                <img [src]="job.companyLogo" [alt]="job.company" class="company-logo" />
+              } @else {
+                <div class="company-logo-placeholder">
+                  <i class="bi bi-building"></i>
+                </div>
+              }
+
+              <div class="flex-grow-1">
+                <h1 class="job-title mb-2">{{ job.title }}</h1>
+                <h5 class="company-name mb-2">{{ job.company }}</h5>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                  </span>
+                  @if (job.remote) {
+                    <span class="badge bg-success-subtle text-success">
+                      <i class="bi bi-wifi me-1"></i>Remote
+                    </span>
+                  }
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-briefcase me-1"></i>{{ formatJobType(job.jobType) }}
+                  </span>
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-bar-chart me-1"></i>{{ formatJobType(job.experienceLevel) }}
+                  </span>
+                </div>
+
+                @if (job.matchScore) {
+                  <div class="match-score-bar mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="small fw-semibold">Match Score</span>
+                      <span class="small fw-bold" [class.text-success]="job.matchScore >= 75" [class.text-warning]="job.matchScore >= 50 && job.matchScore < 75" [class.text-danger]="job.matchScore < 50">{{ job.matchScore }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                      <div
+                        class="progress-bar"
+                        [class.bg-success]="job.matchScore >= 75"
+                        [class.bg-warning]="job.matchScore >= 50 && job.matchScore < 75"
+                        [class.bg-danger]="job.matchScore < 50"
+                        [style.width.%]="job.matchScore"
+                      ></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-file-text me-2"></i>Job Description
+            </h5>
+            <div class="description-content" [innerHTML]="job.description"></div>
+          </div>
+        </div>
+
+        <!-- Requirements -->
+        @if (job.requirements && job.requirements.length > 0) {
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title mb-3">
+                <i class="bi bi-list-check me-2"></i>Requirements
+              </h5>
+              <ul class="requirements-list">
+                @for (req of job.requirements; track req) {
+                  <li>{{ req }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+
+        <!-- Benefits -->
+        @if (job.benefits && job.benefits.length > 0) {
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title mb-3">
+                <i class="bi bi-gift me-2"></i>Benefits
+              </h5>
+              <ul class="benefits-list">
+                @for (benefit of job.benefits; track benefit) {
+                  <li>
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    {{ benefit }}
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-lg-4">
+        <!-- Job Details Card -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Job Details</h5>
+
+            <div class="detail-list">
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-currency-dollar me-2"></i>Salary
+                </span>
+                <span class="detail-value">{{ formatSalary(job) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-briefcase me-2"></i>Job Type
+                </span>
+                <span class="detail-value">{{ formatJobType(job.jobType) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-bar-chart me-2"></i>Experience
+                </span>
+                <span class="detail-value">{{ formatJobType(job.experienceLevel) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-geo-alt me-2"></i>Location
+                </span>
+                <span class="detail-value">{{ job.location }}</span>
+              </div>
+
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-calendar me-2"></i>Posted
+                </span>
+                <span class="detail-value">{{ job.postedDate | date:'mediumDate' }}</span>
+              </div>
+
+              @if (job.expiryDate) {
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="bi bi-calendar-x me-2"></i>Expires
+                  </span>
+                  <span class="detail-value">{{ job.expiryDate | date:'mediumDate' }}</span>
+                </div>
+              }
+
+              <div class="detail-item">
+                <span class="detail-label">
+                  <i class="bi bi-database me-2"></i>Source
+                </span>
+                <span class="detail-value">{{ job.source }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Company Card -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">Company</h5>
+            <div class="d-flex align-items-center gap-3 mb-3">
+              @if (job.companyLogo) {
+                <img [src]="job.companyLogo" [alt]="job.company" class="company-logo-sm" />
+              } @else {
+                <div class="company-logo-sm-placeholder">
+                  <i class="bi bi-building"></i>
+                </div>
+              }
+              <div>
+                <h6 class="mb-0">{{ job.company }}</h6>
+                @if (job.companyWebsite) {
+                  <a [href]="job.companyWebsite" target="_blank" rel="noopener noreferrer" class="small">
+                    <i class="bi bi-globe me-1"></i>Visit Website
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Apply Card -->
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title mb-3 text-center">Interested?</h5>
+
+            @if (isAutomating()) {
+              <!-- Automation Progress -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="small fw-semibold">{{ automationMessage() }}</span>
+                  <span class="small fw-bold text-primary">{{ automationProgress() }}%</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div
+                    class="progress-bar progress-bar-striped progress-bar-animated"
+                    [style.width.%]="automationProgress()"
+                  ></div>
+                </div>
+              </div>
+            }
+
+            <!-- Auto Apply Button -->
+            <button
+              class="btn btn-success btn-lg w-100 mb-2"
+              (click)="autoApply()"
+              [disabled]="isAutomating() || !job.applicationUrl"
+            >
+              @if (isAutomating()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Automating...
+              } @else {
+                <i class="bi bi-robot me-2"></i>Auto Apply
+              }
+            </button>
+
+            <!-- Manual Apply Button -->
+            <a
+              [href]="job.applicationUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-outline-primary btn-lg w-100"
+            >
+              <i class="bi bi-box-arrow-up-right me-2"></i>Apply Manually
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  }
+
+  <!-- Resume/Cover Letter Selection Modal -->
+  @if (showApplyModal()) {
+    <div class="modal-overlay" (click)="closeApplyModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3><i class="bi bi-robot me-2"></i>Auto Apply</h3>
+          <button class="modal-close" (click)="closeApplyModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (loadingModalData()) {
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="text-muted mt-2 mb-0">Loading resumes and cover letters...</p>
+            </div>
+          } @else {
+            <!-- Resume Selection -->
+            <div class="selection-section mb-4">
+              <h6 class="section-label">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Select Resume
+              </h6>
+              @if (uploadedResumes().length === 0) {
+                <div class="empty-selection">
+                  <p class="text-muted mb-0">No uploaded resumes found. You can still proceed without one.</p>
+                </div>
+              } @else {
+                <div class="selection-list">
+                  @for (resume of uploadedResumes(); track resume._id) {
+                    <label
+                      class="selection-item"
+                      [class.selected]="selectedResumeId() === resume._id"
+                    >
+                      <input
+                        type="radio"
+                        name="resume"
+                        [value]="resume._id"
+                        [checked]="selectedResumeId() === resume._id"
+                        (change)="selectedResumeId.set(resume._id)"
+                      />
+                      <div class="selection-info">
+                        <span class="selection-name">
+                          {{ resume.filename }}
+                          @if (resume.isPrimary) {
+                            <span class="badge bg-primary-subtle text-primary ms-1">Primary</span>
+                          }
+                        </span>
+                        <span class="selection-meta">{{ formatFileSize(resume.fileSize) }}</span>
+                      </div>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Cover Letter Selection -->
+            <div class="selection-section">
+              <h6 class="section-label">
+                <i class="bi bi-envelope-paper me-2"></i>Select Cover Letter
+                <span class="text-muted fw-normal ms-1">(optional)</span>
+              </h6>
+              @if (coverLetters().length === 0) {
+                <div class="empty-selection">
+                  <p class="text-muted mb-0">No cover letters found. You can proceed without one.</p>
+                </div>
+              } @else {
+                <div class="selection-list">
+                  <label
+                    class="selection-item"
+                    [class.selected]="selectedCoverLetterId() === null"
+                  >
+                    <input
+                      type="radio"
+                      name="coverLetter"
+                      [value]="null"
+                      [checked]="selectedCoverLetterId() === null"
+                      (change)="selectedCoverLetterId.set(null)"
+                    />
+                    <div class="selection-info">
+                      <span class="selection-name text-muted">None (skip cover letter)</span>
+                    </div>
+                  </label>
+                  @for (cl of coverLetters(); track cl._id) {
+                    <label
+                      class="selection-item"
+                      [class.selected]="selectedCoverLetterId() === cl._id"
+                    >
+                      <input
+                        type="radio"
+                        name="coverLetter"
+                        [value]="cl._id"
+                        [checked]="selectedCoverLetterId() === cl._id"
+                        (change)="selectedCoverLetterId.set(cl._id)"
+                      />
+                      <div class="selection-info">
+                        <span class="selection-name">{{ cl.title }}</span>
+                        <span class="selection-meta">{{ cl.company }} - {{ cl.position }}</span>
+                      </div>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" (click)="closeApplyModal()">Cancel</button>
+          <button
+            class="btn btn-success"
+            (click)="confirmAutoApply()"
+            [disabled]="loadingModalData()"
+          >
+            <i class="bi bi-robot me-2"></i>Start Auto Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

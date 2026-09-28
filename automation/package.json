@@ -1,0 +1,40 @@
+{
+  "name": "job-automation-bot",
+  "version": "1.0.0",
+  "description": "Puppeteer-based job application automation",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "install:chrome-deps": "node scripts/install-chrome-deps.js"
+  },
+  "keywords": [
+    "puppeteer",
+    "automation",
+    "job-application"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/natural": "^5.1.5",
+    "axios": "^1.6.5",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.1",
+    "express": "^5.2.1",
+    "job-application-automation": "file:..",
+    "natural": "^8.1.0",
+    "puppeteer": "^21.7.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "nodemon": "^3.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

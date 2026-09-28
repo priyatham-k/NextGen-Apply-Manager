@@ -1,0 +1,261 @@
+<div class="job-list-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h1 class="page-title">Job Search</h1>
+        <p class="page-subtitle">Browse and discover job opportunities</p>
+      </div>
+      <button
+        class="btn-fetch"
+        (click)="fetchNewJobs()"
+        [disabled]="fetching()"
+      >
+        @if (fetching()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Fetching...
+        } @else {
+          <i class="bi bi-cloud-download me-2"></i>
+          Fetch New Jobs
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="filters-card">
+    <!-- Search Bar -->
+    <div class="search-input-wrapper">
+      <i class="bi bi-search search-icon"></i>
+      <input
+        type="text"
+        placeholder="Search jobs by title, company, or keywords..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        (keyup.enter)="onSearch()"
+      />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="searchQuery.set(''); onSearch()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      }
+      <button class="search-btn" (click)="onSearch()">
+        <i class="bi bi-search me-1"></i>Search
+      </button>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Job Type</label>
+        <select
+          [ngModel]="selectedJobType()"
+          (ngModelChange)="selectedJobType.set($event); onFilterChange()"
+        >
+          <option value="">All Types</option>
+          @for (type of jobTypes; track type) {
+            <option [value]="type">{{ formatJobType(type) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Experience</label>
+        <select
+          [ngModel]="selectedExperience()"
+          (ngModelChange)="selectedExperience.set($event); onFilterChange()"
+        >
+          <option value="">All Levels</option>
+          @for (level of experienceLevels; track level) {
+            <option [value]="level">{{ formatJobType(level) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select
+          [ngModel]="sortBy()"
+          (ngModelChange)="onSortChange($event)"
+        >
+          <option value="postedDate">Date Posted</option>
+          <option value="matchScore">Match Score</option>
+          <option value="salary">Salary</option>
+          <option value="company">Company</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <label
+          class="remote-toggle"
+          [class.active]="remoteOnly()"
+        >
+          <input
+            type="checkbox"
+            [ngModel]="remoteOnly()"
+            (ngModelChange)="remoteOnly.set($event); onFilterChange()"
+          />
+          Remote
+        </label>
+
+        @if (hasActiveFilters) {
+          <button class="clear-filters-btn" (click)="clearFilters()">
+            <i class="bi bi-x-circle"></i>
+            Clear
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-bar">
+      <span class="results-count">
+        <strong>{{ totalJobs() }}</strong> job{{ totalJobs() !== 1 ? 's' : '' }} found
+      </span>
+      <button
+        class="sort-toggle"
+        (click)="sortOrder.set(sortOrder() === 'asc' ? 'desc' : 'asc'); loadJobs()"
+        title="Toggle sort order"
+      >
+        <i class="bi" [class.bi-sort-down]="sortOrder() === 'desc'" [class.bi-sort-up]="sortOrder() === 'asc'"></i>
+        {{ sortOrder() === 'desc' ? 'Newest' : 'Oldest' }}
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading jobs...</p>
+      </div>
+    } @else if (jobs().length === 0) {
+      <!-- Empty State -->
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="bi bi-briefcase"></i>
+        </div>
+        <h4>No jobs found</h4>
+        <p>
+          @if (hasActiveFilters) {
+            Try adjusting your filters or search terms to find more opportunities.
+          } @else {
+            Click "Fetch New Jobs" to pull the latest job listings from all sources.
+          }
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          @if (hasActiveFilters) {
+            <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+              Clear Filters
+            </button>
+          }
+          <button class="btn-fetch" (click)="fetchNewJobs()" [disabled]="fetching()">
+            <i class="bi bi-cloud-download me-2"></i>Fetch Jobs
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- Job Cards -->
+      <div class="job-cards">
+        @for (job of jobs(); track job.id) {
+          <div class="job-card" [routerLink]="['/jobs', job.id]">
+            <div class="job-card-content">
+              <!-- Company Logo -->
+              @if (job.companyLogo) {
+                <img [src]="job.companyLogo" [alt]="job.company" class="company-logo" />
+              } @else {
+                <div class="company-logo-placeholder">
+                  <i class="bi bi-building"></i>
+                </div>
+              }
+
+              <!-- Job Info -->
+              <div class="job-info">
+                <div class="job-header">
+                  <div>
+                    <h5 class="job-title">{{ job.title }}</h5>
+                    <p class="company-name">{{ job.company }}</p>
+                  </div>
+
+                  <!-- Match Score -->
+                  @if (job.matchScore) {
+                    <div class="match-score"
+                      [class.high]="job.matchScore >= 75"
+                      [class.medium]="job.matchScore >= 50 && job.matchScore < 75"
+                      [class.low]="job.matchScore < 50"
+                    >
+                      {{ job.matchScore }}%
+                    </div>
+                  }
+                </div>
+
+                <!-- Meta Info -->
+                <div class="job-meta">
+                  <span class="meta-item">
+                    <i class="bi bi-geo-alt"></i>
+                    {{ job.location }}
+                  </span>
+                  @if (job.remote) {
+                    <span class="remote-badge">Remote</span>
+                  }
+                  @if (formatSalary(job)) {
+                    <span class="meta-item salary">
+                      <i class="bi bi-currency-dollar"></i>
+                      {{ formatSalary(job) }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Tags -->
+                <div class="job-tags">
+                  <span class="tag tag-type">{{ formatJobType(job.jobType) }}</span>
+                  <span class="tag tag-level">{{ formatJobType(job.experienceLevel) }}</span>
+                  <span class="tag tag-status {{ job.status }}">{{ job.status | titlecase }}</span>
+                </div>
+
+                <!-- Footer -->
+                <div class="job-footer">
+                  <span class="posted-time">
+                    <i class="bi bi-clock"></i>
+                    {{ getTimeAgo(job.postedDate) }}
+                  </span>
+                  <span class="source-badge">via {{ job.source }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination-wrapper">
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === 1"
+            (click)="goToPage(currentPage() - 1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+
+          @for (page of getPageNumbers(); track page) {
+            <button
+              class="page-btn"
+              [class.active]="page === currentPage()"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+
+          <button
+            class="page-btn nav-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="goToPage(currentPage() + 1)"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      }
+    }
+</div>

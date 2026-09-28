@@ -1,0 +1,37 @@
+import { Router } from 'express';
+import { register, login, getProfile, refreshToken, forgotPassword, resetPassword } from '../controllers/auth.controller';
+import { getFullProfile, updateFullProfile, updateProfile, uploadProfilePicture, deleteProfilePicture, checkProfileCompletion } from '../controllers/profile.controller';
+import authMiddleware from '../middleware/auth.middleware';
+import { upload, documentUpload } from '../config/multer.config';
+import { parseResume } from '../controllers/resumeParser.controller';
+import { analyzeATS } from '../controllers/atsScore.controller';
+
+const router = Router();
+
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+
+// Protected routes
+router.get('/profile', authMiddleware, getProfile);
+router.post('/refresh', authMiddleware, refreshToken);
+
+// Full profile (comprehensive)
+router.get('/profile/full', authMiddleware, getFullProfile);
+router.patch('/profile/full', authMiddleware, updateFullProfile);
+router.get('/profile/completion', authMiddleware, checkProfileCompletion);
+
+// Profile management routes (legacy basic update)
+router.patch('/profile', authMiddleware, updateProfile);
+router.post('/profile/picture', authMiddleware, upload.single('picture'), uploadProfilePicture);
+router.delete('/profile/picture', authMiddleware, deleteProfilePicture);
+
+// Resume parsing
+router.post('/profile/parse-resume', authMiddleware, documentUpload.single('resume'), parseResume);
+
+// ATS score analysis
+router.post('/ats-score/analyze', authMiddleware, documentUpload.single('resume'), analyzeATS);
+
+export default router;

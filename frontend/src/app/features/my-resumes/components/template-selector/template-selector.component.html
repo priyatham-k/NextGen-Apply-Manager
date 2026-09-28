@@ -1,0 +1,19 @@
+<div class="template-selector mb-4">
+  <h6 class="selector-label mb-3">
+    <i class="bi bi-palette me-2"></i>Choose Template
+  </h6>
+  <div class="d-flex gap-3 flex-wrap">
+    @for (tpl of templates; track tpl.value) {
+      <button
+        type="button"
+        class="template-option"
+        [class.active]="selectedTemplate() === tpl.value"
+        (click)="selectTemplate(tpl.value)"
+      >
+        <i class="bi {{ tpl.icon }} template-icon"></i>
+        <span class="template-name">{{ tpl.label }}</span>
+        <small class="template-desc">{{ tpl.description }}</small>
+      </button>
+    }
+  </div>
+</div>
