@@ -15,7 +15,7 @@ export class ClassicTemplateComponent {
   toBullets(description: string): string[] {
     return description
       .split('\n')
-      .map(line => line.replace(/^[•\-]\s*/, '').trim())
+      .map(line => line.replace(/^[•-]\s*/, '').trim())
       .filter(line => line.length > 0);
   }
 }

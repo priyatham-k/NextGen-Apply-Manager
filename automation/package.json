@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "install:chrome-deps": "node scripts/install-chrome-deps.js"
+    "start": "node dist/index.js"
   },
   "keywords": [
     "puppeteer",
@@ -24,7 +23,6 @@
     "cors": "^2.8.6",
     "dotenv": "^16.4.1",
     "express": "^5.2.1",
-    "job-application-automation": "file:..",
     "natural": "^8.1.0",
     "puppeteer": "^21.7.0",
     "puppeteer-extra": "^3.3.6",

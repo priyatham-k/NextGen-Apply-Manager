@@ -23,8 +23,10 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Chrome path
-ENV CHROME_PATH=/usr/bin/chromium
+# Use the system Chromium instead of Puppeteer's bundled download
+ENV CHROME_PATH=/usr/bin/chromium \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Copy package files
 COPY package*.json ./
@@ -39,10 +41,13 @@ COPY src ./src
 # Build TypeScript
 RUN npm run build
 
-# Create directories
-RUN mkdir -p /app/screenshots /app/logs
+# Create writable runtime directories for the non-root user
+RUN mkdir -p /app/screenshots /app/logs \
+    && chown -R node:node /app/screenshots /app/logs
 
 # Run as node user
 USER node
+
+EXPOSE 3001
 
 CMD ["node", "dist/index.js"]

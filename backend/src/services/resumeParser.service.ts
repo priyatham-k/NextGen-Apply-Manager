@@ -3,6 +3,7 @@ import axios from 'axios';
 import { logger } from '../config/logger';
 
 // pdf-parse v2 uses a class-based API
+// eslint-disable-next-line @typescript-eslint/no-var-requires -- untyped access to PDFParse internals (see load() below)
 const { PDFParse } = require('pdf-parse');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';

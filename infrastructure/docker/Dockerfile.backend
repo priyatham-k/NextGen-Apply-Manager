@@ -2,6 +2,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Chromium is installed from apk in the runtime stage; skip Puppeteer's bundled download
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -20,17 +23,25 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Chromium for the Puppeteer-based automation engine
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+
+ENV NODE_ENV=production \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 # Copy package files
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create logs directory
-RUN mkdir -p /app/logs
+# Create writable runtime directories for the non-root user
+RUN mkdir -p /app/logs /app/uploads/resumes /app/uploads/profile-pictures \
+    && chown -R node:node /app/logs /app/uploads
 
 # Run as non-root user
 USER node
