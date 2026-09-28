@@ -338,10 +338,8 @@ const profileSchema = new Schema<IProfile>(
 
 profileSchema.methods.calculateCompletionScore = function(): number {
   let score = 0;
-  let totalFields = 0;
 
   // Required fields (40 points)
-  totalFields += 8;
   if (this.personalInfo?.firstName) score += 5;
   if (this.personalInfo?.lastName) score += 5;
   if (this.personalInfo?.email) score += 5;
@@ -352,24 +350,19 @@ profileSchema.methods.calculateCompletionScore = function(): number {
   if (this.personalInfo?.address?.zipCode) score += 5;
 
   // Professional Summary (10 points)
-  totalFields += 2;
   if (this.professionalSummary?.summary) score += 5;
   if (this.professionalSummary?.yearsOfExperience !== undefined) score += 5;
 
   // Work Experience (15 points)
-  totalFields += 1;
   if (this.workExperience && this.workExperience.length > 0) score += 15;
 
   // Education (10 points)
-  totalFields += 1;
   if (this.education && this.education.length > 0) score += 10;
 
   // Skills (10 points)
-  totalFields += 1;
   if (this.skills && this.skills.length >= 5) score += 10;
 
   // Screening Questions (15 points) - CRITICAL for automation
-  totalFields += 5;
   if (this.screeningQuestions?.workAuthorization) score += 5;
   if (this.screeningQuestions?.requiresSponsorship !== undefined) score += 2;
   if (this.screeningQuestions?.willingToRelocate !== undefined) score += 2;

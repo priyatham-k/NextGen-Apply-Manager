@@ -8,7 +8,7 @@ import { MatchingService } from '@core/services/matching.service';
 import { AutomationService } from '@core/services/automation.service';
 import { CoverLetterService } from '@core/services/coverLetter.service';
 import { AuthService } from '@core/services/auth.service';
-import { JobMatch, UploadedResume } from '@models/index';
+import { UploadedResume } from '@models/index';
 
 @Component({
   selector: 'app-top-matches',

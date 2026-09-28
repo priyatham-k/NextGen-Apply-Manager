@@ -33,7 +33,7 @@ export class AutomationEngine {
    * Execute the full automation workflow for a job application
    */
   async executeAutomation(jobData: AutomationJobData): Promise<void> {
-    const { applicationId, userId, jobId, jobUrl, resumeId, coverLetterId } = jobData;
+    const { applicationId, userId, jobUrl, resumeId, coverLetterId } = jobData;
 
     let browser: Browser | null = null;
     let page: Page | null = null;

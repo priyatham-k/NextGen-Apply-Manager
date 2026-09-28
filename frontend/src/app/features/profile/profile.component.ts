@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/services/auth.service';
 import { ProfileService } from '@core/services/profile.service';
-import { Profile, SkillCategory, SkillLevel, LanguageProficiency, ScreeningQuestions } from '@models/index';
+import { Profile, SkillCategory, SkillLevel, LanguageProficiency } from '@models/index';
 import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';

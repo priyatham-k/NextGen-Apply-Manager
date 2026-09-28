@@ -153,7 +153,7 @@ export class ApplicationDetailComponent implements OnInit {
       return [];
     }
 
-    return app.screenshots.map((screenshotPath: string, index: number) => {
+    return app.screenshots.map((screenshotPath: string) => {
       // Extract filename from path (e.g., "uploads/screenshots/userId/appId/screenshot-initial-123.png")
       const filename = screenshotPath.split('/').pop() || screenshotPath.split('\\').pop() || '';
 

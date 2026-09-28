@@ -1,9 +1,9 @@
-import { Injectable, signal, computed, inject, effect, DestroyRef } from '@angular/core';
+import { Injectable, signal, inject, effect, DestroyRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '@environments/environment';
-import { AppNotification, ApiResponse } from '@models/index';
+import { AppNotification } from '@models/index';
 import { AuthService } from './auth.service';
 
 @Injectable({

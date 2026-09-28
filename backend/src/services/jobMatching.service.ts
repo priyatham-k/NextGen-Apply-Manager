@@ -302,7 +302,6 @@ Return a JSON array with match analysis for each job.`;
  */
 function fallbackMatch(profileSummary: string, job: any): JobMatchResult {
   const profileLower = profileSummary.toLowerCase();
-  const jobText = `${job.title} ${job.description} ${job.requirements?.join(' ') || ''}`.toLowerCase();
 
   // Simple keyword overlap score
   const keywords = job.requirements || [];
