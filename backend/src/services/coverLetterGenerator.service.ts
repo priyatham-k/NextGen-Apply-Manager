@@ -1,9 +1,6 @@
-import axios from 'axios';
 import { logger } from '../config/logger';
 import { Profile } from '../models/Profile.model';
-
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+import { chatCompletion, parseJsonResponse, assertOpenAIConfigured } from './openai.service';
 
 /**
  * Generate a personalized cover letter using AI
@@ -14,11 +11,7 @@ export async function generateCoverLetter(
   position: string,
   jobDescription: string
 ): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY is not configured');
-  }
+  assertOpenAIConfigured();
 
   // Fetch user profile
   const profile = await Profile.findOne({ userId });
@@ -66,35 +59,16 @@ ${jobDescription}
 Write a compelling cover letter that showcases why this candidate is an excellent fit for this specific role.`;
 
   try {
-    const response = await axios.post(
-      GROQ_API_URL,
-      {
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      }
-    );
-
-    const content = response.data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error('No response content from Groq API');
-    }
+    const content = await chatCompletion({
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.7,
+      maxTokens: 2000
+    });
 
     logger.info(`Cover letter generated successfully for user ${userId}`);
 
-    return content.trim();
+    return content;
   } catch (error: any) {
     logger.error(`Error generating cover letter: ${error.message}`);
     throw new Error('Failed to generate cover letter. Please try again.');
@@ -187,11 +161,7 @@ function buildProfileSummary(profile: any): string {
  * Extract company name and position title from job description using AI
  */
 export async function extractJobDetails(jobDescription: string): Promise<{ company: string; position: string }> {
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY is not configured');
-  }
+  assertOpenAIConfigured();
 
   if (!jobDescription || jobDescription.trim().length < 20) {
     return { company: '', position: '' };
@@ -214,36 +184,16 @@ Do not include any additional text, explanations, or markdown formatting.`;
 ${jobDescription.substring(0, 2000)}`;
 
   try {
-    const response = await axios.post(
-      GROQ_API_URL,
-      {
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 200
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      }
-    );
+    const content = await chatCompletion({
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.2,
+      maxTokens: 200,
+      timeoutMs: 30000,
+      json: true
+    });
 
-    const content = response.data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      logger.warn('No response content from Groq API for job details extraction');
-      return { company: '', position: '' };
-    }
-
-    // Parse JSON response
-    const cleanContent = content.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const extracted = JSON.parse(cleanContent);
+    const extracted = parseJsonResponse(content);
 
     logger.info('Job details extracted successfully');
 

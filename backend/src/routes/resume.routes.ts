@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { validateObjectIdParam } from '../utils/httpErrors';
 import authMiddleware from '../middleware/auth.middleware';
 import {
   createResume,
@@ -11,6 +12,7 @@ import * as resumeUploadController from '../controllers/resumeUpload.controller'
 import { documentUpload } from '../config/multer.config';
 
 const router = Router();
+router.param('id', validateObjectIdParam);
 
 router.use(authMiddleware);
 

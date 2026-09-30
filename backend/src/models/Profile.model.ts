@@ -6,6 +6,7 @@ const personalInfoSchema = new Schema({
   firstName: { type: String, required: true, trim: true },
   middleName: { type: String, trim: true },
   lastName: { type: String, required: true, trim: true },
+  preferredName: { type: String, trim: true },
   email: { type: String, required: true, trim: true, lowercase: true },
   phone: { type: String, trim: true },
   address: {
@@ -179,46 +180,46 @@ const screeningQuestionsSchema = new Schema({
   },
 
   // Legal & Compliance
-  hasNonCompeteAgreement: {
-    type: Boolean,
-    default: false
-  },
-  hasConvictions: {
-    type: Boolean,
-    default: false
-  },
+  hasNonCompeteAgreement: Boolean, // unset = the form question is left for you
+  hasConvictions: Boolean, // unset = the form question is left for you
 
-  // EEO (Optional - for voluntary disclosure)
+  // Common application questions
+  over18: Boolean,
+  hasDriversLicense: Boolean,
+  willingToTravel: {
+    type: String,
+    enum: ['none', 'up_to_25', 'up_to_50', 'up_to_75', 'up_to_100']
+  },
+  highestEducation: {
+    type: String,
+    enum: ['high_school', 'associate', 'bachelor', 'master', 'doctorate', 'other']
+  },
+  citizenship: String, // country of citizenship, e.g. "India"
+  visaType: String, // e.g. "H-1B", "F-1 OPT", "STEM OPT"
+  openToContract: Boolean,
+  canWorkWeekendsOrShifts: Boolean,
+
+  // Voluntary self-identification (EEO). Left unset = the form question is left empty;
+  // "prefer_not_to_say" = the form's decline option is chosen. Never sent to the AI model.
   eeoData: {
+    gender: { type: String, enum: ['male', 'female', 'non_binary', 'prefer_not_to_say'] },
+    pronouns: String, // e.g. "he/him"
+    races: [{
+      type: String,
+      enum: ['asian', 'white', 'black_african_american', 'hispanic_latino', 'native_american',
+        'pacific_islander', 'middle_eastern', 'prefer_not_to_say']
+    }],
+    hispanicLatino: { type: String, enum: ['yes', 'no', 'prefer_not_to_say'] },
     veteranStatus: {
       type: String,
-      enum: ['not_veteran', 'protected_veteran', 'not_protected_veteran', 'prefer_not_to_say'],
-      default: 'prefer_not_to_say'
+      enum: ['not_veteran', 'protected_veteran', 'not_protected_veteran', 'prefer_not_to_say']
     },
-    disabilityStatus: {
+    disabilityStatus: { type: String, enum: ['no_disability', 'has_disability', 'prefer_not_to_say'] },
+    sexualOrientation: {
       type: String,
-      enum: ['no_disability', 'has_disability', 'prefer_not_to_say'],
-      default: 'prefer_not_to_say'
+      enum: ['heterosexual', 'gay', 'lesbian', 'bisexual', 'asexual', 'queer', 'prefer_not_to_say']
     },
-    gender: {
-      type: String,
-      enum: ['male', 'female', 'non_binary', 'prefer_not_to_say'],
-      default: 'prefer_not_to_say'
-    },
-    ethnicity: {
-      type: String,
-      enum: [
-        'hispanic_latino',
-        'white',
-        'black_african_american',
-        'native_american',
-        'asian',
-        'pacific_islander',
-        'two_or_more',
-        'prefer_not_to_say'
-      ],
-      default: 'prefer_not_to_say'
-    }
+    transgender: { type: String, enum: ['yes', 'no', 'prefer_not_to_say'] }
   }
 }, { _id: false });
 
@@ -230,6 +231,7 @@ export interface IProfile extends Document {
     firstName: string;
     middleName?: string;
     lastName: string;
+    preferredName?: string;
     email: string;
     phone?: string;
     address?: {
@@ -277,11 +279,23 @@ export interface IProfile extends Document {
     willingToTakeDrugTest?: boolean;
     hasNonCompeteAgreement?: boolean;
     hasConvictions?: boolean;
+    over18?: boolean;
+    hasDriversLicense?: boolean;
+    willingToTravel?: string;
+    highestEducation?: string;
+    citizenship?: string;
+    visaType?: string;
+    openToContract?: boolean;
+    canWorkWeekendsOrShifts?: boolean;
     eeoData?: {
+      gender?: string;
+      pronouns?: string;
+      races?: string[];
+      hispanicLatino?: string;
       veteranStatus?: string;
       disabilityStatus?: string;
-      gender?: string;
-      ethnicity?: string;
+      sexualOrientation?: string;
+      transgender?: string;
     };
   };
   additionalInfo: {

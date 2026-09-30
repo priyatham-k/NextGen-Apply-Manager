@@ -1,8 +1,10 @@
 import express from 'express';
+import { validateObjectIdParam } from '../utils/httpErrors';
 import { getTopMatches, getMatchDetails, refreshMatches } from '../controllers/matching.controller';
 import authMiddleware from '../middleware/auth.middleware';
 
 const router = express.Router();
+router.param('jobId', validateObjectIdParam);
 
 // All routes require authentication
 router.use(authMiddleware);

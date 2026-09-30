@@ -226,7 +226,8 @@
             <button
               class="btn-success"
               (click)="autoApplyToJob(match.job.id)"
-              [disabled]="isJobAutomating(match.job.id) || !match.job.applicationUrl"
+              [disabled]="isJobAutomating(match.job.id) || !match.job.autoApplySupported"
+              [title]="match.job.autoApplySupported ? 'Fill the company application form for you' : 'Auto Apply works only on company forms (Greenhouse, Lever, Ashby)'"
             >
               @if (isJobAutomating(match.job.id)) {
                 <span class="spinner-border spinner-border-sm me-1"></span>

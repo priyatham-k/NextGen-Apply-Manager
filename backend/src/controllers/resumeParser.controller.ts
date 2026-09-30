@@ -12,6 +12,7 @@ import { logger } from '../config/logger';
  */
 export const parseResume = async (req: Request, res: Response): Promise<void> => {
   const filePath = req.file?.path;
+  let resumeSaved = false;
 
   try {
     const userId = req.user?.userId;
@@ -38,7 +39,22 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // 2. Parse with AI
+    // 2. Save the PDF as the primary resume before parsing, so Auto Apply has it even if AI parsing fails
+    const stats = fs.statSync(req.file.path);
+    await UploadedResume.updateMany({ userId, isPrimary: true }, { $set: { isPrimary: false } });
+    const uploadedResumeDoc = await UploadedResume.create({
+      userId,
+      filename: req.file.originalname,
+      storedFilename: req.file.filename,
+      filePath: req.file.path,
+      fileSize: stats.size,
+      mimeType: req.file.mimetype,
+      isPrimary: true
+    });
+    resumeSaved = true;
+    logger.info(`Saved resume file for user ${userId}: ${uploadedResumeDoc._id}`);
+
+    // 3. Parse with AI
     logger.info(`Sending resume to AI for parsing, user: ${userId}`);
     const parsedData = await parseResumeWithAI(resumeText);
 
@@ -137,30 +153,6 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
 
     logger.info(`Resume parsed and profile updated for user: ${userId}, sections: ${Object.keys($set).join(', ')}`);
 
-    // 7. Save the uploaded resume file permanently
-    let uploadedResumeDoc = null;
-    if (req.file) {
-      const stats = fs.statSync(req.file.path);
-
-      // Set any previous primary resumes to false
-      await UploadedResume.updateMany(
-        { userId, isPrimary: true },
-        { $set: { isPrimary: false } }
-      );
-
-      uploadedResumeDoc = await UploadedResume.create({
-        userId,
-        filename: req.file.originalname,
-        storedFilename: req.file.filename,
-        filePath: req.file.path,
-        fileSize: stats.size,
-        mimeType: req.file.mimetype,
-        isPrimary: true // This becomes the primary resume
-      });
-
-      logger.info(`Saved resume file for user ${userId}: ${uploadedResumeDoc._id}`);
-    }
-
     res.status(200).json({
       success: true,
       data: {
@@ -172,12 +164,19 @@ export const parseResume = async (req: Request, res: Response): Promise<void> =>
   } catch (error: any) {
     logger.error('Resume parsing error:', error);
 
-    // On error, clean up the uploaded file
+    // A saved resume is kept (Auto Apply can still use it); only an unsaved upload is cleaned up
+    if (resumeSaved) {
+      res.status(502).json({
+        success: false,
+        message: `Your resume PDF was saved, but auto-filling your profile failed: ${error.message}. Fill the profile manually or try uploading again.`
+      });
+      return;
+    }
     if (filePath) {
       try { fs.unlinkSync(filePath); } catch { /* ignore */ }
     }
 
-    if (error.message?.includes('GROQ_API_KEY')) {
+    if (error.message?.includes('OPENAI_API_KEY')) {
       res.status(500).json({ success: false, message: error.message });
     } else if (error instanceof SyntaxError) {
       res.status(500).json({ success: false, message: 'Failed to parse AI response. Please try again.' });

@@ -1,4 +1,5 @@
 import express from 'express';
+import { validateObjectIdParam } from '../utils/httpErrors';
 import {
   generateNewCoverLetter,
   getCoverLetters,
@@ -9,6 +10,7 @@ import {
 import authMiddleware from '../middleware/auth.middleware';
 
 const router = express.Router();
+router.param('id', validateObjectIdParam);
 
 // All routes require authentication
 router.use(authMiddleware);

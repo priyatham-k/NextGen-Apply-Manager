@@ -273,7 +273,10 @@ export class ApplicationListComponent implements OnInit {
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       [ApplicationStatus.PENDING]: 'status-pending',
+      [ApplicationStatus.AWAITING_REVIEW]: 'status-review',
       [ApplicationStatus.SUBMITTED]: 'status-submitted',
+      [ApplicationStatus.UNCONFIRMED]: 'status-pending',
+      [ApplicationStatus.CANCELLED]: 'status-declined',
       [ApplicationStatus.FAILED]: 'status-failed',
       [ApplicationStatus.IN_REVIEW]: 'status-review',
       [ApplicationStatus.REJECTED]: 'status-rejected',
@@ -288,7 +291,10 @@ export class ApplicationListComponent implements OnInit {
   getStatusIcon(status: string): string {
     const map: Record<string, string> = {
       [ApplicationStatus.PENDING]: 'bi-hourglass-split',
+      [ApplicationStatus.AWAITING_REVIEW]: 'bi-pencil-square',
       [ApplicationStatus.SUBMITTED]: 'bi-send-check',
+      [ApplicationStatus.UNCONFIRMED]: 'bi-question-circle',
+      [ApplicationStatus.CANCELLED]: 'bi-slash-circle',
       [ApplicationStatus.FAILED]: 'bi-exclamation-triangle',
       [ApplicationStatus.IN_REVIEW]: 'bi-eye',
       [ApplicationStatus.REJECTED]: 'bi-x-circle',

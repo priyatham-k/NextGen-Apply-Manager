@@ -2,7 +2,11 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export enum ApplicationStatus {
   PENDING = 'pending',
+  // Form filled by automation, waiting for the user to approve submission
+  AWAITING_REVIEW = 'awaiting_review',
   SUBMITTED = 'submitted',
+  // Submit was clicked but no confirmation message was detected
+  UNCONFIRMED = 'unconfirmed',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
   IN_REVIEW = 'in_review',
@@ -20,15 +24,27 @@ export enum SubmissionType {
 }
 
 export enum ATSType {
-  LINKEDIN_EASY_APPLY = 'linkedin_easy_apply',
   WORKDAY = 'workday',
   GREENHOUSE = 'greenhouse',
   LEVER = 'lever',
+  ASHBY = 'ashby',
+  SMARTRECRUITERS = 'smartrecruiters',
+  WORKABLE = 'workable',
+  BAMBOOHR = 'bamboohr',
   TALEO = 'taleo',
   ICIMS = 'icims',
   JOBVITE = 'jobvite',
   GENERIC = 'generic',
   UNKNOWN = 'unknown'
+}
+
+export type LogLevel = 'info' | 'success' | 'warn' | 'error';
+
+export interface AutomationLogEntry {
+  at: Date;
+  step?: number;
+  message: string;
+  level: LogLevel;
 }
 
 export interface IApplication extends Document {
@@ -44,6 +60,8 @@ export interface IApplication extends Document {
   notes?: string;
   screenshots?: string[];
   errorLog?: string;
+  /** Every automation step, shown to the user as a progress timeline */
+  automationLog?: AutomationLogEntry[];
   interviewDate?: Date;
   followUpDate?: Date;
   createdAt: Date;
@@ -89,6 +107,13 @@ const applicationSchema = new Schema<IApplication>(
     notes: { type: String },
     screenshots: [{ type: String }],
     errorLog: { type: String },
+    automationLog: [{
+      _id: false,
+      at: { type: Date, default: Date.now },
+      step: { type: Number },
+      message: { type: String, required: true },
+      level: { type: String, enum: ['info', 'success', 'warn', 'error'], default: 'info' }
+    }],
     interviewDate: { type: Date },
     followUpDate: { type: Date }
   },

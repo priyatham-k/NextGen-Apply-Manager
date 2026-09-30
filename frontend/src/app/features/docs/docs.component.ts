@@ -38,7 +38,7 @@ export class DocsComponent {
         },
         {
           title: 'Upload Your Resume',
-          detail: 'Go to Profile and upload a PDF resume. Our AI parser (powered by Groq LLaMA) will automatically extract and populate your profile fields — saving you time.'
+          detail: 'Go to Profile and upload a PDF resume. Our AI parser (powered by OpenAI GPT) will automatically extract and populate your profile fields — saving you time.'
         },
         {
           title: 'Explore the Dashboard',
@@ -128,7 +128,7 @@ export class DocsComponent {
         },
         {
           title: 'Get Your Score',
-          detail: 'Click Analyze and our AI (Groq LLaMA 3.3) evaluates your resume across 6 categories, giving you a score from 0-100 with a letter grade.'
+          detail: 'Click Analyze and our AI (OpenAI GPT) evaluates your resume across 6 categories, giving you a score from 0-100 with a letter grade.'
         },
         {
           title: 'Review the Breakdown',

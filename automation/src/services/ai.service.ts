@@ -393,10 +393,9 @@ function validateAndPolish(data: ResumeTemplateData): ResumeTemplateData {
   return data;
 }
 
-// ─── Groq AI Resume Generation ───────────────────────────────────
+// ─── OpenAI Resume Generation ────────────────────────────────────
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 function buildProfileContext(userProfile: UserProfile): string {
   const lines: string[] = [];
@@ -449,9 +448,9 @@ function buildProfileContext(userProfile: UserProfile): string {
   return lines.join('\n');
 }
 
-async function generateResumeWithGroq(jobDescription: string, userProfile: UserProfile): Promise<ResumeTemplateData> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY not configured');
+async function generateResumeWithOpenAI(jobDescription: string, userProfile: UserProfile): Promise<ResumeTemplateData> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
 
   const profileContext = buildProfileContext(userProfile);
 
@@ -511,15 +510,16 @@ Rules:
 - Return only the JSON object, nothing else`;
 
   const response = await axios.post(
-    GROQ_API_URL,
+    OPENAI_API_URL,
     {
-      model: GROQ_MODEL,
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.4,
-      max_tokens: 4000
+      max_completion_tokens: 4000,
+      response_format: { type: 'json_object' }
     },
     {
       headers: {
@@ -531,15 +531,15 @@ Rules:
   );
 
   const content = response.data.choices?.[0]?.message?.content;
-  if (!content) throw new Error('No content returned from Groq');
+  if (!content) throw new Error('No content returned from OpenAI');
 
-  // Strip markdown code blocks if Groq wraps the JSON
+  // Strip markdown code blocks if the model wraps the JSON
   const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
   const parsed = JSON.parse(cleaned);
 
   // Validate required fields exist
   if (!parsed.fullName || !parsed.experiences || !parsed.skills) {
-    throw new Error('Groq returned incomplete resume data');
+    throw new Error('OpenAI returned incomplete resume data');
   }
 
   return parsed as ResumeTemplateData;
@@ -550,15 +550,15 @@ Rules:
 export async function generateResumeFromJobDescription(jobDescription: string, userProfile?: UserProfile): Promise<ResumeTemplateData> {
   logger.info('=== Resume Generation Started ===');
 
-  // Try Groq AI first if profile is available
-  if (userProfile && process.env.GROQ_API_KEY) {
+  // Try OpenAI first if profile is available
+  if (userProfile && process.env.OPENAI_API_KEY) {
     try {
-      logger.info('Using Groq AI for resume generation...');
-      const result = await generateResumeWithGroq(jobDescription, userProfile);
-      logger.info('=== Groq AI Resume Generation Complete ===');
+      logger.info('Using OpenAI for resume generation...');
+      const result = await generateResumeWithOpenAI(jobDescription, userProfile);
+      logger.info('=== OpenAI Resume Generation Complete ===');
       return validateAndPolish(result);
     } catch (err: any) {
-      logger.warn(`Groq AI failed, falling back to NLP: ${err.message}`);
+      logger.warn(`OpenAI failed, falling back to NLP: ${err.message}`);
     }
   }
 

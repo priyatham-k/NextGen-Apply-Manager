@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "NextGen Apply",
+  "version": "1.0.0",
+  "description": "Fills job application forms from your NextGen Apply Manager profile. You review and click Submit.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "NextGen Apply" },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.greenhouse.io/*",
+        "*://*.lever.co/*",
+        "*://*.ashbyhq.com/*",
+        "*://*.myworkdayjobs.com/*",
+        "*://*.myworkdaysite.com/*",
+        "*://*.workday.com/*",
+        "*://*.icims.com/*",
+        "*://*.smartrecruiters.com/*",
+        "*://*.workable.com/*",
+        "*://*.jobvite.com/*",
+        "*://*.bamboohr.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["http://localhost:4200/*", "http://127.0.0.1:4200/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

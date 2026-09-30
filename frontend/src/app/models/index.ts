@@ -28,6 +28,10 @@ export interface Job {
   jobType: JobType;
   experienceLevel: ExperienceLevel;
   applicationUrl: string;
+  atsApplyUrl?: string; // Company form on Greenhouse/Lever/Ashby
+  autoApplySupported?: boolean;
+  /** The Chrome extension can fill this job's application form */
+  extensionSupported?: boolean;
   companyWebsite?: string;
   companyLogo?: string;
   source: string; // API source
@@ -81,6 +85,8 @@ export interface Application {
   notes?: string;
   screenshots?: string[];
   errorLog?: string;
+  /** Every automation step, in order */
+  automationLog?: { at: string; step?: number; message: string; level: 'info' | 'success' | 'warn' | 'error' }[];
   interviewDate?: Date;
   followUpDate?: Date;
   createdAt: Date;
@@ -89,8 +95,11 @@ export interface Application {
 
 export enum ApplicationStatus {
   PENDING = 'pending',
+  AWAITING_REVIEW = 'awaiting_review',
   SUBMITTED = 'submitted',
+  UNCONFIRMED = 'unconfirmed',
   FAILED = 'failed',
+  CANCELLED = 'cancelled',
   IN_REVIEW = 'in_review',
   REJECTED = 'rejected',
   INTERVIEW_SCHEDULED = 'interview_scheduled',
@@ -109,6 +118,10 @@ export enum ATSType {
   WORKDAY = 'workday',
   GREENHOUSE = 'greenhouse',
   LEVER = 'lever',
+  ASHBY = 'ashby',
+  SMARTRECRUITERS = 'smartrecruiters',
+  WORKABLE = 'workable',
+  BAMBOOHR = 'bamboohr',
   TALEO = 'taleo',
   ICIMS = 'icims',
   JOBVITE = 'jobvite',
@@ -455,8 +468,6 @@ export interface CompanyJobGroup {
 
 export interface InternetSearchResult {
   totalJobs: number;
-  newJobs: number;
-  updatedJobs: number;
   companies: CompanyJobGroup[];
 }
 

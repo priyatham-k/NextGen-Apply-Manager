@@ -198,6 +198,11 @@
                   @if (job.remote) {
                     <span class="remote-badge">Remote</span>
                   }
+                  @if (job.autoApplySupported) {
+                    <span class="remote-badge auto-apply-badge" title="Company form on Greenhouse, Lever or Ashby">
+                      <i class="bi bi-robot"></i> Auto Apply
+                    </span>
+                  }
                   @if (formatSalary(job)) {
                     <span class="meta-item salary">
                       <i class="bi bi-currency-dollar"></i>

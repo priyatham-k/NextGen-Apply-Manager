@@ -52,7 +52,7 @@ export const getTopMatches = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (error.message.includes('GROQ_API_KEY')) {
+    if (error.message.includes('OPENAI_API_KEY')) {
       res.status(500).json({
         success: false,
         error: 'AI service configuration error'

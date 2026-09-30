@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleClientDataError } from '../utils/httpErrors';
 import { Job, JobStatus } from '../models/Job.model';
 import { NotificationType } from '../models/Notification.model';
 import { fetchJobs, searchAndFetchJobs } from '../services/jobFetcher.service';
@@ -159,6 +160,7 @@ export const updateJobStatus = async (req: Request, res: Response): Promise<void
       message: 'Job status updated successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     logger.error('Update job status error:', error);
     res.status(500).json({
       success: false,
@@ -234,8 +236,6 @@ export const searchInternetJobs = async (req: Request, res: Response): Promise<v
       success: true,
       data: {
         totalJobs: result.totalJobs,
-        newJobs: result.newJobs,
-        updatedJobs: result.updatedJobs,
         companies: result.companies
       },
       message: `Found ${result.totalJobs} jobs from ${result.companies.length} companies`

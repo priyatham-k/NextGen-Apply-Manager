@@ -31,10 +31,15 @@ import resumeRoutes from './routes/resume.routes';
 import matchingRoutes from './routes/matching.routes';
 import coverLetterRoutes from './routes/coverLetter.routes';
 import automationRoutes from './routes/automation.routes';
+import applyQueueRoutes from './routes/applyQueue.routes';
+import extensionRoutes from './routes/extension.routes';
 
 // Import automation services
 import { automationEngine } from './services/automation/automationEngine.service';
 import { browserManager } from './services/automation/browserManager.service';
+import { ensureJobTextIndex } from './models/Job.model';
+import { startAutopilotScheduler } from './services/autopilot.service';
+import { startApplyQueueScheduler } from './services/applyQueue.service';
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -73,6 +78,8 @@ app.use(`${API_PREFIX}/resumes`, resumeRoutes);
 app.use(`${API_PREFIX}/matching`, matchingRoutes);
 app.use(`${API_PREFIX}/cover-letters`, coverLetterRoutes);
 app.use(`${API_PREFIX}/automation`, automationRoutes);
+app.use(`${API_PREFIX}/apply-queue`, applyQueueRoutes);
+app.use(`${API_PREFIX}/extension`, extensionRoutes);
 
 // Error handling
 app.use(notFoundHandler);
@@ -85,6 +92,10 @@ export let io: any;
 const startServer = async () => {
   try {
     await connectDatabase();
+    await ensureJobTextIndex();
+    await automationEngine.recoverInterruptedAutomations();
+    startAutopilotScheduler();
+    startApplyQueueScheduler();
 
     // Initialize Socket.IO
     io = initializeSocket(httpServer);

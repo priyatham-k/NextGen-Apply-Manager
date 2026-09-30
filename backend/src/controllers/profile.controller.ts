@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleClientDataError } from '../utils/httpErrors';
 import { User } from '../models/User.model';
 import { Profile } from '../models/Profile.model';
 import { logger } from '../config/logger';
@@ -115,6 +116,12 @@ export const updateFullProfile = async (req: Request, res: Response): Promise<vo
     if (updateData.skills) $set.skills = updateData.skills;
     if (updateData.certifications) $set.certifications = updateData.certifications;
     if (updateData.additionalInfo) $set.additionalInfo = updateData.additionalInfo;
+    if (updateData.screeningQuestions) {
+      // Field by field, so answers the form doesn't show (e.g. security clearance) aren't wiped
+      for (const [key, value] of Object.entries(updateData.screeningQuestions)) {
+        if (value !== undefined) $set[`screeningQuestions.${key}`] = value;
+      }
+    }
 
     let updatedProfile = await Profile.findOneAndUpdate(
       { userId },
@@ -155,6 +162,7 @@ export const updateFullProfile = async (req: Request, res: Response): Promise<vo
       message: 'Profile updated successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     logger.error('Update full profile error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
@@ -242,6 +250,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       message: 'Profile updated successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     logger.error('Update profile error:', error);
     res.status(500).json({
       success: false,

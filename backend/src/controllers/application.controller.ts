@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleClientDataError } from '../utils/httpErrors';
 import { Application, ApplicationStatus } from '../models/Application.model';
 import { NotificationType } from '../models/Notification.model';
 import { createNotification } from '../services/notification.service';
@@ -176,6 +177,7 @@ export const createApplication = async (req: Request, res: Response): Promise<vo
       message: 'Application created successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     if (error.code === 11000) {
       res.status(400).json({
         success: false,
@@ -242,6 +244,7 @@ export const updateApplicationStatus = async (req: Request, res: Response): Prom
       message: 'Application status updated successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     logger.error('Update application status error:', error);
     res.status(500).json({
       success: false,

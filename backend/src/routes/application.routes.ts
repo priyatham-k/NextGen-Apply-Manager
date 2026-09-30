@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { validateObjectIdParam } from '../utils/httpErrors';
 import authMiddleware from '../middleware/auth.middleware';
 import {
   getApplications,
@@ -11,6 +12,7 @@ import {
 } from '../controllers/application.controller';
 
 const router = Router();
+router.param('id', validateObjectIdParam);
 
 // All routes require authentication
 router.use(authMiddleware);

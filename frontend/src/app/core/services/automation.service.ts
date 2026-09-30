@@ -14,8 +14,59 @@ export interface AutomationProgress {
 
 export interface AutomationComplete {
   applicationId: string;
-  status: 'success' | 'failed';
+  jobId: string;
+  // 'review': form filled and waiting for the user to submit or discard it
+  // 'action': the site wants a person (verification code, spam check); the tab is held open
+  // 'unconfirmed': submit was clicked but no confirmation message appeared
+  status: 'success' | 'unconfirmed' | 'review' | 'action' | 'failed';
   error?: string;
+}
+
+export interface AutopilotStatus {
+  enabled: boolean;
+  time: string;
+  dailyLimit: number;
+  minMatchScore: number;
+  running: boolean;
+  appliedToday: number;
+  /** Filled tabs waiting for the user: human checks and pre-submit reviews */
+  actionNeeded: ActionNeededItem[];
+  lastRun?: {
+    trigger: 'schedule' | 'manual';
+    startedAt: string;
+    finishedAt?: string;
+    error?: string;
+    result?: { queued: number; skippedReason?: string };
+    steps: AutopilotStep[];
+    applications: AutopilotApplication[];
+  } | null;
+}
+
+export interface ActionNeededItem {
+  id: string;
+  job: { title: string; company: string } | null;
+  reason: string;
+  /** True when the site asked for a person (verification code, spam check) after submit */
+  humanCheck: boolean;
+  since: string;
+  expiresAt: string;
+}
+
+export type AutopilotPhase = 'start' | 'fetch' | 'match' | 'queue' | 'done';
+
+export interface AutopilotStep {
+  at: string;
+  phase: AutopilotPhase;
+  message: string;
+  level: 'info' | 'success' | 'warn' | 'error';
+}
+
+export interface AutopilotApplication {
+  id: string;
+  status: string;
+  errorLog?: string;
+  job: { title: string; company: string } | null;
+  steps: { at: string; step?: number; message: string; level: 'info' | 'success' | 'warn' | 'error' }[];
 }
 
 export interface AutomationStatus {
@@ -137,10 +188,49 @@ export class AutomationService {
   }
 
   /**
+   * Submit a filled form after reviewing it
+   */
+  submitReviewed(applicationId: string): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(`${this.apiUrl}/submit/${applicationId}`, {});
+  }
+
+  /**
+   * The user finished the form in the held tab themselves (e.g. entered an email code)
+   */
+  confirmSubmitted(applicationId: string): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(`${this.apiUrl}/confirm-submitted/${applicationId}`, {});
+  }
+
+  /**
+   * Bring the held tab to the front of the automation browser window
+   */
+  focusTab(applicationId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/focus/${applicationId}`, {});
+  }
+
+  /**
+   * Close a filled form without submitting
+   */
+  discardReview(applicationId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/discard/${applicationId}`, {});
+  }
+
+  /**
    * Cancel a pending automation
    */
   cancelAutomation(applicationId: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/cancel/${applicationId}`);
+  }
+
+  /**
+   * Run the daily autopilot now (fetch → match → apply) for the current user
+   */
+  runAutopilot(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/autopilot/run`, {});
+  }
+
+  getAutopilotStatus(): Observable<AutopilotStatus> {
+    return this.http.get<AutopilotStatus>(`${this.apiUrl}/autopilot/status`);
   }
 
   /**

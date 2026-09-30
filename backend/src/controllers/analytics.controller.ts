@@ -1,12 +1,9 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import axios from 'axios';
 import { Application, ApplicationStatus } from '../models/Application.model';
 import { Job } from '../models/Job.model';
 import { logger } from '../config/logger';
-
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+import { chatCompletion, parseJsonResponse } from '../services/openai.service';
 
 const SUCCESS_STATUSES = [ApplicationStatus.OFFER_RECEIVED, ApplicationStatus.ACCEPTED];
 const FAIL_STATUSES = [ApplicationStatus.REJECTED, ApplicationStatus.FAILED];
@@ -220,9 +217,8 @@ export const getAIInsights = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      res.status(500).json({ success: false, message: 'GROQ_API_KEY is not configured' });
+    if (!process.env.OPENAI_API_KEY) {
+      res.status(500).json({ success: false, message: 'OPENAI_API_KEY is not configured' });
       return;
     }
 
@@ -338,39 +334,16 @@ Rules:
 - Keep each message under 150 characters
 - Return ONLY the JSON object`;
 
-    const response = await axios.post(
-      GROQ_API_URL,
-      {
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: dataSummary }
-        ],
-        temperature: 0.3,
-        max_tokens: 1500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      }
-    );
+    const content = await chatCompletion({
+      system: systemPrompt,
+      user: dataSummary,
+      temperature: 0.3,
+      maxTokens: 1500,
+      timeoutMs: 30000,
+      json: true
+    });
 
-    const content = response.data.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from Groq API');
-    }
-
-    // Clean markdown fences if present
-    let jsonStr = content.trim();
-    if (jsonStr.startsWith('```json')) jsonStr = jsonStr.slice(7);
-    else if (jsonStr.startsWith('```')) jsonStr = jsonStr.slice(3);
-    if (jsonStr.endsWith('```')) jsonStr = jsonStr.slice(0, -3);
-    jsonStr = jsonStr.trim();
-
-    const parsed = JSON.parse(jsonStr);
+    const parsed = parseJsonResponse(content);
 
     logger.info(`AI insights generated for user ${userId}`);
 

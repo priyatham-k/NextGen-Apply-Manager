@@ -52,7 +52,7 @@ export const analyzeATS = async (req: Request, res: Response): Promise<void> => 
   } catch (error: any) {
     logger.error('ATS analysis error:', error);
 
-    if (error.message?.includes('GROQ_API_KEY')) {
+    if (error.message?.includes('OPENAI_API_KEY')) {
       res.status(500).json({ success: false, message: error.message });
     } else if (error instanceof SyntaxError) {
       res.status(500).json({ success: false, message: 'Failed to parse AI response. Please try again.' });

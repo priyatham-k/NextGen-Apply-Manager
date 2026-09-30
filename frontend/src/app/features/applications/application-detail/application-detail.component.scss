@@ -231,6 +231,15 @@
     h3 { color: $danger; }
   }
 
+  &.review-card {
+    border-color: rgba(#8b5cf6, 0.35);
+    background: rgba(#8b5cf6, 0.04);
+
+    h3 { color: #6d28d9; }
+    p { color: #475569; margin-bottom: 1rem; }
+    .automation-actions { margin-bottom: 0; }
+  }
+
   h3 {
     font-size: 1rem;
     font-weight: 600;
@@ -388,4 +397,24 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+// Automation steps accordion
+.steps-card {
+  .steps-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin-bottom: 0.75rem;
+    text-align: left;
+    cursor: pointer;
+
+    h3 { flex: 1; margin: 0; }
+    .steps-count { font-size: 0.8rem; color: #64748b; }
+    &:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  }
 }

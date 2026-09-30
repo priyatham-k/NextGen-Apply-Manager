@@ -1,5 +1,13 @@
 import { logger } from '../../config/logger';
 import { automationEngine, AutomationJobData } from './automationEngine.service';
+import { Application } from '../../models/Application.model';
+
+// Rapid back-to-back submissions get flagged as spam; wait a random gap between autopilot applications
+function autopilotGapMs(): number {
+  const min = parseInt(process.env.AUTOPILOT_DELAY_MIN_SECONDS || '120', 10);
+  const max = Math.max(min, parseInt(process.env.AUTOPILOT_DELAY_MAX_SECONDS || '300', 10));
+  return (min + Math.random() * (max - min)) * 1000;
+}
 
 /** Single-process automation queue. Pending work is lost if the backend restarts. */
 class LocalAutomationQueue {
@@ -38,9 +46,22 @@ class LocalAutomationQueue {
     if (this.processing) return;
     this.processing = true;
     try {
+      let previousWasAutopilot = false;
       while (this.pending.length > 0) {
         const job = this.pending.shift()!;
         this.active.add(job.applicationId);
+
+        if (job.autopilot && previousWasAutopilot) {
+          const gap = autopilotGapMs();
+          await Application.updateOne({ _id: job.applicationId }, {
+            $push: { automationLog: {
+              at: new Date(), step: 0, level: 'info',
+              message: `Waiting ${Math.round(gap / 60000 * 10) / 10} min before starting (spacing applications out avoids spam flags)`
+            } }
+          }).catch(() => undefined);
+          await new Promise(resolve => setTimeout(resolve, gap));
+        }
+        previousWasAutopilot = !!job.autopilot;
         try {
           await automationEngine.executeAutomation(job);
           this.completed++;

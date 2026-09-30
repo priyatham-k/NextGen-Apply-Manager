@@ -479,6 +479,11 @@
     }
   }
 
+  .remote-badge.auto-apply-badge {
+    background: rgba(#16a34a, 0.1);
+    color: #15803d;
+  }
+
   .remote-badge {
     background: rgba($accent, 0.1);
     color: darken($accent, 10%);

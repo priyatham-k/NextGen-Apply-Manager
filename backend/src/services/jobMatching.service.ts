@@ -1,12 +1,9 @@
-import axios from 'axios';
 import { logger } from '../config/logger';
+import { chatCompletion, parseJsonResponse, assertOpenAIConfigured } from './openai.service';
 import { Profile } from '../models/Profile.model';
 import { UserSettings } from '../models/Settings.model';
 import { Job } from '../models/Job.model';
 import { Application } from '../models/Application.model';
-
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 // Cache for storing match results (userId -> { results, timestamp })
 const matchCache = new Map<string, { results: any[]; timestamp: number }>();
@@ -25,18 +22,24 @@ export interface JobMatchResult {
   cons: string[];
 }
 
+export interface MatchOptions {
+  /** Only score jobs whose application form Auto Apply can fill (used by autopilot); bypasses the cache */
+  autoApplyOnly?: boolean;
+  /** Only score jobs whose form the Chrome extension can fill (used by the apply queue); bypasses the cache */
+  extensionOnly?: boolean;
+  /** Jobs to leave out, e.g. ones already in the apply queue */
+  excludeJobIds?: string[];
+}
+
 /**
  * Calculate job matches for a user using AI-powered analysis
  */
-export async function calculateMatches(userId: string, limit: number = 20): Promise<JobMatchResult[]> {
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY is not configured');
-  }
+export async function calculateMatches(userId: string, limit: number = 20, options: MatchOptions = {}): Promise<JobMatchResult[]> {
+  assertOpenAIConfigured();
 
   // Check cache
-  const cached = matchCache.get(userId);
+  const filtered = options.autoApplyOnly || options.extensionOnly || !!options.excludeJobIds?.length;
+  const cached = filtered ? undefined : matchCache.get(userId);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
     logger.info(`Returning cached matches for user ${userId}`);
     return cached.results.slice(0, limit);
@@ -57,6 +60,9 @@ export async function calculateMatches(userId: string, limit: number = 20): Prom
   // Fetch available jobs (recent, not expired, not applied)
   const jobs = await Job.find({
     status: 'new',
+    ...(options.autoApplyOnly && { autoApplySupported: true }),
+    ...(options.extensionOnly && { extensionSupported: true }),
+    ...(options.excludeJobIds?.length && { _id: { $nin: options.excludeJobIds } }),
     $or: [
       { expiryDate: { $gte: new Date() } },
       { expiryDate: { $exists: false } }
@@ -83,15 +89,17 @@ export async function calculateMatches(userId: string, limit: number = 20): Prom
 
   for (let i = 0; i < Math.min(availableJobs.length, 50); i += batchSize) {
     const batch = availableJobs.slice(i, i + batchSize);
-    const batchMatches = await analyzeJobBatch(profileSummary, batch, apiKey);
+    const batchMatches = await analyzeJobBatch(profileSummary, batch);
     allMatches.push(...batchMatches);
   }
 
   // Sort by match score descending
   allMatches.sort((a, b) => b.matchScore - a.matchScore);
 
-  // Cache results
-  matchCache.set(userId, { results: allMatches, timestamp: Date.now() });
+  // Cache results (the filtered autopilot view would give Top Matches an incomplete list)
+  if (!filtered) {
+    matchCache.set(userId, { results: allMatches, timestamp: Date.now() });
+  }
 
   logger.info(`Calculated ${allMatches.length} matches for user ${userId}`);
 
@@ -161,8 +169,7 @@ function buildProfileSummary(profile: any, settings: any): string {
  */
 async function analyzeJobBatch(
   profileSummary: string,
-  jobs: any[],
-  apiKey: string
+  jobs: any[]
 ): Promise<JobMatchResult[]> {
   const systemPrompt = `You are an expert job matching AI. Analyze the candidate's profile against each job posting and return match scores with detailed analysis.
 
@@ -227,45 +234,15 @@ ${jobsPrompt}
 Return a JSON array with match analysis for each job.`;
 
   try {
-    const response = await axios.post(
-      GROQ_API_URL,
-      {
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 4000
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      }
-    );
+    // The reply is a JSON array, so JSON-object response mode can't be used here
+    const content = await chatCompletion({
+      system: systemPrompt,
+      user: userPrompt,
+      temperature: 0.3,
+      maxTokens: 4000
+    });
 
-    const content = response.data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error('No response content from Groq API');
-    }
-
-    // Clean up response - strip markdown fences if present
-    let jsonStr = content.trim();
-    if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.slice(7);
-    } else if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.slice(3);
-    }
-    if (jsonStr.endsWith('```')) {
-      jsonStr = jsonStr.slice(0, -3);
-    }
-    jsonStr = jsonStr.trim();
-
-    const matchAnalyses = JSON.parse(jsonStr);
+    const matchAnalyses = parseJsonResponse<any[]>(content);
 
     // Map results back to jobs
     const results: JobMatchResult[] = [];

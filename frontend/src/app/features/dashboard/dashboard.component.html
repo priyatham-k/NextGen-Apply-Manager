@@ -48,6 +48,182 @@
       </div>
     </div>
 
+    <!-- Action needed: filled tabs waiting for the user -->
+    @if (actionItems().length) {
+      <div class="content-card action-card" role="region" aria-label="Applications that need you">
+        <div class="card-header">
+          <h2 class="card-title"><i class="bi bi-hand-index-thumb me-2"></i>Action needed ({{ actionItems().length }})</h2>
+        </div>
+        <ul class="action-list">
+          @for (item of actionItems(); track item.id) {
+            <li class="action-row" [class.human-check]="item.humanCheck">
+              <div class="action-info">
+                <a class="action-job" [routerLink]="['/applications', item.id]">
+                  {{ item.job?.title || 'Application' }} <span class="text-muted">at {{ item.job?.company || '—' }}</span>
+                </a>
+                <span class="action-reason"><i class="bi bi-exclamation-circle me-1"></i>{{ item.reason }}</span>
+                <span class="action-time">Tab open for {{ minutesLeft(item.expiresAt) }} more min</span>
+              </div>
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline-secondary" (click)="runAction(item.id, 'focus')" [disabled]="busyAction()[item.id]">
+                  <i class="bi bi-window me-1"></i>Show tab
+                </button>
+                @if (item.humanCheck) {
+                  <button class="btn btn-sm btn-success" (click)="runAction(item.id, 'confirm')" [disabled]="busyAction()[item.id]"
+                          title="You entered the code / finished the form in the browser tab">
+                    @if (busyAction()[item.id] === 'confirm') { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    <i class="bi bi-check2-circle me-1"></i>I submitted it
+                  </button>
+                }
+                <button class="btn btn-sm btn-primary" (click)="runAction(item.id, 'submit')" [disabled]="busyAction()[item.id]"
+                        [title]="item.humanCheck ? 'After entering the code in the tab, click Submit on the form for you' : 'Submit the filled form'">
+                  @if (busyAction()[item.id] === 'submit') { <span class="spinner-border spinner-border-sm me-1"></span> }
+                  <i class="bi bi-send me-1"></i>Submit for me
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="runAction(item.id, 'discard')" [disabled]="busyAction()[item.id]">
+                  Discard
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+        <p class="action-help">
+          Some sites ask for a code sent to your email, or flag automated submissions. Switch to the automation
+          browser window (<strong>Show tab</strong>), finish it there, then click <strong>I submitted it</strong>
+          — or paste the code and use <strong>Submit for me</strong>.
+        </p>
+      </div>
+    }
+
+    <!-- Autopilot -->
+    @if (autopilot(); as ap) {
+      <div class="content-card autopilot-card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="bi bi-robot me-2"></i>Autopilot</h2>
+          <span class="autopilot-state" [class.on]="ap.enabled">
+            {{ ap.enabled ? 'On — daily at ' + ap.time : 'Off' }}
+          </span>
+        </div>
+        <div class="autopilot-body">
+          <p class="autopilot-summary">
+            Applies to up to <strong>{{ ap.dailyLimit }}</strong> jobs a day that score <strong>{{ ap.minMatchScore }}+</strong>
+            and have a company application form (Greenhouse, Lever, Ashby). Applications with required questions
+            your profile can't answer are skipped, never sent half-filled.
+          </p>
+          <div class="autopilot-stats">
+            <span><i class="bi bi-send-check me-1"></i>{{ ap.appliedToday }} / {{ ap.dailyLimit }} today</span>
+            @if (ap.lastRun) {
+              <span>
+                <i class="bi bi-clock-history me-1"></i>Last run {{ ap.lastRun.startedAt | date: 'MMM d, h:mm a' }}:
+                @if (ap.lastRun.error) {
+                  failed — {{ ap.lastRun.error }}
+                } @else if (!ap.lastRun.finishedAt) {
+                  running…
+                } @else if (ap.lastRun.result) {
+                  {{ ap.lastRun.result.queued }} queued{{ ap.lastRun.result.skippedReason ? ' — ' + ap.lastRun.result.skippedReason : '' }}
+                }
+              </span>
+            }
+          </div>
+          <div class="autopilot-actions">
+            <button class="btn btn-primary btn-sm" (click)="runAutopilotNow()" [disabled]="ap.running || startingAutopilot()">
+              @if (ap.running || startingAutopilot()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Running…
+              } @else {
+                <i class="bi bi-play-fill me-1"></i>Run now
+              }
+            </button>
+            @if (desktopAlerts() === 'default') {
+              <button class="btn btn-outline-secondary btn-sm" (click)="enableDesktopAlerts()">
+                <i class="bi bi-bell me-1"></i>Enable desktop alerts
+              </button>
+            } @else if (desktopAlerts() === 'denied') {
+              <span class="autopilot-hint">Desktop alerts are blocked in this browser's site settings.</span>
+            }
+            @if (!ap.enabled) {
+              <span class="autopilot-hint">Set <code>AUTOPILOT_ENABLED=true</code> in .env to run it every day.</span>
+            }
+          </div>
+
+          <!-- Step-by-step progress of the latest run -->
+          @if (ap.lastRun && runSteps().length) {
+            <div class="run-progress">
+              <app-step-timeline [steps]="runSummary()" />
+
+              <div class="ap-accordion">
+                @for (section of autopilotSections; track section.key; let i = $index) {
+                  @let state = sectionState(section.key);
+                  <div class="ap-item" [class]="'state-' + state">
+                    <button type="button" class="ap-header" (click)="toggle(section.key)" [attr.aria-expanded]="isOpen(section.key)">
+                      <span class="ap-status">
+                        @switch (state) {
+                          @case ('running') { <span class="spinner-border spinner-border-sm"></span> }
+                          @case ('done') { <i class="bi bi-check-circle-fill"></i> }
+                          @case ('warn') { <i class="bi bi-exclamation-triangle-fill"></i> }
+                          @case ('error') { <i class="bi bi-x-circle-fill"></i> }
+                          @default { <i class="bi bi-circle"></i> }
+                        }
+                      </span>
+                      <span class="ap-title"><i class="bi me-1" [class]="section.icon"></i>{{ i + 1 }}. {{ section.title }}</span>
+                      <span class="ap-count">
+                        @if (section.key === 'queue') {
+                          {{ runApplications().length }} application(s)
+                        } @else {
+                          {{ stepsFor(section.key).length }} step(s)
+                        }
+                      </span>
+                      <i class="bi ap-chevron" [class.bi-chevron-up]="isOpen(section.key)" [class.bi-chevron-down]="!isOpen(section.key)"></i>
+                    </button>
+
+                    @if (isOpen(section.key)) {
+                      <div class="ap-body">
+                        <app-step-timeline
+                          [steps]="stepsFor(section.key)"
+                          [inProgress]="state === 'running' && section.key !== 'queue'"
+                          emptyText="Waiting for the previous step…" />
+
+                        <!-- One nested item per application, with its own form-filling steps -->
+                        @if (section.key === 'queue') {
+                          @for (app of runApplications(); track app.id) {
+                            @let appView = appState(app);
+                            <div class="ap-item nested" [class]="'state-' + appView.css">
+                              <button type="button" class="ap-header" (click)="toggle('app:' + app.id)" [attr.aria-expanded]="isOpen('app:' + app.id)">
+                                <span class="ap-status">
+                                  @if (appView.css === 'running') {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                  } @else {
+                                    <i class="bi" [class]="appView.icon"></i>
+                                  }
+                                </span>
+                                <span class="ap-title">{{ app.job?.title || 'Job' }} <span class="text-muted">at {{ app.job?.company || '—' }}</span></span>
+                                <span class="ap-badge">{{ appView.label }}</span>
+                                <i class="bi ap-chevron" [class.bi-chevron-up]="isOpen('app:' + app.id)" [class.bi-chevron-down]="!isOpen('app:' + app.id)"></i>
+                              </button>
+                              @if (isOpen('app:' + app.id)) {
+                                <div class="ap-body">
+                                  <app-step-timeline
+                                    [steps]="app.steps"
+                                    [inProgress]="app.status === 'pending'"
+                                    emptyText="Waiting in the queue…" />
+                                  <a class="ap-link" [routerLink]="['/applications', app.id]">
+                                    Open application <i class="bi bi-arrow-right"></i>
+                                  </a>
+                                </div>
+                              }
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     <!-- Content Grid -->
     <div class="content-grid">
       <!-- High Match Jobs -->

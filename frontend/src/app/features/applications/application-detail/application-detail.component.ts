@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -8,15 +8,16 @@ import { ApplicationService } from '@core/services/application.service';
 import { AutomationService } from '@core/services/automation.service';
 import { Application, ApplicationStatus } from '@models/index';
 import { environment } from '../../../../environments/environment';
+import { StepTimelineComponent } from '@shared/components/step-timeline/step-timeline.component';
 
 @Component({
   selector: 'app-application-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, StepTimelineComponent],
   templateUrl: './application-detail.component.html',
   styleUrls: ['./application-detail.component.scss']
 })
-export class ApplicationDetailComponent implements OnInit {
+export class ApplicationDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private applicationService = inject(ApplicationService);
@@ -28,6 +29,10 @@ export class ApplicationDetailComponent implements OnInit {
   updatingStatus = signal(false);
   retrying = signal(false);
   cancelling = signal(false);
+  submitting = signal(false);
+  stepsOpen = signal(true);
+  private refreshTimer?: ReturnType<typeof setInterval>;
+  discarding = signal(false);
 
   statuses = Object.values(ApplicationStatus);
 
@@ -35,11 +40,19 @@ export class ApplicationDetailComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadApplication(id);
+      // Keep the step timeline live while automation is working on this application
+      this.refreshTimer = setInterval(() => {
+        if (this.application()?.status === ApplicationStatus.PENDING) this.loadApplication(id, true);
+      }, 5000);
     }
   }
 
-  async loadApplication(id: string): Promise<void> {
-    this.loading.set(true);
+  ngOnDestroy(): void {
+    clearInterval(this.refreshTimer);
+  }
+
+  async loadApplication(id: string, silent = false): Promise<void> {
+    if (!silent) this.loading.set(true);
     try {
       const response = await firstValueFrom(this.applicationService.getApplicationById(id));
       if (response.success && response.data) {
@@ -107,12 +120,84 @@ export class ApplicationDetailComponent implements OnInit {
     try {
       await firstValueFrom(this.automationService.cancelAutomation(app.id));
       this.toastr.success('Automation cancelled');
-      this.application.update(a => a ? { ...a, status: ApplicationStatus.FAILED } : a);
+      this.application.update(a => a ? { ...a, status: ApplicationStatus.CANCELLED } : a);
     } catch {
       this.toastr.error('Failed to cancel automation');
     } finally {
       this.cancelling.set(false);
     }
+  }
+
+  async submitReviewed(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+
+    this.submitting.set(true);
+    try {
+      const result = await firstValueFrom(this.automationService.submitReviewed(app.id));
+      if (result.status === ApplicationStatus.SUBMITTED) {
+        this.toastr.success(result.message);
+      } else {
+        this.toastr.warning(result.message);
+      }
+    } catch (error: any) {
+      this.toastr.error(error.error?.message || 'Failed to submit application');
+    } finally {
+      this.submitting.set(false);
+      await this.loadApplication(app.id);
+    }
+  }
+
+  async discardReview(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+
+    this.discarding.set(true);
+    try {
+      await firstValueFrom(this.automationService.discardReview(app.id));
+      this.toastr.info('Discarded without submitting');
+    } catch (error: any) {
+      this.toastr.error(error.error?.message || 'Failed to discard application');
+    } finally {
+      this.discarding.set(false);
+      await this.loadApplication(app.id);
+    }
+  }
+
+  /** The site stopped the automated submit and wants a person (verification code, spam check) */
+  isHumanCheck(): boolean {
+    return !!this.application()?.errorLog?.startsWith('Action needed');
+  }
+
+  async focusTab(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+    try {
+      await firstValueFrom(this.automationService.focusTab(app.id));
+      this.toastr.info('Switch to the automation browser window — the tab is in front');
+    } catch (error: any) {
+      this.toastr.error(error.error?.message || 'The tab is no longer open');
+    }
+  }
+
+  async confirmSubmitted(): Promise<void> {
+    const app = this.application();
+    if (!app) return;
+    this.submitting.set(true);
+    try {
+      const result = await firstValueFrom(this.automationService.confirmSubmitted(app.id));
+      this.toastr.success(result.message);
+    } catch (error: any) {
+      this.toastr.error(error.error?.message || 'Failed to update the application');
+    } finally {
+      this.submitting.set(false);
+      await this.loadApplication(app.id);
+    }
+  }
+
+  canRetry(status: string): boolean {
+    return [ApplicationStatus.FAILED, ApplicationStatus.UNCONFIRMED, ApplicationStatus.CANCELLED]
+      .includes(status as ApplicationStatus);
   }
 
   goBack(): void {
@@ -135,7 +220,10 @@ export class ApplicationDetailComponent implements OnInit {
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       [ApplicationStatus.PENDING]: 'status-pending',
+      [ApplicationStatus.AWAITING_REVIEW]: 'status-review',
       [ApplicationStatus.SUBMITTED]: 'status-submitted',
+      [ApplicationStatus.UNCONFIRMED]: 'status-pending',
+      [ApplicationStatus.CANCELLED]: 'status-declined',
       [ApplicationStatus.FAILED]: 'status-failed',
       [ApplicationStatus.IN_REVIEW]: 'status-review',
       [ApplicationStatus.REJECTED]: 'status-rejected',
@@ -160,9 +248,11 @@ export class ApplicationDetailComponent implements OnInit {
       // Determine label based on filename
       let label = 'Screenshot';
       if (filename.includes('initial')) {
-        label = 'Before Submission';
-      } else if (filename.includes('success')) {
-        label = 'After Submission';
+        label = 'Job Page';
+      } else if (filename.includes('filled')) {
+        label = 'Filled Form (before submit)';
+      } else if (filename.includes('after-submit') || filename.includes('success')) {
+        label = 'After Submit';
       } else if (filename.includes('error')) {
         label = 'Error Screenshot';
       }

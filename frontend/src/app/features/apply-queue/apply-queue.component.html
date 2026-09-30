@@ -1,0 +1,247 @@
+<div class="queue-page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Apply Queue</h1>
+      <p class="page-subtitle">
+        Today's best matches. The Chrome extension fills each application in your own browser — you review and click Submit.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline-primary" (click)="buildNow()" [disabled]="state()?.building || startingBuild()">
+        @if (state()?.building || startingBuild()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>Building…
+        } @else {
+          <i class="bi bi-arrow-repeat me-1"></i>Build queue now
+        }
+      </button>
+      <button class="btn btn-primary" (click)="applyHere()" [disabled]="!openItems().length" title="Open the forms right here in the app">
+        <i class="bi bi-window-sidebar me-1"></i>Apply here
+      </button>
+      <button class="btn btn-success" (click)="startApplying()" [disabled]="!openItems().length || launching()"
+              title="Open the forms in NextGen Chrome (the extension fills them)">
+        @if (launching()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>Opening…
+        } @else {
+          <i class="bi bi-play-fill me-1"></i>Start applying
+        }
+      </button>
+    </div>
+  </header>
+
+  @if (loading() && !state()) {
+    <div class="loading"><span class="spinner-border text-primary"></span></div>
+  }
+  @if (state(); as s) {
+    <!-- Stats -->
+    <div class="stats" role="list">
+      <div class="stat" role="listitem"><span class="stat-value">{{ stats().toApply }}</span><span class="stat-label">To apply</span></div>
+      <div class="stat" role="listitem"><span class="stat-value warn">{{ stats().needsYou }}</span><span class="stat-label">Need you</span></div>
+      <div class="stat" role="listitem"><span class="stat-value done">{{ stats().submitted }}</span><span class="stat-label">Submitted</span></div>
+      <div class="stat" role="listitem"><span class="stat-value">{{ stats().skipped }}</span><span class="stat-label">Skipped</span></div>
+    </div>
+
+    <!-- Apply here: the job form inside this page -->
+    @if (current(); as job) {
+      @let jobState = itemState(job);
+      <section id="apply-workspace" class="workspace" aria-label="Application form">
+        <div class="workspace-bar">
+          <div class="workspace-job">
+            <span class="position">#{{ job.position }}</span>
+            <strong>{{ job.job?.title }}</strong>
+            <span class="muted">at {{ job.job?.company }}</span>
+            <span class="score">{{ job.matchScore }}</span>
+            <span class="badge-status" [class]="'state-' + jobState.css">{{ jobState.label }}</span>
+          </div>
+          <div class="workspace-actions">
+            <button class="btn btn-sm btn-success" (click)="currentAction('submitted')" [disabled]="busyItem()[job.id]">
+              <i class="bi bi-check2-circle me-1"></i>I submitted it
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" (click)="currentAction('skip')" [disabled]="busyItem()[job.id]">Skip</button>
+            <button class="btn btn-sm btn-outline-primary" (click)="applyNext()">Next job <i class="bi bi-arrow-right"></i></button>
+            <button class="btn btn-sm btn-link" (click)="openCurrentInTab()" title="If the site will not submit inside the app">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Open in new tab
+            </button>
+            <button class="btn btn-sm btn-link text-muted" (click)="closeWorkspace()" aria-label="Close the form"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </div>
+        @if (!extensionHere()) {
+          <p class="workspace-note">
+            <i class="bi bi-info-circle me-1"></i>
+            Auto-fill needs the NextGen extension in this browser. Use <b>Open NextGen Chrome</b> below (it has the extension) and open
+            this page there, or fill this form yourself.
+          </p>
+        }
+        @if (frameUrl(); as url) {
+          <iframe #jobFrame class="workspace-frame" [src]="url" [title]="'Application form: ' + (job.job?.title || 'job')"
+                  allow="clipboard-write"></iframe>
+        }
+        <p class="workspace-note">
+          Review the form, fill anything highlighted, then click the form's own <b>Submit</b> button. If the site does not let you
+          submit inside the app, use <b>Open in new tab</b>.
+        </p>
+      </section>
+    }
+
+    <!-- Extension connection -->
+    <section class="card-block" aria-labelledby="ext-title">
+      <div class="block-header">
+        <h2 id="ext-title"><i class="bi bi-puzzle me-2"></i>Chrome extension</h2>
+        <span class="pill" [class.on]="connected()">{{ connected() ? 'Connected' : 'Not connected' }}</span>
+      </div>
+      @if (connected()) {
+        <ul class="connections">
+          @for (c of s.extensions; track c.id) {
+            <li>
+              <span><i class="bi bi-laptop me-1"></i>{{ c.label }}</span>
+              <span class="muted">last active {{ c.lastUsedAt | date: 'MMM d, h:mm a' }}</span>
+              <button class="btn btn-sm btn-link text-danger" (click)="disconnect(c.id)">Disconnect</button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ol class="install-steps">
+          <li>Build it once: in the project folder run <code>cd extension &amp;&amp; npm install &amp;&amp; npm run build</code></li>
+          <li>Open <code>chrome://extensions</code>, turn on <b>Developer mode</b>, click <b>Load unpacked</b> and pick the <code>extension/dist</code> folder</li>
+          <li>Click <b>Get pairing code</b> below, then enter it in the NextGen Apply extension popup</li>
+        </ol>
+      }
+      @if (pairing(); as p) {
+        <div class="pairing" aria-live="polite">
+          @if (secondsLeft(p.expiresAt) > 0) {
+            <span class="muted">Enter this code in the extension popup:</span>
+            <span class="pair-code">{{ p.code }}</span>
+            <span class="muted">expires in {{ secondsLeft(p.expiresAt) / 60 | number: '1.0-0' }} min · waiting for the extension…</span>
+          } @else {
+            <span class="muted">The code expired.</span>
+          }
+        </div>
+      }
+      <div class="ext-actions">
+        @if (s.browserLaunch.available) {
+          <button class="btn btn-sm btn-primary" (click)="openItem()" [disabled]="launching()"
+                  title="Opens a Chrome window with the extension installed and connected">
+            <i class="bi bi-browser-chrome me-1"></i>Open NextGen Chrome
+          </button>
+        } @else {
+          <span class="muted">{{ s.browserLaunch.reason }}</span>
+        }
+        <button class="btn btn-sm btn-outline-secondary" (click)="connectExtension()">
+          <i class="bi bi-key me-1"></i>{{ connected() ? 'Connect another browser' : 'Get pairing code' }}
+        </button>
+      </div>
+      @if (!connected() && s.browserLaunch.available) {
+        <p class="muted mt-2 mb-0">
+          Easiest: click <b>Open NextGen Chrome</b> — it opens with the extension already installed and connects itself.
+          Use the steps above only to add the extension to your everyday Chrome.
+        </p>
+      }
+    </section>
+
+    <!-- Latest build: step-by-step -->
+    @if (s.build; as b) {
+      <section class="card-block" aria-labelledby="build-title">
+        <div class="block-header">
+          <h2 id="build-title"><i class="bi bi-diagram-3 me-2"></i>Latest queue build</h2>
+          <span class="muted">{{ b.startedAt | date: 'MMM d, h:mm a' }} · {{ b.trigger === 'manual' ? 'Build now' : 'daily schedule' }}</span>
+        </div>
+        <app-step-timeline [steps]="buildSummary()" />
+        <div class="accordion-list">
+          @for (section of buildSections; track section.key; let i = $index) {
+            @let st = buildSectionState(section.key);
+            <div class="acc-item" [class]="'state-' + st">
+              <button type="button" class="acc-header" (click)="toggle('build:' + section.key)" [attr.aria-expanded]="isOpen('build:' + section.key, true)">
+                <span class="acc-status">
+                  @switch (st) {
+                    @case ('running') { <span class="spinner-border spinner-border-sm"></span> }
+                    @case ('done') { <i class="bi bi-check-circle-fill"></i> }
+                    @case ('warn') { <i class="bi bi-exclamation-triangle-fill"></i> }
+                    @case ('error') { <i class="bi bi-x-circle-fill"></i> }
+                    @default { <i class="bi bi-circle"></i> }
+                  }
+                </span>
+                <span class="acc-title"><i class="bi me-1" [class]="section.icon"></i>{{ i + 1 }}. {{ section.title }}</span>
+                <span class="acc-meta">{{ stepsFor(section.key).length }} step(s)</span>
+                <i class="bi acc-chevron" [class.bi-chevron-up]="isOpen('build:' + section.key, true)" [class.bi-chevron-down]="!isOpen('build:' + section.key, true)"></i>
+              </button>
+              @if (isOpen('build:' + section.key, true)) {
+                <div class="acc-body">
+                  <app-step-timeline [steps]="stepsFor(section.key)" [inProgress]="st === 'running'" emptyText="Waiting for the previous step…" />
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- The queue -->
+    <section class="card-block" aria-labelledby="queue-title">
+      <div class="block-header">
+        <h2 id="queue-title"><i class="bi bi-list-check me-2"></i>Jobs</h2>
+        <span class="muted">
+          {{ s.config.enabled ? 'Built daily at ' + s.config.time : 'Daily build is off (APPLY_QUEUE_ENABLED)' }} · {{ s.config.size }} jobs · score {{ s.config.minMatchScore }}+
+        </span>
+      </div>
+
+      @if (!items().length) {
+        <div class="empty">
+          <i class="bi bi-inbox"></i>
+          <p>No jobs queued yet. Click <b>Build queue now</b> to fetch and score today's jobs.</p>
+        </div>
+      } @else {
+        <div class="accordion-list">
+          @for (item of items(); track item.id) {
+            @let st = itemState(item);
+            <div class="acc-item" [class]="'state-' + st.css">
+              <div class="acc-header item-header">
+                <button type="button" class="acc-toggle" (click)="toggle('item:' + item.id)" [attr.aria-expanded]="isOpen('item:' + item.id, false)"
+                        [attr.aria-label]="'Show steps for ' + (item.job?.title || 'job')">
+                  <span class="acc-status">
+                    @if (st.css === 'running' && !st.icon) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      <i class="bi" [class]="st.icon"></i>
+                    }
+                  </span>
+                  <span class="acc-title">
+                    <span class="position">#{{ item.position }}</span>
+                    {{ item.job?.title || 'Job' }} <span class="muted">at {{ item.job?.company || '—' }}</span>
+                  </span>
+                </button>
+                <span class="score">{{ item.matchScore }}</span>
+                <span class="badge-status">{{ st.label }}</span>
+                <span class="item-actions">
+                  @if (item.status !== 'submitted' && item.status !== 'skipped') {
+                    <button class="btn btn-sm btn-primary" (click)="applyHere(item)"><i class="bi bi-window-sidebar me-1"></i>Apply here</button>
+                    <button class="btn btn-sm btn-outline-primary" (click)="openItem(item)" title="Open in NextGen Chrome" aria-label="Open in NextGen Chrome"><i class="bi bi-box-arrow-up-right"></i></button>
+                    <button class="btn btn-sm btn-outline-success" (click)="act(item, 'submitted')" [disabled]="busyItem()[item.id]">Submitted</button>
+                    <button class="btn btn-sm btn-outline-secondary" (click)="act(item, 'skip')" [disabled]="busyItem()[item.id]">Skip</button>
+                  } @else if (item.applicationId) {
+                    <a class="btn btn-sm btn-link" [routerLink]="['/applications', item.applicationId]">View application</a>
+                  } @else if (item.status === 'skipped') {
+                    <button class="btn btn-sm btn-outline-secondary" (click)="requeue(item)"><i class="bi bi-arrow-counterclockwise me-1"></i>Requeue</button>
+                  }
+                </span>
+                <i class="bi acc-chevron" [class.bi-chevron-up]="isOpen('item:' + item.id, false)" [class.bi-chevron-down]="!isOpen('item:' + item.id, false)"></i>
+              </div>
+              @if (isOpen('item:' + item.id, false)) {
+                <div class="acc-body">
+                  @if (item.matchReason) {
+                    <p class="reason"><i class="bi bi-stars me-1"></i>{{ item.matchReason }}</p>
+                  }
+                  @if (item.missingFields.length && item.status !== 'submitted') {
+                    <div class="missing">
+                      <strong>Fields that need you:</strong>
+                      <ul>@for (f of item.missingFields; track $index) { <li>{{ f }}</li> }</ul>
+                    </div>
+                  }
+                  <app-step-timeline [steps]="item.steps" [inProgress]="item.status === 'opened'" emptyText="Not opened yet" />
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

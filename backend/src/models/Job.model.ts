@@ -43,6 +43,10 @@ export interface IJob extends Document {
   experienceLevel: ExperienceLevel;
   applicationUrl: string;
   url?: string; // Direct job page URL for automation
+  atsApplyUrl?: string; // Company application form on a supported ATS (Greenhouse, Lever, Ashby)
+  autoApplySupported: boolean;
+  /** The Chrome extension can fill this job's form (a wider set of ATS than server-side automation) */
+  extensionSupported: boolean;
   companyWebsite?: string;
   companyLogo?: string;
   source: string;
@@ -102,6 +106,9 @@ const jobSchema = new Schema<IJob>(
       required: true
     },
     url: { type: String }, // Direct job page URL for automation
+    atsApplyUrl: { type: String },
+    autoApplySupported: { type: Boolean, default: false },
+    extensionSupported: { type: Boolean, default: false },
     companyWebsite: { type: String },
     companyLogo: { type: String },
     source: {
@@ -144,10 +151,30 @@ const jobSchema = new Schema<IJob>(
 
 // Indexes
 jobSchema.index({ source: 1, sourceId: 1 }, { unique: true });
-jobSchema.index({ title: 'text', company: 'text', description: 'text' });
+jobSchema.index(
+  { title: 'text', company: 'text', location: 'text', description: 'text' },
+  { name: 'job_text_search' }
+);
 jobSchema.index({ postedDate: -1 });
 jobSchema.index({ status: 1 });
 jobSchema.index({ matchScore: -1 });
 jobSchema.index({ jobType: 1, experienceLevel: 1, remote: 1 });
 
 export const Job = mongoose.model<IJob>('Job', jobSchema);
+
+/**
+ * MongoDB allows one text index per collection, so an older text index without
+ * `location` blocks autoIndex from creating the current one. Replace it if present.
+ */
+export async function ensureJobTextIndex(): Promise<void> {
+  // createCollection is a no-op if it exists; listing indexes on a missing collection throws
+  await Job.createCollection();
+  const indexes = await Job.collection.indexes();
+  const staleTextIndex = indexes.find(
+    idx => idx.key?._fts === 'text' && idx.name !== 'job_text_search'
+  );
+  if (staleTextIndex?.name) {
+    await Job.collection.dropIndex(staleTextIndex.name);
+  }
+  await Job.createIndexes();
+}

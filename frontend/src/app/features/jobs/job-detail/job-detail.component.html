@@ -34,7 +34,8 @@
         <button
           class="btn btn-success"
           (click)="autoApply()"
-          [disabled]="isAutomating() || !job.applicationUrl"
+          [disabled]="isAutomating() || !job.autoApplySupported"
+          [title]="job.autoApplySupported ? 'Fill the company application form for you' : 'Auto Apply works only on company forms (Greenhouse, Lever, Ashby)'"
         >
           @if (isAutomating()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
@@ -281,7 +282,8 @@
             <button
               class="btn btn-success btn-lg w-100 mb-2"
               (click)="autoApply()"
-              [disabled]="isAutomating() || !job.applicationUrl"
+              [disabled]="isAutomating() || !job.autoApplySupported"
+          [title]="job.autoApplySupported ? 'Fill the company application form for you' : 'Auto Apply works only on company forms (Greenhouse, Lever, Ashby)'"
             >
               @if (isAutomating()) {
                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -290,6 +292,13 @@
                 <i class="bi bi-robot me-2"></i>Auto Apply
               }
             </button>
+
+            @if (!job.autoApplySupported) {
+              <p class="small text-muted mb-2">
+                <i class="bi bi-info-circle me-1"></i>
+                This job is on a job board that needs your login (e.g. LinkedIn, Indeed), so Auto Apply isn't available. Apply manually instead.
+              </p>
+            }
 
             <!-- Manual Apply Button -->
             <a

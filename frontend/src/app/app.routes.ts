@@ -35,6 +35,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/resume-score/resume-score.routes').then(m => m.RESUME_SCORE_ROUTES)
       },
       {
+        path: 'apply-queue',
+        loadChildren: () => import('./features/apply-queue/apply-queue.routes').then(m => m.APPLY_QUEUE_ROUTES)
+      },
+      {
         path: 'top-matches',
         loadChildren: () => import('./features/top-matches/top-matches.routes').then(m => m.TOP_MATCHES_ROUTES)
       },

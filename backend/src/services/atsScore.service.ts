@@ -1,8 +1,5 @@
-import axios from 'axios';
 import { logger } from '../config/logger';
-
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+import { chatCompletion, parseJsonResponse, assertOpenAIConfigured } from './openai.service';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Formatting & Layout': 'bi-layout-text-sidebar-reverse',
@@ -26,11 +23,7 @@ function getGradeAndColor(score: number): { grade: string; gradeColor: string } 
 }
 
 export async function analyzeResumeATS(resumeText: string, jobDescription?: string): Promise<Record<string, any>> {
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY is not configured. Please add it to your .env file.');
-  }
+  assertOpenAIConfigured();
 
   const jdSection = jobDescription
     ? `\n\nThe user also provided a JOB DESCRIPTION to compare against:\n"""\n${jobDescription}\n"""\n\nUse this job description to evaluate keyword optimization — check which keywords from the JD appear in the resume and which are missing.`
@@ -114,45 +107,15 @@ Rules:
 - The summary should highlight the biggest strength and most impactful improvement
 - Return ONLY the JSON object, nothing else`;
 
-  const response = await axios.post(
-    GROQ_API_URL,
-    {
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Analyze this resume for ATS compatibility:\n\n${resumeText}${jdSection}` }
-      ],
-      temperature: 0.2,
-      max_tokens: 4000
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 60000
-    }
-  );
+  const content = await chatCompletion({
+    system: systemPrompt,
+    user: `Analyze this resume for ATS compatibility:\n\n${resumeText}${jdSection}`,
+    temperature: 0.2,
+    maxTokens: 4000,
+    json: true
+  });
 
-  const content = response.data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error('No response content from Groq API');
-  }
-
-  // Clean up response - strip markdown fences if present
-  let jsonStr = content.trim();
-  if (jsonStr.startsWith('```json')) {
-    jsonStr = jsonStr.slice(7);
-  } else if (jsonStr.startsWith('```')) {
-    jsonStr = jsonStr.slice(3);
-  }
-  if (jsonStr.endsWith('```')) {
-    jsonStr = jsonStr.slice(0, -3);
-  }
-  jsonStr = jsonStr.trim();
-
-  const parsed = JSON.parse(jsonStr);
+  const parsed = parseJsonResponse(content);
 
   // Add icons and grade/color (not AI-generated)
   if (parsed.categories) {
@@ -165,7 +128,7 @@ Rules:
   parsed.grade = grade;
   parsed.gradeColor = gradeColor;
 
-  logger.info('ATS score analysis completed via Groq API');
+  logger.info('ATS score analysis completed via OpenAI API');
 
   return parsed;
 }

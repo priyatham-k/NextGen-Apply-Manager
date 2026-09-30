@@ -69,11 +69,25 @@ export class NotificationService {
         timeOut: 5000,
         positionClass: 'toast-top-right'
       });
+
+      // Autopilot runs while the user may be in another window: surface its updates on the desktop too
+      if (/^(action needed|autopilot)/i.test(notification.title)) {
+        this.showDesktopNotification(notification.title, notification.message);
+      }
     });
 
     this.socket.on('connect_error', (err) => {
       console.error('Socket connection error:', err.message);
     });
+  }
+
+  private showDesktopNotification(title: string, body: string): void {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const desktop = new Notification(title, { body, tag: `${title}:${body}`, requireInteraction: /action needed/i.test(title) });
+    desktop.onclick = () => {
+      window.focus();
+      desktop.close();
+    };
   }
 
   private disconnect(): void {

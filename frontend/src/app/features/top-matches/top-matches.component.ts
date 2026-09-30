@@ -98,11 +98,17 @@ export class TopMatchesComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.automationService.complete$.subscribe(result => {
         const automating = this.automatingJobIds();
-        automating.delete(result.applicationId);
+        automating.delete(result.jobId);
         this.automatingJobIds.set(new Set(automating));
 
-        if (result.status === 'success') {
+        if (result.status === 'action') {
+          this.toastr.warning(`Action needed: ${result.error}. See the Dashboard.`, undefined, { timeOut: 10000 });
+        } else if (result.status === 'review') {
+          this.toastr.info('Form filled — open Applications to review and submit it');
+        } else if (result.status === 'success') {
           this.toastr.success('Application submitted successfully!');
+        } else if (result.status === 'unconfirmed') {
+          this.toastr.warning('Submitted, but no confirmation appeared. Check the application screenshots.');
         } else {
           this.toastr.error(result.error || 'Automation failed');
         }

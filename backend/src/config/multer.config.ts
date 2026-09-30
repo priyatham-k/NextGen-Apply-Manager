@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { logger } from './logger';
+import { HttpError } from '../utils/httpErrors';
 
 const uploadDir = path.join(__dirname, '../../uploads/profile-pictures');
 
@@ -32,7 +33,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+    cb(new HttpError(400, 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
   }
 };
 
@@ -73,7 +74,7 @@ const documentFileFilter = (_req: any, file: Express.Multer.File, cb: multer.Fil
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only PDF files are allowed.'));
+    cb(new HttpError(400, 'Invalid file type. Only PDF files are allowed.'));
   }
 };
 

@@ -77,9 +77,18 @@ export class JobDetailComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.automationService.complete$.subscribe(result => {
         this.isAutomating.set(false);
-        if (result.status === 'success') {
+        if (result.status === 'action') {
+          this.toastr.warning(`Action needed: ${result.error}. Finish it in the browser tab.`, undefined, { timeOut: 10000 });
+          this.router.navigate(['/applications', result.applicationId]);
+        } else if (result.status === 'review') {
+          this.toastr.info('Form filled — review it and click Submit');
+          this.router.navigate(['/applications', result.applicationId]);
+        } else if (result.status === 'success') {
           this.toastr.success('Application submitted successfully!');
-          this.router.navigate(['/applications']);
+          this.router.navigate(['/applications', result.applicationId]);
+        } else if (result.status === 'unconfirmed') {
+          this.toastr.warning('Submitted, but no confirmation appeared. Check the screenshot.');
+          this.router.navigate(['/applications', result.applicationId]);
         } else {
           this.toastr.error(result.error || 'Automation failed');
         }

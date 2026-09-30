@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleClientDataError } from '../utils/httpErrors';
 import { User } from '../models/User.model';
 import { UserSettings } from '../models/Settings.model';
 import { logger } from '../config/logger';
@@ -85,6 +86,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
       message: 'Settings updated successfully'
     });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     logger.error('Update settings error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }

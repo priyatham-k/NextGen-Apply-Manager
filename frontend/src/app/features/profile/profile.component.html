@@ -81,6 +81,32 @@
           </div>
         </div>
 
+        <!-- Resume (always available; the big banner only shows for near-empty profiles) -->
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="card-title mb-2"><i class="bi bi-file-earmark-pdf me-1"></i>Resume (PDF)</h6>
+            @if (primaryResume(); as resume) {
+              <p class="small mb-1 text-truncate" [title]="resume.filename">
+                <i class="bi bi-check-circle-fill text-success me-1"></i>{{ resume.filename }}
+              </p>
+              <p class="small text-muted mb-2">Used for Auto Apply and Autopilot</p>
+            } @else {
+              <p class="small text-muted mb-2">No resume uploaded yet. Auto Apply needs one.</p>
+            }
+            <input #resumeCardInput type="file" class="d-none" accept=".pdf,application/pdf" (change)="onResumeSelected($event)" />
+            <div class="d-grid">
+              <button type="button" class="btn btn-sm btn-primary" (click)="resumeCardInput.click()" [disabled]="parsingResume()">
+                @if (parsingResume()) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>Reading resume...
+                } @else {
+                  <i class="bi bi-upload me-1"></i>{{ primaryResume() ? 'Replace PDF' : 'Upload PDF' }}
+                }
+              </button>
+            </div>
+            <small class="text-muted d-block mt-2">Uploading fills your profile from the resume automatically.</small>
+          </div>
+        </div>
+
         <!-- Profile Completeness -->
         <div class="card mt-3">
           <div class="card-body">
@@ -147,6 +173,11 @@
                       <label class="form-label">Last Name *</label>
                       <input type="text" class="form-control" formControlName="lastName" placeholder="Doe" />
                     </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Preferred Name</label>
+                      <input type="text" class="form-control" formControlName="preferredName" placeholder="What you like to be called" />
+                    </div>
+                    <div class="col-md-8"></div>
                     <div class="col-md-6">
                       <label class="form-label">Email *</label>
                       <input type="email" class="form-control" formControlName="email" placeholder="you&#64;example.com" />
@@ -450,6 +481,15 @@
                       </div>
                     </div>
 
+                    <div class="col-md-6">
+                      <label class="form-label">Visa Type <span class="text-muted">(if any)</span></label>
+                      <input type="text" class="form-control" formControlName="visaType" placeholder="e.g., H-1B, F-1 STEM OPT" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Country of Citizenship</label>
+                      <input type="text" class="form-control" formControlName="citizenship" placeholder="e.g., India" />
+                    </div>
+
                     <!-- Work Preferences -->
                     <div class="col-12 mt-4">
                       <h6 class="section-heading mb-3"><i class="bi bi-geo-alt me-1"></i>Work Preferences</h6>
@@ -474,6 +514,24 @@
                       <label class="form-label">Earliest Start Date</label>
                       <input type="month" class="form-control" formControlName="earliestStartDate" />
                     </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Willing to Travel</label>
+                      <select class="form-select" formControlName="willingToTravel">
+                        <option value="">-- Not set --</option>
+                        @for (opt of travelOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Highest Education</label>
+                      <select class="form-select" formControlName="highestEducation">
+                        <option value="">-- Not set --</option>
+                        @for (opt of educationLevelOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
 
                     <!-- Salary -->
                     <div class="col-12 mt-4">
@@ -486,6 +544,34 @@
                     <div class="col-md-6">
                       <label class="form-label">Maximum</label>
                       <input type="number" class="form-control" formControlName="desiredSalaryMax" min="0" placeholder="e.g., 120000" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Current Salary <span class="text-muted">(only used if a form asks)</span></label>
+                      <input type="number" class="form-control" formControlName="currentSalary" min="0" placeholder="e.g., 95000" />
+                    </div>
+
+                    <!-- Common Yes/No questions -->
+                    <div class="col-12 mt-4">
+                      <h6 class="section-heading mb-1"><i class="bi bi-ui-radios me-1"></i>Common Questions</h6>
+                      <p class="text-muted mb-2" style="font-size: 0.8rem;">Left as "Not set", the question is left empty on forms for you to answer.</p>
+                    </div>
+                    @for (q of yesNoQuestions; track q.key) {
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'yn-' + q.key">{{ q.label }}</label>
+                        <select class="form-select" [id]="'yn-' + q.key" [formControlName]="q.key">
+                          <option value="">-- Not set --</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                      </div>
+                    }
+                    <div class="col-md-6">
+                      <label class="form-label">Security Clearance</label>
+                      <select class="form-select" formControlName="securityClearance">
+                        @for (opt of clearanceOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
                     </div>
 
                     <!-- Background -->
@@ -508,6 +594,82 @@
                   <div class="mt-4">
                     <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'screening' || screeningForm.invalid">
                       @if (savingSection() === 'screening') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Screening Answers }
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- SELF-IDENTIFICATION (EEO) -->
+              @if (activeTab() === 'selfid') {
+                <h5 class="mb-2">Voluntary Self-Identification</h5>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">
+                  US applications ask these optional EEO questions. Only your answers here are used; they are never sent to the AI.
+                  Leave a question <b>Not set</b> and it stays empty on the form. Choose <b>Prefer not to say</b> to pick the form's decline option.
+                </p>
+                <form [formGroup]="selfIdForm" (ngSubmit)="saveSection('selfid')">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-gender">Gender</label>
+                      <select class="form-select" id="eeo-gender" formControlName="gender">
+                        <option value="">-- Not set --</option>
+                        @for (opt of genderOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-pronouns">Pronouns</label>
+                      <input type="text" class="form-control" id="eeo-pronouns" formControlName="pronouns" placeholder="e.g., he/him" />
+                    </div>
+                    <div class="col-12">
+                      <span class="form-label d-block">Race <span class="text-muted">(select all that apply)</span></span>
+                      <div class="d-flex flex-wrap gap-3" formGroupName="races">
+                        @for (opt of raceOptions; track opt.value) {
+                          <div class="form-check">
+                            <input type="checkbox" class="form-check-input" [id]="'race-' + opt.value" [formControlName]="opt.value"
+                                   (change)="onRaceToggle(opt.value)" />
+                            <label class="form-check-label" [for]="'race-' + opt.value">{{ opt.label }}</label>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-hispanic">Hispanic or Latino?</label>
+                      <select class="form-select" id="eeo-hispanic" formControlName="hispanicLatino">
+                        <option value="">-- Not set --</option>
+                        @for (opt of yesNoDeclineOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-veteran">Veteran Status</label>
+                      <select class="form-select" id="eeo-veteran" formControlName="veteranStatus">
+                        <option value="">-- Not set --</option>
+                        @for (opt of veteranOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-disability">Disability Status</label>
+                      <select class="form-select" id="eeo-disability" formControlName="disabilityStatus">
+                        <option value="">-- Not set --</option>
+                        @for (opt of disabilityOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-orientation">Sexual Orientation</label>
+                      <select class="form-select" id="eeo-orientation" formControlName="sexualOrientation">
+                        <option value="">-- Not set --</option>
+                        @for (opt of sexualOrientationOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="eeo-trans">Do you identify as transgender?</label>
+                      <select class="form-select" id="eeo-trans" formControlName="transgender">
+                        <option value="">-- Not set --</option>
+                        @for (opt of yesNoDeclineOptions; track opt.value) { <option [value]="opt.value">{{ opt.label }}</option> }
+                      </select>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" [disabled]="savingSection() === 'selfid'">
+                      @if (savingSection() === 'selfid') { <span class="spinner-border spinner-border-sm me-1"></span>Saving... } @else { <i class="bi bi-check-circle me-1"></i>Save Self-ID }
                     </button>
                   </div>
                 </form>

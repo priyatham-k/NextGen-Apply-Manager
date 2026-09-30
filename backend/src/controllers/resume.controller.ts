@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleClientDataError } from '../utils/httpErrors';
 import { logger } from '../config/logger';
 import {
   createResume as createResumeService,
@@ -24,6 +25,7 @@ export const createResume = async (req: Request, res: Response): Promise<void> =
     const resume = await createResumeService(userId, req.body);
     res.status(201).json({ success: true, data: resume });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     if (error.code === 11000) {
       res.status(409).json({ success: false, message: error.message });
       return;
@@ -86,6 +88,7 @@ export const updateResume = async (req: Request, res: Response): Promise<void> =
 
     res.status(200).json({ success: true, data: resume });
   } catch (error: any) {
+    if (handleClientDataError(res, error)) return;
     if (error.code === 11000) {
       res.status(409).json({ success: false, message: error.message });
       return;

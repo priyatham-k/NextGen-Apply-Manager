@@ -10,7 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
 
-type ProfileTab = 'personal' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'screening' | 'additional';
+type ProfileTab = 'personal' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'screening' | 'selfid' | 'additional';
 
 @Component({
   selector: 'app-profile',
@@ -39,6 +39,7 @@ export class ProfileComponent implements OnInit {
   onboardingMode = signal(false);
   parsingResume = signal(false);
   dragOver = signal(false);
+  primaryResume = signal<{ filename: string } | null>(null);
 
   // Forms
   personalInfoForm!: FormGroup;
@@ -49,6 +50,7 @@ export class ProfileComponent implements OnInit {
   educationForm!: FormGroup;
   certificationsForm!: FormGroup;
   screeningForm!: FormGroup;
+  selfIdForm!: FormGroup;
   additionalForm!: FormGroup;
 
   // Enum values for template dropdowns
@@ -77,6 +79,89 @@ export class ProfileComponent implements OnInit {
     { value: '1_month', label: '1 Month' },
     { value: '2_months', label: '2 Months' },
     { value: '3_months', label: '3 Months' }
+  ];
+
+  travelOptions = [
+    { value: 'none', label: 'No travel' },
+    { value: 'up_to_25', label: 'Up to 25%' },
+    { value: 'up_to_50', label: 'Up to 50%' },
+    { value: 'up_to_75', label: 'Up to 75%' },
+    { value: 'up_to_100', label: 'Up to 100%' }
+  ];
+
+  educationLevelOptions = [
+    { value: 'high_school', label: 'High School / GED' },
+    { value: 'associate', label: "Associate's Degree" },
+    { value: 'bachelor', label: "Bachelor's Degree" },
+    { value: 'master', label: "Master's Degree" },
+    { value: 'doctorate', label: 'Doctorate (PhD)' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  clearanceOptions = [
+    { value: 'none', label: 'None' },
+    { value: 'confidential', label: 'Confidential' },
+    { value: 'secret', label: 'Secret' },
+    { value: 'top_secret', label: 'Top Secret' }
+  ];
+
+  // Yes/No questions a profile may leave unanswered ("" = not set)
+  yesNoQuestions = [
+    { key: 'over18', label: 'Are you 18 years or older?' },
+    { key: 'hasDriversLicense', label: "Do you have a valid driver's license?" },
+    { key: 'openToContract', label: 'Open to contract / contract-to-hire roles?' },
+    { key: 'canWorkWeekendsOrShifts', label: 'Can you work weekends / shifts / on-call?' },
+    { key: 'hasNonCompeteAgreement', label: 'Bound by a non-compete agreement?' },
+    { key: 'hasConvictions', label: 'Ever convicted of a felony?' }
+  ];
+
+  // ─── Voluntary self-identification (EEO) ───
+  // Blank = the question is left empty on forms; "Prefer not to say" = the form's decline option
+  genderOptions = [
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'non_binary', label: 'Non-binary' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  ];
+
+  raceOptions = [
+    { value: 'asian', label: 'Asian' },
+    { value: 'white', label: 'White' },
+    { value: 'black_african_american', label: 'Black or African American' },
+    { value: 'hispanic_latino', label: 'Hispanic or Latino' },
+    { value: 'native_american', label: 'American Indian or Alaska Native' },
+    { value: 'pacific_islander', label: 'Native Hawaiian or Other Pacific Islander' },
+    { value: 'middle_eastern', label: 'Middle Eastern or North African' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  ];
+
+  yesNoDeclineOptions = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  ];
+
+  veteranOptions = [
+    { value: 'not_veteran', label: 'I am not a veteran' },
+    { value: 'protected_veteran', label: 'I am a protected veteran' },
+    { value: 'not_protected_veteran', label: 'I am a veteran, but not a protected veteran' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  ];
+
+  disabilityOptions = [
+    { value: 'no_disability', label: 'No, I do not have a disability' },
+    { value: 'has_disability', label: 'Yes, I have a disability (or had one)' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
+  ];
+
+  sexualOrientationOptions = [
+    { value: 'heterosexual', label: 'Heterosexual / Straight' },
+    { value: 'gay', label: 'Gay' },
+    { value: 'lesbian', label: 'Lesbian' },
+    { value: 'bisexual', label: 'Bisexual' },
+    { value: 'asexual', label: 'Asexual' },
+    { value: 'queer', label: 'Queer' },
+    { value: 'prefer_not_to_say', label: 'Prefer not to say' }
   ];
 
   hasProfilePicture = computed(() => !!this.authService.currentUser()?.profilePicture);
@@ -113,6 +198,7 @@ export class ProfileComponent implements OnInit {
     { key: 'education', label: 'Education', icon: 'bi-mortarboard' },
     { key: 'certifications', label: 'Certifications', icon: 'bi-award' },
     { key: 'screening', label: 'Screening', icon: 'bi-shield-check' },
+    { key: 'selfid', label: 'Self-ID', icon: 'bi-person-vcard' },
     { key: 'additional', label: 'Additional', icon: 'bi-plus-circle' }
   ];
 
@@ -126,6 +212,18 @@ export class ProfileComponent implements OnInit {
       this.onboardingMode.set(true);
     }
     await this.loadProfile();
+    await this.loadPrimaryResume();
+  }
+
+  async loadPrimaryResume(): Promise<void> {
+    try {
+      const response: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/resumes/uploads`));
+      const resumes: any[] = response.data || [];
+      const primary = resumes.find(r => r.isPrimary) || resumes[0];
+      this.primaryResume.set(primary ? { filename: primary.filename } : null);
+    } catch {
+      this.primaryResume.set(null);
+    }
   }
 
   private async loadProfile(): Promise<void> {
@@ -150,6 +248,7 @@ export class ProfileComponent implements OnInit {
       firstName: [p?.personalInfo?.firstName || '', [Validators.required, Validators.minLength(2)]],
       middleName: [p?.personalInfo?.middleName || ''],
       lastName: [p?.personalInfo?.lastName || '', [Validators.required, Validators.minLength(2)]],
+      preferredName: [(p?.personalInfo as any)?.preferredName || ''],
       email: [p?.personalInfo?.email || '', [Validators.required, Validators.email]],
       phone: [p?.personalInfo?.phone || ''],
       city: [p?.personalInfo?.address?.city || ''],
@@ -184,7 +283,7 @@ export class ProfileComponent implements OnInit {
     this.certificationsForm = this.fb.group({ certifications: this.fb.array([]) });
     p?.certifications?.forEach(c => this.certificationsArray.push(this.createCertificationGroup(c)));
 
-    const sq = p?.screeningQuestions;
+    const sq: any = p?.screeningQuestions;
     this.screeningForm = this.fb.group({
       workAuthorization: [sq?.workAuthorization || ''],
       requiresSponsorship: [sq?.requiresSponsorship ?? false],
@@ -195,7 +294,26 @@ export class ProfileComponent implements OnInit {
       desiredSalaryMin: [sq?.desiredSalary?.min || null],
       desiredSalaryMax: [sq?.desiredSalary?.max || null],
       willingToUndergoBackgroundCheck: [sq?.willingToUndergoBackgroundCheck ?? true],
-      willingToTakeDrugTest: [sq?.willingToTakeDrugTest ?? true]
+      willingToTakeDrugTest: [sq?.willingToTakeDrugTest ?? true],
+      currentSalary: [sq?.currentSalary?.amount || null],
+      highestEducation: [sq?.highestEducation || ''],
+      citizenship: [sq?.citizenship || ''],
+      visaType: [sq?.visaType || ''],
+      willingToTravel: [sq?.willingToTravel || ''],
+      securityClearance: [sq?.securityClearance || 'none'],
+      ...Object.fromEntries(this.yesNoQuestions.map(q => [q.key, [this.toYesNo(sq?.[q.key])]]))
+    });
+
+    const eeo = sq?.eeoData || {};
+    this.selfIdForm = this.fb.group({
+      gender: [eeo.gender || ''],
+      pronouns: [eeo.pronouns || ''],
+      races: this.fb.group(Object.fromEntries(this.raceOptions.map(r => [r.value, [(eeo.races || []).includes(r.value)]]))),
+      hispanicLatino: [eeo.hispanicLatino || ''],
+      veteranStatus: [eeo.veteranStatus || ''],
+      disabilityStatus: [eeo.disabilityStatus || ''],
+      sexualOrientation: [eeo.sexualOrientation || ''],
+      transgender: [eeo.transgender || '']
     });
 
     this.additionalForm = this.fb.group({
@@ -208,6 +326,25 @@ export class ProfileComponent implements OnInit {
     p?.additionalInfo?.publications?.forEach(pb => this.publicationsArray.push(this.createPublicationGroup(pb)));
     p?.additionalInfo?.languages?.forEach(l => this.languagesArray.push(this.createLanguageGroup(l)));
     p?.additionalInfo?.volunteerExperience?.forEach(v => this.volunteerArray.push(this.createVolunteerGroup(v)));
+  }
+
+  private toYesNo(value: unknown): string {
+    return value === true ? 'yes' : value === false ? 'no' : '';
+  }
+
+  private fromYesNo(value: string): boolean | null {
+    return value === 'yes' ? true : value === 'no' ? false : null;
+  }
+
+  /** "Prefer not to say" for race is exclusive of the actual races */
+  onRaceToggle(value: string): void {
+    const races = this.selfIdForm.get('races') as FormGroup;
+    if (!races.get(value)?.value) return;
+    if (value === 'prefer_not_to_say') {
+      Object.keys(races.controls).filter(k => k !== value).forEach(k => races.get(k)?.setValue(false));
+    } else {
+      races.get('prefer_not_to_say')?.setValue(false);
+    }
   }
 
   // ─── FormArray getters ────────────────────────────────────────
@@ -390,7 +527,7 @@ export class ProfileComponent implements OnInit {
         const v = this.personalInfoForm.value;
         return {
           personalInfo: {
-            firstName: v.firstName, middleName: v.middleName, lastName: v.lastName,
+            firstName: v.firstName, middleName: v.middleName, lastName: v.lastName, preferredName: v.preferredName,
             email: v.email, phone: v.phone,
             address: { city: v.city, state: v.state, country: v.country, zipCode: v.zipCode },
             linkedin: v.linkedin, github: v.github, portfolio: v.portfolio, website: v.website
@@ -462,7 +599,31 @@ export class ProfileComponent implements OnInit {
               currency: 'USD'
             },
             willingToUndergoBackgroundCheck: sv.willingToUndergoBackgroundCheck,
-            willingToTakeDrugTest: sv.willingToTakeDrugTest
+            willingToTakeDrugTest: sv.willingToTakeDrugTest,
+            currentSalary: { amount: sv.currentSalary || null, currency: 'USD' },
+            highestEducation: sv.highestEducation || null,
+            citizenship: sv.citizenship || null,
+            visaType: sv.visaType || null,
+            willingToTravel: sv.willingToTravel || null,
+            securityClearance: sv.securityClearance || 'none',
+            ...Object.fromEntries(this.yesNoQuestions.map(q => [q.key, this.fromYesNo(sv[q.key])]))
+          }
+        } as any;
+      }
+      case 'selfid': {
+        const v = this.selfIdForm.value;
+        return {
+          screeningQuestions: {
+            eeoData: {
+              gender: v.gender || null,
+              pronouns: v.pronouns?.trim() || null,
+              races: Object.entries(v.races as Record<string, boolean>).filter(([, on]) => on).map(([race]) => race),
+              hispanicLatino: v.hispanicLatino || null,
+              veteranStatus: v.veteranStatus || null,
+              disabilityStatus: v.disabilityStatus || null,
+              sexualOrientation: v.sexualOrientation || null,
+              transgender: v.transgender || null
+            }
           }
         } as any;
       }
@@ -610,10 +771,14 @@ export class ProfileComponent implements OnInit {
         this.http.post(`${environment.apiUrl}/auth/profile/parse-resume`, formData)
       );
 
-      if (response.success && response.data) {
-        this.profile.set(response.data);
+      // The API returns { profile, uploadedResume }
+      if (response.success && response.data?.profile) {
+        this.profile.set(response.data.profile);
         this.initializeForms();
         this.onboardingMode.set(false);
+        if (response.data.uploadedResume) {
+          this.primaryResume.set({ filename: response.data.uploadedResume.filename });
+        }
         this.toastr.success('Profile auto-filled from your resume!', 'Success');
       }
     } catch (error: any) {
@@ -621,6 +786,8 @@ export class ProfileComponent implements OnInit {
         error.error?.message || 'Failed to parse resume. Please try again.',
         'Parsing Failed'
       );
+      // The PDF may have been saved even though auto-fill failed
+      await this.loadPrimaryResume();
     } finally {
       this.parsingResume.set(false);
     }

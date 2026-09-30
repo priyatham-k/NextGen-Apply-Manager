@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { Job, IJob, JobType, ExperienceLevel, JobStatus } from '../models/Job.model';
+import { LogLevel } from '../models/Application.model';
 import { logger } from '../config/logger';
+import { isAutoApplySupported, isExtensionSupported } from './automation/atsDetector.service';
+import { fetchAtsJobs } from './atsJobSource.service';
 
 interface FetchResult {
   newJobs: number;
@@ -33,6 +36,8 @@ interface JSearchJob {
     required_experience_in_months?: number;
   };
   job_apply_link: string;
+  // Every place the job can be applied to, often including the company's own ATS form
+  apply_options?: { publisher: string; apply_link: string; is_direct?: boolean }[];
   job_posted_at_datetime_utc: string;
   job_offer_expiration_datetime_utc?: string;
 }
@@ -78,10 +83,38 @@ function mapExperienceLevel(raw?: string, months?: number): ExperienceLevel {
   return ExperienceLevel.MID;
 }
 
+// ─── USA targeting ───────────────────────────────────────────────
+
+// Every stored job's location ends in "USA" so text search on "usa" finds it
+const US_LOCATION_SUFFIX = 'USA';
+const US_LOCATION_PATTERN = /\b(usa|us|u\.s\.a?|united states|america|americas|north america)\b/i;
+const WORLDWIDE_PATTERN = /\b(worldwide|anywhere|global)\b/i;
+
+// Searches run with country=us; remote listings come back with no country ("Anywhere"),
+// so keep those and drop only jobs explicitly located in another country
+/**
+ * Picks the company's application form among the job's links: preferably one server-side
+ * automation supports (Greenhouse, Lever, Ashby), otherwise any ATS the extension can fill.
+ */
+function atsApplyFields(links: (string | undefined)[]): Pick<IJob, 'atsApplyUrl' | 'autoApplySupported' | 'extensionSupported'> {
+  const atsApplyUrl = links.find(link => isAutoApplySupported(link)) || links.find(link => isExtensionSupported(link));
+  return {
+    atsApplyUrl,
+    autoApplySupported: isAutoApplySupported(atsApplyUrl),
+    extensionSupported: isExtensionSupported(atsApplyUrl)
+  };
+}
+
+function isUSJSearchJob(raw: JSearchJob): boolean {
+  const country = (raw.job_country || '').toUpperCase();
+  return country === 'US' || (!country && raw.job_is_remote);
+}
+
 function normalizeJSearchJob(raw: JSearchJob): Partial<IJob> {
-  const location = [raw.job_city, raw.job_state, raw.job_country]
-    .filter(Boolean)
-    .join(', ') || 'Unknown';
+  const cityState = [raw.job_city, raw.job_state].filter(Boolean).join(', ');
+  const location = cityState
+    ? `${cityState}, ${US_LOCATION_SUFFIX}`
+    : `${raw.job_is_remote ? 'Remote' : 'Unknown'}, ${US_LOCATION_SUFFIX}`;
 
   const salary: { min?: number; max?: number; currency: string } = {
     currency: raw.job_salary_currency || 'USD'
@@ -104,6 +137,7 @@ function normalizeJSearchJob(raw: JSearchJob): Partial<IJob> {
       raw.job_required_experience?.required_experience_in_months
     ),
     applicationUrl: raw.job_apply_link,
+    ...atsApplyFields([raw.job_apply_link, ...(raw.apply_options || []).map(o => o.apply_link)]),
     companyWebsite: raw.employer_website || undefined,
     companyLogo: raw.employer_logo || undefined,
     source: 'jsearch',
@@ -135,7 +169,8 @@ async function fetchFromJSearch(
         query,
         page: page.toString(),
         num_pages: '1',
-        date_posted: 'month'
+        date_posted: 'month',
+        country: 'us'
       },
       headers: {
         'X-RapidAPI-Key': apiKey,
@@ -144,7 +179,8 @@ async function fetchFromJSearch(
       timeout: 15000
     });
 
-    return response.data?.data || [];
+    const jobs: JSearchJob[] = response.data?.data || [];
+    return jobs.filter(isUSJSearchJob);
   } catch (error: any) {
     if (error.response?.status === 401 || error.response?.status === 403) {
       logger.error('JSearch API authentication failed. Check your API key.');
@@ -198,21 +234,29 @@ function mapRemotiveJobType(type: string): JobType {
   return JobType.FULL_TIME;
 }
 
+// Remotive jobs are all remote; keep those open to US-based candidates
+function isUSEligibleRemotiveJob(raw: RemotiveJob): boolean {
+  const location = (raw.candidate_required_location || '').trim();
+  return !location || US_LOCATION_PATTERN.test(location) || WORLDWIDE_PATTERN.test(location);
+}
+
 function normalizeRemotiveJob(raw: RemotiveJob): Partial<IJob> {
-  const location = raw.candidate_required_location || 'Remote';
-  const isRemote = !location || location.toLowerCase().includes('worldwide') ||
-    location.toLowerCase() === 'remote' || location === '';
+  const location = (raw.candidate_required_location || '').trim();
+  const isUSOnly = US_LOCATION_PATTERN.test(location);
 
   return {
     title: raw.title,
     company: raw.company_name,
-    location: isRemote ? 'Remote' : location,
-    remote: isRemote,
+    location: isUSOnly || !location
+      ? `Remote, ${US_LOCATION_SUFFIX}`
+      : `Remote (${location}), ${US_LOCATION_SUFFIX}`,
+    remote: true,
     description: raw.description,
     requirements: raw.tags || [],
     jobType: mapRemotiveJobType(raw.job_type),
     experienceLevel: ExperienceLevel.MID,
     applicationUrl: raw.url,
+    ...atsApplyFields([raw.url]),
     companyLogo: raw.company_logo || undefined,
     source: 'remotive',
     sourceId: String(raw.id),
@@ -229,62 +273,10 @@ async function fetchFromRemotive(search?: string): Promise<RemotiveJob[]> {
       params,
       timeout: 15000
     });
-    return response.data?.jobs || [];
+    const jobs: RemotiveJob[] = response.data?.jobs || [];
+    return jobs.filter(isUSEligibleRemotiveJob);
   } catch (error: any) {
     logger.error('Remotive API error:', error.message);
-    return [];
-  }
-}
-
-// ─── Arbeitnow (Free — no API key) ───────────────────────────────
-
-interface ArbeitnowJob {
-  slug: string;
-  company_name: string;
-  title: string;
-  description: string;
-  remote: boolean;
-  url: string;
-  tags: string[];
-  job_types: string[];
-  location: string;
-  created_at: number;
-}
-
-function mapArbeitnowJobType(types: string[]): JobType {
-  const t = (types || []).join(' ').toLowerCase();
-  if (t.includes('part')) return JobType.PART_TIME;
-  if (t.includes('contract') || t.includes('freelance')) return JobType.CONTRACT;
-  if (t.includes('intern')) return JobType.INTERNSHIP;
-  return JobType.FULL_TIME;
-}
-
-function normalizeArbeitnowJob(raw: ArbeitnowJob): Partial<IJob> {
-  return {
-    title: raw.title,
-    company: raw.company_name,
-    location: raw.remote ? 'Remote' : (raw.location || 'Remote'),
-    remote: raw.remote,
-    description: raw.description,
-    requirements: raw.tags || [],
-    jobType: mapArbeitnowJobType(raw.job_types),
-    experienceLevel: ExperienceLevel.MID,
-    applicationUrl: raw.url,
-    source: 'arbeitnow',
-    sourceId: raw.slug,
-    postedDate: raw.created_at ? new Date(raw.created_at * 1000) : new Date()
-  };
-}
-
-async function fetchFromArbeitnow(page: number = 1): Promise<ArbeitnowJob[]> {
-  try {
-    const response = await axios.get('https://www.arbeitnow.com/api/job-board-api', {
-      params: { page },
-      timeout: 15000
-    });
-    return response.data?.data || [];
-  } catch (error: any) {
-    logger.error('Arbeitnow API error:', error.message);
     return [];
   }
 }
@@ -293,10 +285,15 @@ async function fetchFromArbeitnow(page: number = 1): Promise<ArbeitnowJob[]> {
 
 function jobMatchesKeywords(job: Partial<IJob>, keywords: string[]): boolean {
   if (keywords.length === 0) return true;
-  const haystack = [job.title, job.description, ...(job.requirements || [])]
+  // Title + tags only: long descriptions mention "react"/"developer" in unrelated roles
+  const haystack = [job.title, ...(job.requirements || [])]
     .join(' ')
-    .toLowerCase();
-  return keywords.some(kw => haystack.includes(kw.toLowerCase()));
+    .toLowerCase()
+    .replace(/-/g, ' ');
+  // A multi-word keyword ("Node.js Developer") matches when every word appears, not only the exact phrase
+  return keywords.some(kw =>
+    kw.toLowerCase().split(/\s+/).filter(Boolean).every(word => haystack.includes(word))
+  );
 }
 
 // ─── Internet search types ────────────────────────────────────────
@@ -324,48 +321,38 @@ export interface CompanyGroup {
 
 export interface SearchFetchResult {
   totalJobs: number;
-  newJobs: number;
-  updatedJobs: number;
   companies: CompanyGroup[];
 }
 
-async function processNormalizedJobs(
+// Search results are returned to the caller only — never written to the jobs collection
+function groupJobsByCompany(
   normalizedList: Partial<IJob>[],
   companyMap: Map<string, { website: string | null; logo: string | null; jobs: CompanyJobEntry[] }>,
   result: SearchFetchResult
-): Promise<void> {
+): void {
   for (const normalized of normalizedList) {
-    try {
-      const action = await upsertJob(normalized);
-      if (action === 'new') result.newJobs++;
-      else result.updatedJobs++;
-      result.totalJobs++;
+    const company = normalized.company || 'Unknown';
 
-      const persisted = await Job.findOne({ source: normalized.source, sourceId: normalized.sourceId });
-      const company = normalized.company || 'Unknown';
-
-      if (!companyMap.has(company)) {
-        companyMap.set(company, {
-          website: normalized.companyWebsite || null,
-          logo: normalized.companyLogo || null,
-          jobs: []
-        });
-      }
-
-      companyMap.get(company)!.jobs.push({
-        id: persisted ? persisted._id.toString() : normalized.sourceId!,
-        title: normalized.title!,
-        location: normalized.location!,
-        remote: normalized.remote || false,
-        jobType: normalized.jobType || 'full_time',
-        experienceLevel: normalized.experienceLevel || 'mid',
-        applicationUrl: normalized.applicationUrl!,
-        salary: normalized.salary,
-        postedDate: normalized.postedDate || new Date()
+    if (!companyMap.has(company)) {
+      companyMap.set(company, {
+        website: normalized.companyWebsite || null,
+        logo: normalized.companyLogo || null,
+        jobs: []
       });
-    } catch (error: any) {
-      logger.error(`Error processing job:`, error.message);
     }
+
+    companyMap.get(company)!.jobs.push({
+      id: `${normalized.source}:${normalized.sourceId}`,
+      title: normalized.title!,
+      location: normalized.location!,
+      remote: normalized.remote || false,
+      jobType: normalized.jobType || 'full_time',
+      experienceLevel: normalized.experienceLevel || 'mid',
+      applicationUrl: normalized.applicationUrl!,
+      salary: normalized.salary,
+      postedDate: normalized.postedDate || new Date()
+    });
+    result.totalJobs++;
   }
 }
 
@@ -380,12 +367,12 @@ export async function searchAndFetchJobs(
 
   logger.info(`Internet search: "${fullQuery}" (page ${page})`);
 
-  const result: SearchFetchResult = { totalJobs: 0, newJobs: 0, updatedJobs: 0, companies: [] };
+  const result: SearchFetchResult = { totalJobs: 0, companies: [] };
   const companyMap = new Map<string, { website: string | null; logo: string | null; jobs: CompanyJobEntry[] }>();
 
   // JSearch (requires API key)
   const jsearchJobs = await fetchFromJSearch(fullQuery, page);
-  await processNormalizedJobs(jsearchJobs.map(normalizeJSearchJob), companyMap, result);
+  groupJobsByCompany(jsearchJobs.map(normalizeJSearchJob), companyMap, result);
   logger.info(`JSearch: ${jsearchJobs.length} jobs`);
 
   // Remotive (free, only on page 1 to avoid duplicate calls)
@@ -395,7 +382,7 @@ export async function searchAndFetchJobs(
     const filteredRemotive = remotiveJobs
       .map(normalizeRemotiveJob)
       .filter(j => jobMatchesKeywords(j, queryKeywords));
-    await processNormalizedJobs(filteredRemotive, companyMap, result);
+    groupJobsByCompany(filteredRemotive, companyMap, result);
     logger.info(`Remotive: ${remotiveJobs.length} raw, ${filteredRemotive.length} matched`);
   }
 
@@ -409,17 +396,20 @@ export async function searchAndFetchJobs(
     }))
     .sort((a, b) => b.jobCount - a.jobCount);
 
-  logger.info(`Internet search complete: ${result.totalJobs} total, ${result.newJobs} new, ${result.companies.length} companies`);
+  logger.info(`Internet search complete: ${result.totalJobs} total, ${result.companies.length} companies`);
   return result;
 }
 
-export async function fetchJobs(): Promise<FetchResult> {
+/** Receives a human-readable line for each fetch step (shown in the autopilot progress view) */
+export type FetchProgress = (message: string, level?: LogLevel) => void;
+
+export async function fetchJobs(onProgress: FetchProgress = () => undefined): Promise<FetchResult> {
   const result: FetchResult = { newJobs: 0, updatedJobs: 0, errors: 0 };
 
-  // Purge jobs older than 60 days to keep the board fresh
+  // Purge untouched jobs older than 60 days; jobs the user saved or applied to are kept
   const purgeDate = new Date();
   purgeDate.setDate(purgeDate.getDate() - 60);
-  const purged = await Job.deleteMany({ postedDate: { $lt: purgeDate } });
+  const purged = await Job.deleteMany({ postedDate: { $lt: purgeDate }, status: JobStatus.NEW });
   if (purged.deletedCount > 0) {
     logger.info(`Purged ${purged.deletedCount} jobs older than 60 days`);
   }
@@ -433,6 +423,9 @@ export async function fetchJobs(): Promise<FetchResult> {
 
   // ── JSearch (requires API key) ──
   logger.info(`JSearch fetch: ${keywords.length} keywords x ${locations.length} locations`);
+  if (!process.env.JSEARCH_API_KEY) {
+    onProgress('JSearch skipped: no JSEARCH_API_KEY configured', 'warn');
+  }
   for (const keyword of keywords) {
     for (const location of locations) {
       for (let page = 1; page <= maxPages; page++) {
@@ -441,7 +434,10 @@ export async function fetchJobs(): Promise<FetchResult> {
           : `${keyword} in ${location}`;
 
         const rawJobs = await fetchFromJSearch(query, page);
-        if (rawJobs.length === 0) break;
+        if (rawJobs.length === 0) {
+          if (process.env.JSEARCH_API_KEY) onProgress(`JSearch "${query}" page ${page}: no US jobs`);
+          break;
+        }
 
         for (const rawJob of rawJobs) {
           try {
@@ -454,6 +450,7 @@ export async function fetchJobs(): Promise<FetchResult> {
           }
         }
         logger.info(`JSearch: "${query}" page ${page} → ${rawJobs.length} jobs`);
+        onProgress(`JSearch "${query}" page ${page}: ${rawJobs.length} US jobs (job boards — apply manually)`);
       }
     }
   }
@@ -476,30 +473,27 @@ export async function fetchJobs(): Promise<FetchResult> {
       }
     }
     logger.info(`Remotive: "${keyword}" → ${remotiveJobs.length} raw, ${filtered.length} matched`);
+    onProgress(`Remotive "${keyword}": ${filtered.length} matching remote jobs`);
   }
 
-  // ── Arbeitnow (free, no key) — filter by keywords since it has no search param ──
-  logger.info('Fetching from Arbeitnow (free)...');
-  for (let page = 1; page <= 2; page++) {
-    const arbeitnowJobs = await fetchFromArbeitnow(page);
-    if (arbeitnowJobs.length === 0) break;
-
-    const filtered = arbeitnowJobs
-      .map(normalizeArbeitnowJob)
-      .filter(j => jobMatchesKeywords(j, keywords));
-    for (const normalized of filtered) {
-      try {
-        const action = await upsertJob(normalized);
-        if (action === 'new') result.newJobs++;
-        else result.updatedJobs++;
-      } catch (error: any) {
-        result.errors++;
-        logger.error(`Arbeitnow upsert error:`, error.message);
-      }
+  // ── Company boards on Greenhouse / Lever / Ashby (free, no key) — the only auto-apply-capable source ──
+  logger.info('Fetching from company ATS boards (Greenhouse, Lever, Ashby)...');
+  onProgress('Checking company career boards (Greenhouse, Lever, Ashby)...');
+  const atsJobs = await fetchAtsJobs(onProgress);
+  for (const normalized of atsJobs) {
+    try {
+      const action = await upsertJob(normalized);
+      if (action === 'new') result.newJobs++;
+      else result.updatedJobs++;
+    } catch (error: any) {
+      result.errors++;
+      logger.error(`ATS upsert error ${normalized.sourceId}:`, error.message);
     }
-    logger.info(`Arbeitnow: page ${page} → ${arbeitnowJobs.length} raw, ${filtered.length} matched`);
   }
+  logger.info(`ATS boards: ${atsJobs.length} jobs`);
 
   logger.info(`Job fetch complete: ${result.newJobs} new, ${result.updatedJobs} updated, ${result.errors} errors`);
+  onProgress(`Fetch complete: ${result.newJobs} new, ${result.updatedJobs} updated${result.errors ? `, ${result.errors} errors` : ''}`,
+    result.errors ? 'warn' : 'success');
   return result;
 }
