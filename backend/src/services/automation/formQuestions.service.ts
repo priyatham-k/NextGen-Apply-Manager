@@ -174,7 +174,7 @@ async function readComboboxOptions(page: Page, questions: FormQuestion[]): Promi
   }
 }
 
-function profileForPrompt(profile: any): Record<string, any> {
+export function profileForPrompt(profile: any): Record<string, any> {
   const p = typeof profile.toObject === 'function' ? profile.toObject() : profile;
   return {
     personalInfo: {

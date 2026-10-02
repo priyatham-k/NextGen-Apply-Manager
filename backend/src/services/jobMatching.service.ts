@@ -333,10 +333,3 @@ export function clearMatchCache(userId: string): void {
   logger.info(`Cleared match cache for user ${userId}`);
 }
 
-/**
- * Clear entire match cache
- */
-export function clearAllMatchCache(): void {
-  matchCache.clear();
-  logger.info('Cleared all match cache');
-}

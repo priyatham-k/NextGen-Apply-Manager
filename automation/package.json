@@ -16,7 +16,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/natural": "^5.1.5",
@@ -25,9 +24,6 @@
     "dotenv": "^16.4.1",
     "express": "^5.2.1",
     "natural": "^8.1.0",
-    "puppeteer": "^21.7.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "winston": "^3.11.0"
   },
   "devDependencies": {

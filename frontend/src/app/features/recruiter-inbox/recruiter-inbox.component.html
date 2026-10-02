@@ -1,0 +1,193 @@
+<div class="inbox-page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Recruiter Inbox</h1>
+      <p class="page-subtitle">
+        Emails where a recruiter reaches out about a job, with a reply written from your profile. Review it, then send it with
+        your resume attached. Nothing is sent until you click Send.
+      </p>
+    </div>
+    @if (status()?.configured && status()?.isOwner) {
+      <div class="header-actions">
+        <button class="btn btn-primary" (click)="checkNow()" [disabled]="checking() || status()?.checking">
+          @if (checking() || status()?.checking) {
+            <span class="spinner-border spinner-border-sm me-1"></span>Checking Gmail…
+          } @else {
+            <i class="bi bi-arrow-repeat me-1"></i>Check now
+          }
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (loading()) {
+    <div class="loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading</span></div></div>
+  } @else {
+    @let s = status();
+    <!-- Connection -->
+    @if (s && !s.configured) {
+      <section class="card-block setup">
+        <h2 class="block-title"><i class="bi bi-envelope-at me-2"></i>Connect your Gmail</h2>
+        <ol>
+          <li>Turn on <b>2-Step Verification</b> in your Google Account (Security).</li>
+          <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>,
+            create an App Password named "NextGen Apply" and copy the 16 letters.</li>
+          <li>In the project's <code>.env</code> set <code>SMTP_USER</code> to your Gmail address and <code>SMTP_PASS</code> to the App Password.</li>
+          <li>Restart the backend. The inbox is checked every few minutes.</li>
+        </ol>
+        <p class="muted mb-0">The App Password only works for this app and can be revoked any time from the same Google page.</p>
+      </section>
+    } @else if (s && !s.isOwner) {
+      <section class="card-block setup">
+        <p class="mb-0"><i class="bi bi-info-circle me-1"></i>The connected Gmail inbox ({{ s.address }}) belongs to another account in this app.</p>
+      </section>
+    } @else if (s) {
+      <section class="connection">
+        <span><i class="bi bi-envelope-check me-1 text-success"></i>Connected to <b>{{ s.address }}</b></span>
+        <span class="muted">
+          @if (s.enabled) { Checked every {{ s.pollMinutes }} min } @else { Automatic checks are off }
+          @if (s.lastCheck) { · last check {{ s.lastCheck | date: 'shortTime' }} }
+        </span>
+        @if (s.lastError) {
+          <span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ s.lastError }}</span>
+        }
+      </section>
+    }
+
+    <!-- Views -->
+    <nav class="views" aria-label="Filter emails">
+      <button [class.active]="view() === 'review'" (click)="view.set('review')">To review <span class="count">{{ counts().review }}</span></button>
+      <button [class.active]="view() === 'sent'" (click)="view.set('sent')">Sent <span class="count">{{ counts().sent }}</span></button>
+      <button [class.active]="view() === 'dismissed'" (click)="view.set('dismissed')">Dismissed <span class="count">{{ counts().dismissed }}</span></button>
+      <button [class.active]="view() === 'ignored'" (click)="view.set('ignored')" title="Emails that were not about a job">
+        Not job emails <span class="count">{{ counts().ignored }}</span>
+      </button>
+    </nav>
+
+    @if (!visible().length) {
+      <div class="empty">
+        @switch (view()) {
+          @case ('review') { <i class="bi bi-inbox"></i><p>No recruiter emails waiting for a reply.</p> }
+          @case ('sent') { <i class="bi bi-send"></i><p>No replies sent yet.</p> }
+          @case ('dismissed') { <i class="bi bi-archive"></i><p>Nothing dismissed.</p> }
+          @case ('ignored') { <i class="bi bi-funnel"></i><p>No other emails checked yet.</p> }
+        }
+      </div>
+    }
+
+    <ul class="email-list">
+      @for (email of visible(); track email._id) {
+        @let state = statusLabel(email);
+        @let open = openId() === email._id;
+        <li class="email" [class.open]="open">
+          <button class="email-head" (click)="toggle(email)" [attr.aria-expanded]="open">
+            <div class="email-main">
+              <div class="email-title">
+                <strong>{{ email.position || email.subject || '(no subject)' }}</strong>
+                @if (email.company) { <span class="muted">at {{ email.company }}</span> }
+              </div>
+              <div class="email-meta">
+                <span>{{ email.from.name || email.from.address }}</span>
+                @if (email.location) { <span>· {{ email.location }}</span> }
+                <span>· {{ email.receivedAt | date: 'MMM d, h:mm a' }}</span>
+              </div>
+            </div>
+            <div class="email-badges">
+              @if (email.suspicious) { <span class="badge-status state-warn"><i class="bi bi-shield-exclamation me-1"></i>Check sender</span> }
+              <span class="badge-status" [class]="'state-' + state.css">{{ state.label }}</span>
+              <i class="bi" [class.bi-chevron-down]="!open" [class.bi-chevron-up]="open"></i>
+            </div>
+          </button>
+
+          @if (open) {
+            <div class="email-body">
+              @if (email.suspicious) {
+                <div class="alert alert-warning py-2 mb-0">
+                  <i class="bi bi-shield-exclamation me-1"></i><b>Possible scam:</b> {{ email.suspicious }}. Your resume has your phone and
+                  address. Check the sender before replying.
+                </div>
+              }
+
+              <!-- Original email -->
+              <details class="original" [open]="email.status !== 'draft_ready'">
+                <summary>Their email: {{ email.subject || '(no subject)' }}</summary>
+                <p class="muted mb-1">From {{ sender(email) }}@if (email.replyTo !== email.from.address) { · reply to {{ email.replyTo }} }</p>
+                <pre>{{ email.text }}</pre>
+                @if (email.reason) { <p class="muted mb-0"><i class="bi bi-robot me-1"></i>{{ email.reason }}</p> }
+              </details>
+
+              @switch (email.status) {
+                @case ('ignored') {
+                  <div class="actions">
+                    <button class="btn btn-sm btn-primary" (click)="markAsJob(email)" [disabled]="busy()[email._id]">
+                      @if (busy()[email._id]) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                      This is a job email — write a reply
+                    </button>
+                  </div>
+                }
+                @case ('drafting') {
+                  <p class="muted"><span class="spinner-border spinner-border-sm me-1"></span>Writing the reply…</p>
+                }
+                @case ('sent') {
+                  <div class="sent-reply">
+                    <p class="mb-1"><i class="bi bi-check2-circle text-success me-1"></i>Sent to {{ email.replyTo }} on {{ email.sentAt | date: 'MMM d, h:mm a' }}
+                      @if (email.attachment) { with <b>{{ email.attachment.filename }}</b> }</p>
+                    <p class="mb-1"><b>{{ email.draft?.subject }}</b></p>
+                    <pre>{{ email.draft?.body }}</pre>
+                  </div>
+                }
+                @default {
+                  @if (email.error) {
+                    <div class="alert alert-danger py-2 mb-0"><i class="bi bi-exclamation-triangle me-1"></i>{{ email.error }}</div>
+                  }
+                  @if (email.draft) {
+                    @let missing = placeholders(email);
+                    <div class="draft">
+                      <label class="form-label" [for]="'subject-' + email._id">Subject</label>
+                      <input class="form-control" [id]="'subject-' + email._id" [ngModel]="subjectOf(email)"
+                             (ngModelChange)="edit(email, 'subject', $event)" [disabled]="email.status === 'dismissed'" />
+                      <label class="form-label mt-2" [for]="'body-' + email._id">Reply to {{ email.replyTo }}</label>
+                      <textarea class="form-control body" [id]="'body-' + email._id" rows="12" [ngModel]="bodyOf(email)"
+                                (ngModelChange)="edit(email, 'body', $event)" [disabled]="email.status === 'dismissed'"></textarea>
+                      <div class="attachment">
+                        @if (email.attachment) {
+                          <i class="bi bi-paperclip"></i> {{ email.attachment.filename }}
+                        } @else {
+                          <span class="text-danger"><i class="bi bi-paperclip"></i> No resume uploaded. Upload one in Profile so it can be attached.</span>
+                        }
+                      </div>
+                      @if (missing.length) {
+                        <div class="alert alert-warning py-2 mb-0">
+                          <i class="bi bi-pencil-square me-1"></i>Fill in before sending: <b>{{ missing.join(', ') }}</b>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <div class="actions">
+                    @if (email.status === 'dismissed') {
+                      <button class="btn btn-sm btn-outline-primary" (click)="setDismissed(email, false)" [disabled]="busy()[email._id]">Restore</button>
+                    } @else {
+                      @if (email.draft) {
+                        <button class="btn btn-sm btn-success" (click)="send(email)"
+                                [disabled]="busy()[email._id] || !email.attachment || email.status === 'sending'">
+                          @if (busy()[email._id] === 'send') { <span class="spinner-border spinner-border-sm me-1"></span>Sending… }
+                          @else { <i class="bi bi-send me-1"></i>Send with resume }
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" (click)="save(email)" [disabled]="busy()[email._id] || !isEdited(email)">Save draft</button>
+                      }
+                      <button class="btn btn-sm btn-outline-primary" (click)="regenerate(email)" [disabled]="busy()[email._id]">
+                        @if (busy()[email._id] === 'regenerate') { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="bi bi-stars me-1"></i>Write again
+                      </button>
+                      <button class="btn btn-sm btn-link text-muted" (click)="setDismissed(email, true)" [disabled]="busy()[email._id]">Dismiss</button>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

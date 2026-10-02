@@ -46,9 +46,6 @@ export const upload = multer({
   }
 });
 
-// Export upload directory path for use in controllers
-export const profilePicturesDir = uploadDir;
-
 // ─── Document Upload (PDF resumes) ───────────────────────────
 const resumeUploadDir = path.join(__dirname, '../../uploads/resumes');
 

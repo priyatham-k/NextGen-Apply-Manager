@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './core/layout';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -9,6 +10,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: 'dashboard',
@@ -37,6 +39,10 @@ export const routes: Routes = [
       {
         path: 'apply-queue',
         loadChildren: () => import('./features/apply-queue/apply-queue.routes').then(m => m.APPLY_QUEUE_ROUTES)
+      },
+      {
+        path: 'recruiter-inbox',
+        loadChildren: () => import('./features/recruiter-inbox/recruiter-inbox.routes').then(m => m.RECRUITER_INBOX_ROUTES)
       },
       {
         path: 'top-matches',

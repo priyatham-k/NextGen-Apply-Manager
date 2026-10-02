@@ -33,6 +33,7 @@ import coverLetterRoutes from './routes/coverLetter.routes';
 import automationRoutes from './routes/automation.routes';
 import applyQueueRoutes from './routes/applyQueue.routes';
 import extensionRoutes from './routes/extension.routes';
+import recruiterInboxRoutes from './routes/recruiterInbox.routes';
 
 // Import automation services
 import { automationEngine } from './services/automation/automationEngine.service';
@@ -40,6 +41,7 @@ import { browserManager } from './services/automation/browserManager.service';
 import { ensureJobTextIndex } from './models/Job.model';
 import { startAutopilotScheduler } from './services/autopilot.service';
 import { startApplyQueueScheduler } from './services/applyQueue.service';
+import { startRecruiterInboxScheduler } from './services/recruiterInbox.service';
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -80,6 +82,7 @@ app.use(`${API_PREFIX}/cover-letters`, coverLetterRoutes);
 app.use(`${API_PREFIX}/automation`, automationRoutes);
 app.use(`${API_PREFIX}/apply-queue`, applyQueueRoutes);
 app.use(`${API_PREFIX}/extension`, extensionRoutes);
+app.use(`${API_PREFIX}/recruiter-inbox`, recruiterInboxRoutes);
 
 // Error handling
 app.use(notFoundHandler);
@@ -96,6 +99,7 @@ const startServer = async () => {
     await automationEngine.recoverInterruptedAutomations();
     startAutopilotScheduler();
     startApplyQueueScheduler();
+    startRecruiterInboxScheduler();
 
     // Initialize Socket.IO
     io = initializeSocket(httpServer);
