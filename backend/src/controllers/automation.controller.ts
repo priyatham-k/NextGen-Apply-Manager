@@ -8,10 +8,18 @@ import { profileCompletionService } from '../services/profileCompletion.service'
 import { localAutomationQueue } from '../services/automation/localAutomationQueue.service';
 import { automationEngine } from '../services/automation/automationEngine.service';
 import { isAutoApplySupported } from '../services/automation/atsDetector.service';
+import { needsSponsorship } from '../services/workAuthorization.service';
 import { runAutopilot, isAutopilotRunning, getAutopilotStatus, autopilotBlocker } from '../services/autopilot.service';
 
 const MANUAL_APPLY_MESSAGE =
   'Auto Apply only works on company application forms (Greenhouse, Lever, Ashby). Please apply to this job manually.';
+
+/** Why this candidate can't apply (posting needs citizenship / a Green Card / no sponsorship), or null */
+function workAuthBlock(job: { workAuthRestriction?: string }, profile: unknown): string | null {
+  return job.workAuthRestriction && needsSponsorship(profile)
+    ? `Not applying: ${job.workAuthRestriction}, and your profile says you need visa sponsorship.`
+    : null;
+}
 
 /** The URL automation should open, or null when the job can only be applied to manually */
 function automationUrlFor(job: { atsApplyUrl?: string; applicationUrl?: string }): string | null {
@@ -56,6 +64,10 @@ export const applyToJob = async (req: Request, res: Response) => {
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
+    }
+    const restricted = workAuthBlock(job, profile);
+    if (restricted) {
+      return res.status(400).json({ message: restricted, action: 'work_authorization' });
     }
     const jobUrl = automationUrlFor(job);
     if (!jobUrl) {
@@ -155,6 +167,11 @@ export const applyToBulk = async (req: Request, res: Response) => {
         const job = await Job.findById(jobId);
         if (!job) {
           errors.push({ jobId, error: 'Job not found' });
+          continue;
+        }
+        const restricted = workAuthBlock(job, profile);
+        if (restricted) {
+          errors.push({ jobId, error: restricted });
           continue;
         }
         const jobUrl = automationUrlFor(job);

@@ -5,7 +5,8 @@ import { Job } from '../models/Job.model';
 import { Profile } from '../models/Profile.model';
 import { UploadedResume } from '../models/UploadedResume.model';
 import { NotificationType } from '../models/Notification.model';
-import { fetchJobs } from './jobFetcher.service';
+import { fetchJobs, tagWorkAuthRestrictions } from './jobFetcher.service';
+import { needsSponsorship } from './workAuthorization.service';
 import { calculateMatches } from './jobMatching.service';
 import { createNotification } from './notification.service';
 import { profileCompletionService } from './profileCompletion.service';
@@ -74,6 +75,9 @@ export async function buildQueue(userId: string, trigger: 'schedule' | 'manual')
       fetchSteps = fetchSteps.then(() => step('fetch', message, level));
     });
     await fetchSteps;
+
+    const removed = await skipRestrictedQueueItems(userId);
+    if (removed) await step('queue', `Skipped ${removed} queued job(s) that need US citizenship / a Green Card or don't sponsor visas`, 'warn');
 
     // Top up today's queue rather than duplicating it when rebuilt
     const todays = await ApplyQueueItem.countDocuments({ userId, queueDate, status: { $ne: QueueItemStatus.SKIPPED } });
@@ -159,6 +163,38 @@ function toQueueView(item: any) {
 }
 
 /** Today's queue plus anything still open from earlier days */
+/**
+ * For candidates who need sponsorship: skips not-yet-submitted queue items whose posting requires US citizenship,
+ * a Green Card or a clearance, or says it doesn't sponsor. Returns how many were skipped.
+ */
+export async function skipRestrictedQueueItems(userId: string): Promise<number> {
+  const profile = await Profile.findOne({ userId }).select('screeningQuestions').lean();
+  if (!needsSponsorship(profile)) return 0;
+
+  const open = await ApplyQueueItem.find({
+    userId, status: { $in: [QueueItemStatus.QUEUED, QueueItemStatus.OPENED, QueueItemStatus.FILLED] }
+  }).populate('jobId', 'workAuthRestriction');
+  let skipped = 0;
+  for (const item of open) {
+    const reason = (item.jobId as any)?.workAuthRestriction;
+    if (!reason) continue;
+    item.status = QueueItemStatus.SKIPPED;
+    item.steps.push({ at: new Date(), message: `Skipped automatically: ${reason}. You need visa sponsorship.`, level: 'warn' });
+    await item.save();
+    skipped++;
+  }
+  if (skipped) logger.info(`Apply queue: skipped ${skipped} job(s) with work-authorization restrictions for user ${userId}`);
+  return skipped;
+}
+
+/** At startup: re-tag stored jobs with the current rules, then clear restricted jobs from everyone's queue */
+export async function applyWorkAuthRules(): Promise<void> {
+  const restricted = await tagWorkAuthRestrictions();
+  logger.info(`🛂 ${restricted} job(s) require US citizenship / a Green Card or don't sponsor visas`);
+  const userIds = await ApplyQueueItem.distinct('userId', { status: { $in: [QueueItemStatus.QUEUED, QueueItemStatus.OPENED, QueueItemStatus.FILLED] } });
+  for (const userId of userIds) await skipRestrictedQueueItems(userId.toString());
+}
+
 export async function getQueue(userId: string) {
   const items = await ApplyQueueItem.find({
     userId,

@@ -484,6 +484,11 @@
     color: #15803d;
   }
 
+  .remote-badge.work-auth-badge {
+    background: rgba(#dc2626, 0.1);
+    color: #b91c1c;
+  }
+
   .remote-badge {
     background: rgba($accent, 0.1);
     color: darken($accent, 10%);

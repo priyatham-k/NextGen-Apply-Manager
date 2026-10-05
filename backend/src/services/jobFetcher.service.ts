@@ -4,6 +4,7 @@ import { LogLevel } from '../models/Application.model';
 import { logger } from '../config/logger';
 import { isAutoApplySupported, isExtensionSupported } from './automation/atsDetector.service';
 import { fetchAtsJobs } from './atsJobSource.service';
+import { findWorkAuthRestriction } from './workAuthorization.service';
 
 interface FetchResult {
   newJobs: number;
@@ -187,13 +188,40 @@ async function fetchFromJSearch(
     } else if (error.response?.status === 429) {
       logger.warn('JSearch API rate limit reached. Try again later.');
     } else {
-      logger.error(`JSearch API error for query "${query}":`, error.message);
+      logger.error(`JSearch API error for query "${query}": ${error.message}`);
     }
     return [];
   }
 }
 
+/** Tags postings that rule out candidates who need visa sponsorship (unset fields clear an old tag) */
+function workAuthFields(job: Partial<IJob>): { $set: Partial<IJob>; $unset: Record<string, ''> } {
+  const found = findWorkAuthRestriction(job.title, job.description, job.requirements);
+  return found
+    ? { $set: { workAuthRestriction: found.reason, workAuthEvidence: found.evidence }, $unset: {} }
+    : { $set: {}, $unset: { workAuthRestriction: '', workAuthEvidence: '' } };
+}
+
+/** Re-checks every stored job against the current rules (run at startup; cheap for a few thousand jobs) */
+export async function tagWorkAuthRestrictions(): Promise<number> {
+  const jobs = await Job.find({}).select('title description requirements workAuthRestriction workAuthEvidence').lean();
+  let restricted = 0;
+  const updates = jobs.flatMap(job => {
+    const found = findWorkAuthRestriction(job.title, job.description, job.requirements);
+    if (found) restricted++;
+    if (found?.reason === job.workAuthRestriction && found?.evidence === job.workAuthEvidence) return [];
+    const update = found
+      ? { $set: { workAuthRestriction: found.reason, workAuthEvidence: found.evidence } }
+      : { $unset: { workAuthRestriction: '', workAuthEvidence: '' } };
+    return [{ updateOne: { filter: { _id: job._id }, update } }];
+  });
+  if (updates.length) await Job.bulkWrite(updates);
+  return restricted;
+}
+
 async function upsertJob(jobData: Partial<IJob>): Promise<'new' | 'updated'> {
+  const workAuth = workAuthFields(jobData);
+  jobData = { ...jobData, ...workAuth.$set };
   const existing = await Job.findOne({
     source: jobData.source,
     sourceId: jobData.sourceId
@@ -202,7 +230,10 @@ async function upsertJob(jobData: Partial<IJob>): Promise<'new' | 'updated'> {
   if (existing) {
     // Update job data but preserve user-set status
     const { status: _status, ...updateFields } = jobData;
-    await Job.findByIdAndUpdate(existing._id, { $set: updateFields });
+    await Job.findByIdAndUpdate(existing._id, {
+      $set: updateFields,
+      ...(Object.keys(workAuth.$unset).length && { $unset: workAuth.$unset })
+    });
     return 'updated';
   } else {
     await Job.create({ ...jobData, status: JobStatus.NEW });
@@ -276,7 +307,7 @@ async function fetchFromRemotive(search?: string): Promise<RemotiveJob[]> {
     const jobs: RemotiveJob[] = response.data?.jobs || [];
     return jobs.filter(isUSEligibleRemotiveJob);
   } catch (error: any) {
-    logger.error('Remotive API error:', error.message);
+    logger.error(`Remotive API error: ${error.message}`);
     return [];
   }
 }
@@ -446,7 +477,7 @@ export async function fetchJobs(onProgress: FetchProgress = () => undefined): Pr
             else result.updatedJobs++;
           } catch (error: any) {
             result.errors++;
-            logger.error(`JSearch upsert error ${rawJob.job_id}:`, error.message);
+            logger.error(`JSearch upsert error ${rawJob.job_id}: ${error.message}`);
           }
         }
         logger.info(`JSearch: "${query}" page ${page} → ${rawJobs.length} jobs`);
@@ -469,7 +500,7 @@ export async function fetchJobs(onProgress: FetchProgress = () => undefined): Pr
         else result.updatedJobs++;
       } catch (error: any) {
         result.errors++;
-        logger.error(`Remotive upsert error:`, error.message);
+        logger.error(`Remotive upsert error: ${error.message}`);
       }
     }
     logger.info(`Remotive: "${keyword}" → ${remotiveJobs.length} raw, ${filtered.length} matched`);
@@ -487,7 +518,7 @@ export async function fetchJobs(onProgress: FetchProgress = () => undefined): Pr
       else result.updatedJobs++;
     } catch (error: any) {
       result.errors++;
-      logger.error(`ATS upsert error ${normalized.sourceId}:`, error.message);
+      logger.error(`ATS upsert error ${normalized.sourceId}: ${error.message}`);
     }
   }
   logger.info(`ATS boards: ${atsJobs.length} jobs`);

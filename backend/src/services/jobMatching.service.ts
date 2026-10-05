@@ -1,5 +1,6 @@
 import { logger } from '../config/logger';
 import { chatCompletion, parseJsonResponse, assertOpenAIConfigured } from './openai.service';
+import { needsSponsorship } from './workAuthorization.service';
 import { Profile } from '../models/Profile.model';
 import { UserSettings } from '../models/Settings.model';
 import { Job } from '../models/Job.model';
@@ -63,6 +64,8 @@ export async function calculateMatches(userId: string, limit: number = 20, optio
     ...(options.autoApplyOnly && { autoApplySupported: true }),
     ...(options.extensionOnly && { extensionSupported: true }),
     ...(options.excludeJobIds?.length && { _id: { $nin: options.excludeJobIds } }),
+    // Candidates who need sponsorship never see citizens / Green Card only or no-sponsorship postings
+    ...(needsSponsorship(profile) && { workAuthRestriction: { $exists: false } }),
     $or: [
       { expiryDate: { $gte: new Date() } },
       { expiryDate: { $exists: false } }

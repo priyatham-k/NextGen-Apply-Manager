@@ -47,6 +47,18 @@
       </div>
     </div>
 
+    <!-- Work authorization restriction -->
+    @if (job.workAuthRestriction) {
+      <div class="alert alert-danger d-flex align-items-start gap-3 mb-4" role="alert">
+        <i class="bi bi-passport fs-4 mt-1"></i>
+        <div>
+          <h6 class="alert-heading mb-1">{{ job.workAuthRestriction }}</h6>
+          <p class="mb-1">If you need visa sponsorship, this job is kept out of your matches and apply queue, and Auto Apply won't run.</p>
+          @if (job.workAuthEvidence) { <p class="mb-0 small fst-italic">The posting says: "{{ job.workAuthEvidence }}"</p> }
+        </div>
+      </div>
+    }
+
     <!-- Profile Completion Alert -->
     @if (profileError()) {
       <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">

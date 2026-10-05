@@ -11,6 +11,7 @@ import { IRecruiterEmail, RecruiterEmail, RecruiterEmailCategory } from '../mode
 import { chatCompletion, parseJsonResponse } from './openai.service';
 import { createNotification } from './notification.service';
 import { profileForPrompt } from './automation/formQuestions.service';
+import { needsSponsorship, workAuthRestriction } from './workAuthorization.service';
 
 /**
  * Recruiter inbox: reads the user's Gmail (IMAP, App Password), finds emails where a recruiter or company
@@ -259,13 +260,17 @@ export async function checkInbox(userId: string): Promise<number> {
     const own = config.address;
     const automated = (e: IncomingEmail) => e.from.address === own || AUTOMATED_SENDER.test(e.from.address);
     const classifications = await classify(emails.filter(e => !automated(e)));
+    const needsVisa = needsSponsorship(await Profile.findOne({ userId }).select('screeningQuestions').lean());
 
     let found = 0;
     for (const email of emails) {
       const result: Classification = automated(email)
         ? { category: JOB_BOARD_ALERT.test(email.from.address) ? 'job_alert' : 'other', reason: 'Automated sender' }
         : classifications.get(email.messageId) || { category: 'other', reason: 'Not classified' };
-      const isJob = result.category === 'job_opportunity';
+      // A role for citizens / Green Card holders only, or without sponsorship: no reply for someone who needs sponsorship
+      const restriction = result.category === 'job_opportunity' && needsVisa ? workAuthRestriction(email.subject, email.text) : null;
+      if (restriction) result.reason = `${restriction}. You need visa sponsorship, so no reply was drafted.`;
+      const isJob = result.category === 'job_opportunity' && !restriction;
       const saved = await RecruiterEmail.findOneAndUpdate(
         { userId, messageId: email.messageId },
         {

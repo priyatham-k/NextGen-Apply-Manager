@@ -32,6 +32,10 @@ export interface Job {
   autoApplySupported?: boolean;
   /** The Chrome extension can fill this job's application form */
   extensionSupported?: boolean;
+  /** The posting rules out candidates who need sponsorship (citizens / Green Card only, no sponsorship...) */
+  workAuthRestriction?: string;
+  /** The posting's words that set the restriction */
+  workAuthEvidence?: string;
   companyWebsite?: string;
   companyLogo?: string;
   source: string; // API source

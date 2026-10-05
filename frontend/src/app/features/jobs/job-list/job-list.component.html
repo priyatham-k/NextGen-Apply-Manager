@@ -198,6 +198,11 @@
                   @if (job.remote) {
                     <span class="remote-badge">Remote</span>
                   }
+                  @if (job.workAuthRestriction) {
+                    <span class="remote-badge work-auth-badge" [title]="job.workAuthRestriction + ': ' + (job.workAuthEvidence || '')">
+                      <i class="bi bi-passport"></i> No sponsorship
+                    </span>
+                  }
                   @if (job.autoApplySupported) {
                     <span class="remote-badge auto-apply-badge" title="Company form on Greenhouse, Lever or Ashby">
                       <i class="bi bi-robot"></i> Auto Apply

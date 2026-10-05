@@ -40,7 +40,7 @@ import { automationEngine } from './services/automation/automationEngine.service
 import { browserManager } from './services/automation/browserManager.service';
 import { ensureJobTextIndex } from './models/Job.model';
 import { startAutopilotScheduler } from './services/autopilot.service';
-import { startApplyQueueScheduler } from './services/applyQueue.service';
+import { applyWorkAuthRules, startApplyQueueScheduler } from './services/applyQueue.service';
 import { startRecruiterInboxScheduler } from './services/recruiterInbox.service';
 
 const app: Express = express();
@@ -98,6 +98,7 @@ const startServer = async () => {
     await ensureJobTextIndex();
     await automationEngine.recoverInterruptedAutomations();
     startAutopilotScheduler();
+    applyWorkAuthRules().catch(error => logger.warn(`Work-authorization check failed: ${error.message}`));
     startApplyQueueScheduler();
     startRecruiterInboxScheduler();
 

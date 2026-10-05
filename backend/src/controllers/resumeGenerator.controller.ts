@@ -124,7 +124,7 @@ export const generateResume = async (req: Request, res: Response): Promise<void>
 
     res.status(response.status).json(response.data);
   } catch (error: any) {
-    logger.error('Resume generation proxy error:', error.message);
+    logger.error(`Resume generation proxy error: ${error.message}`);
 
     if (error.code === 'ECONNREFUSED') {
       res.status(503).json({

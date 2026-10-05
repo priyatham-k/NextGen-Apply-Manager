@@ -47,6 +47,10 @@ export interface IJob extends Document {
   autoApplySupported: boolean;
   /** The Chrome extension can fill this job's form (a wider set of ATS than server-side automation) */
   extensionSupported: boolean;
+  /** Set when the posting rules out candidates who need sponsorship (citizens / Green Card only, no sponsorship...) */
+  workAuthRestriction?: string;
+  /** The posting's words that set the restriction */
+  workAuthEvidence?: string;
   companyWebsite?: string;
   companyLogo?: string;
   source: string;
@@ -109,6 +113,8 @@ const jobSchema = new Schema<IJob>(
     atsApplyUrl: { type: String },
     autoApplySupported: { type: Boolean, default: false },
     extensionSupported: { type: Boolean, default: false },
+    workAuthRestriction: { type: String },
+    workAuthEvidence: { type: String },
     companyWebsite: { type: String },
     companyLogo: { type: String },
     source: {
