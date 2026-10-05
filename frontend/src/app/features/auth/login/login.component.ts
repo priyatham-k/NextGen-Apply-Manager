@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
@@ -21,7 +21,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -54,7 +55,9 @@ export class LoginComponent {
     try {
       const { email, password, rememberMe } = this.loginForm.value;
       await firstValueFrom(this.authService.login({ email, password }, rememberMe));
-      this.router.navigate(['/dashboard']);
+      // Back to the page the auth guard sent us from (app paths only)
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      await this.router.navigateByUrl(returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/dashboard');
     } catch (err: any) {
       this.error.set(err.error?.message || 'Invalid email or password');
     } finally {

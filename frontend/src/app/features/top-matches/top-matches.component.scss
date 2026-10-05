@@ -960,3 +960,16 @@
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+// Shown while matches are being scored
+.scoring-note {
+  display: flex;
+  align-items: center;
+  margin: 0 0 1rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  color: #3730a3;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 0.75rem;
+}

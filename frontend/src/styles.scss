@@ -175,6 +175,12 @@ small { font-size: $font-size-xs; }
   }
 }
 
+// Multi-line fields size by their rows, not the single-line input height
+textarea.form-control {
+  height: auto;
+  min-height: calc(#{$input-height} * 2);
+}
+
 .form-label {
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;

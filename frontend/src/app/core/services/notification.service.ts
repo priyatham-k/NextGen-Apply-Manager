@@ -40,7 +40,7 @@ export class NotificationService {
         this.notificationsSignal.set([]);
         this.unreadCountSignal.set(0);
       }
-    });
+    }, { allowSignalWrites: true });
 
     this.destroyRef.onDestroy(() => this.disconnect());
   }

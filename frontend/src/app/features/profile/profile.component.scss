@@ -200,12 +200,8 @@
 // Tab Navigation
 .profile-tabs {
   border-bottom: 2px solid #f1f5f9;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
+  flex-wrap: wrap;
   gap: 0;
-
-  &::-webkit-scrollbar { height: 0; }
 
   .nav-item { white-space: nowrap; }
 

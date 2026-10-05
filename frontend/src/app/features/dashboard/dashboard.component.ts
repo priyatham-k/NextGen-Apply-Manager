@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { JobService } from '@core/services/job.service';
+import { MatchingService } from '@core/services/matching.service';
 import { ApplicationService } from '@core/services/application.service';
 import { AuthService } from '@core/services/auth.service';
 import { AutomationService, AutopilotStatus, AutopilotPhase, AutopilotApplication } from '@core/services/automation.service';
@@ -22,6 +23,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private jobService = inject(JobService);
+  private matchingService = inject(MatchingService);
   private applicationService = inject(ApplicationService);
   private authService = inject(AuthService);
   private automationService = inject(AutomationService);
@@ -98,13 +100,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     totalJobs: 0,
     totalApplications: 0,
     pendingApplications: 0,
-    successfulApplications: 0,
-    averageMatchScore: 0
+    successfulApplications: 0
   });
   
   // Computed values
   currentUser = this.authService.currentUser;
-  highMatchJobs = this.jobService.highMatchJobs;
+  /** Match scores come from Top Matches (calculated per user, never stored on jobs); empty until it has run */
+  highMatches = computed(() => this.matchingService.matches().filter(m => m.matchScore >= 70).slice(0, 5));
+  averageMatchScore = computed(() => {
+    const matches = this.matchingService.matches();
+    return matches.length ? Math.round(matches.reduce((sum, m) => sum + m.matchScore, 0) / matches.length) : null;
+  });
   recentApplications = computed(() => 
     this.applicationService.applications().slice(0, 5)
   );
@@ -220,7 +226,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     try {
       // Load jobs and applications in parallel
       await Promise.all([
-        this.jobService.getJobs({ minMatchScore: 70 }, 1, 10).toPromise(),
+        this.jobService.getJobs({}, 1, 1).toPromise(),
         this.applicationService.getApplications({}, 1, 10).toPromise()
       ]);
       
@@ -229,8 +235,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         totalJobs: this.jobService.totalJobs(),
         totalApplications: this.applicationService.totalApplications(),
         pendingApplications: this.applicationService.pendingApplications(),
-        successfulApplications: this.applicationService.submittedApplications(),
-        averageMatchScore: this.calculateAverageMatchScore()
+        successfulApplications: this.applicationService.submittedApplications()
       });
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -239,13 +244,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
   
-  private calculateAverageMatchScore(): number {
-    const jobs = this.jobService.jobs();
-    if (jobs.length === 0) return 0;
-    
-    const total = jobs.reduce((sum, job) => sum + (job.matchScore ?? 0), 0);
-    return Math.round(total / jobs.length);
-  }
   
   refreshData(): void {
     this.loading.set(true);

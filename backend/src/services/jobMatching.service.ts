@@ -83,14 +83,18 @@ export async function calculateMatches(userId: string, limit: number = 20, optio
   // Build user profile summary for AI
   const profileSummary = buildProfileSummary(profile, settings);
 
-  // Process jobs in batches to reduce API calls
+  // Score up to 50 jobs, 5 per AI call. Calls run a few at a time: one after another took ~90s,
+  // which left Top Matches loading for over a minute. A failed batch falls back to keyword scoring.
   const batchSize = 5;
-  const allMatches: JobMatchResult[] = [];
-
+  const concurrency = 5;
+  const batches: any[][] = [];
   for (let i = 0; i < Math.min(availableJobs.length, 50); i += batchSize) {
-    const batch = availableJobs.slice(i, i + batchSize);
-    const batchMatches = await analyzeJobBatch(profileSummary, batch);
-    allMatches.push(...batchMatches);
+    batches.push(availableJobs.slice(i, i + batchSize));
+  }
+  const allMatches: JobMatchResult[] = [];
+  for (let i = 0; i < batches.length; i += concurrency) {
+    const results = await Promise.all(batches.slice(i, i + concurrency).map(batch => analyzeJobBatch(profileSummary, batch)));
+    results.forEach(batchMatches => allMatches.push(...batchMatches));
   }
 
   // Sort by match score descending

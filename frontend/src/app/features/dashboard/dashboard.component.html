@@ -42,7 +42,7 @@
       <div class="stat-card">
         <div class="stat-icon purple"><i class="bi bi-stars"></i></div>
         <div class="stat-info">
-          <span class="stat-value">{{ stats().averageMatchScore }}%</span>
+          <span class="stat-value">{{ averageMatchScore() === null ? '—' : averageMatchScore() + '%' }}</span>
           <span class="stat-label">Avg Match</span>
         </div>
       </div>
@@ -230,12 +230,13 @@
       <div class="content-card">
         <div class="card-header">
           <h2 class="card-title"><i class="bi bi-lightning-charge me-2"></i>High Match Jobs</h2>
-          <a routerLink="/jobs" class="view-all-link">View All <i class="bi bi-chevron-right"></i></a>
+          <a routerLink="/top-matches" class="view-all-link">View All <i class="bi bi-chevron-right"></i></a>
         </div>
         <div class="card-body">
-          @if (highMatchJobs().length > 0) {
+          @if (highMatches().length > 0) {
             <div class="job-items">
-              @for (job of highMatchJobs(); track job.id) {
+              @for (match of highMatches(); track match.job.id) {
+                @let job = match.job;
                 <a class="job-item" [routerLink]="['/jobs', job.id]">
                   <div class="job-item-left">
                     <div class="job-item-avatar">
@@ -251,15 +252,15 @@
                       <span class="job-item-meta">{{ job.location }}</span>
                     </div>
                   </div>
-                  <div class="match-badge">{{ job.matchScore }}%</div>
+                  <div class="match-badge">{{ match.matchScore }}%</div>
                 </a>
               }
             </div>
           } @else {
             <div class="empty-card-state">
               <i class="bi bi-briefcase"></i>
-              <p>No high match jobs found</p>
-              <button class="btn-sm-action" (click)="refreshData()">Fetch Jobs</button>
+              <p>See how jobs match your profile</p>
+              <a class="btn-sm-action" routerLink="/top-matches">Open Top Matches</a>
             </div>
           }
         </div>

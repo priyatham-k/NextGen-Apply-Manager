@@ -49,6 +49,11 @@
       <button class="filter-tab active">All Matches</button>
     </div>
 
+    <p class="scoring-note" role="status">
+      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      Scoring up to 50 recent jobs against your profile with AI. This takes about half a minute; the results are kept for 24 hours.
+    </p>
+
     <div class="matches-grid">
       @for (i of [1, 2, 3, 4, 5, 6]; track i) {
         <div class="match-card skeleton">
